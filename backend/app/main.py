@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(settings.RESUME_TEMPLATE_DIR, exist_ok=True)
     await init_db()
     yield
     await close_db()

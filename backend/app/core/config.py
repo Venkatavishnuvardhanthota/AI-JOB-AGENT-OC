@@ -32,10 +32,12 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_UPLOAD_EXTENSIONS: list[str] = [
-        ".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"
+        ".pdf", ".doc", ".docx", ".txt", ".png", ".jpg", ".jpeg"
     ]
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    RESUME_TEMPLATE_DIR: str = "templates/resumes"
+    DEFAULT_RESUME_TEMPLATE: str = "modern"
 
     @property
     def access_token_expire_seconds(self) -> int:
