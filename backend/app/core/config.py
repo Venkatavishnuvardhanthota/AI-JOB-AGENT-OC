@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     RESUME_TEMPLATE_DIR: str = "templates/resumes"
     DEFAULT_RESUME_TEMPLATE: str = "modern"
 
+    PROVIDER_REQUEST_TIMEOUT: int = 30
+    PROVIDER_MAX_RETRIES: int = 3
+    PROVIDER_RATE_LIMIT_DEFAULT: float = 1.0
+    ENABLED_PROVIDERS: list[str] = [
+        "linkedin", "indeed", "wellfound", "greenhouse", "lever",
+        "ashby", "remoteok", "weworkremotely",
+    ]
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

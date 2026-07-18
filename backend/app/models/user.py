@@ -30,6 +30,11 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    job_postings: Mapped[list["JobPosting"]] = relationship(  # noqa: F821
+        "JobPosting",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"

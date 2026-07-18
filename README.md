@@ -108,3 +108,14 @@ cd frontend && npm run lint && npm run format
 - **Database**: PostgreSQL 16
 - **Infrastructure**: Docker, Docker Compose, Nginx
 - **CI/CD**: GitHub Actions
+
+## Provider Framework
+
+The system fetches jobs from **17 sources** using a pluggable provider framework:
+
+**Global job boards:** LinkedIn, Indeed, Google Jobs, Wellfound, RemoteOK, We Work Remotely, Y Combinator
+**ATS platforms:** Greenhouse, Lever, Ashby, Workday
+**Indian job portals:** Naukri, Foundit, Internshala, Unstop, Freshersworld
+**Career pages:** Company Career Pages (configurable scraping)
+
+Each provider implements `BaseProvider` and reuses shared rate limiting, retries, logging, metrics, error handling, and normalization. See [docs/providers.md](docs/providers.md) for full documentation.

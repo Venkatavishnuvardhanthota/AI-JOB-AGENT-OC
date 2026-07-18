@@ -120,6 +120,22 @@ GitHub Actions workflow:
 - [x] Environment variables (.env.example)
 - [x] Dependency injection (FastAPI Depends)
 
+## Phase 4 — Provider Framework
+
+The [provider framework](providers.md) is a pluggable system for fetching jobs from 17 sources:
+
+- [x] Provider interface (`BaseProvider` ABC)
+- [x] Provider registry and factory
+- [x] Rate limiting (token-bucket)
+- [x] Retry logic with exponential backoff
+- [x] Structured logging (structlog)
+- [x] Metrics collection
+- [x] Health checks
+- [x] 17 provider implementations (LinkedIn, Indeed, Wellfound, Greenhouse, Lever, Ashby, Workday, Google Jobs, RemoteOK, We Work Remotely, Career Pages, Y Combinator, Naukri, Foundit, Internshala, Unstop, Freshersworld)
+- [x] Job normalization and deduplication
+- [x] Job schemas (Pydantic)
+- [x] Comprehensive test suite (190 tests)
+
 ## Remaining for Phase 2
 
 - [ ] Resume parsing and analysis

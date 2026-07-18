@@ -4,6 +4,7 @@ from app.models.certification import Certification
 from app.models.education import Education
 from app.models.experience import Experience
 from app.models.generated_resume import GeneratedResume
+from app.models.job_posting import JobPosting
 from app.models.language import Language
 from app.models.portfolio_item import PortfolioItem
 from app.models.project import Project
@@ -21,6 +22,7 @@ __all__ = [
     "Education",
     "Experience",
     "GeneratedResume",
+    "JobPosting",
     "Language",
     "PortfolioItem",
     "Project",
