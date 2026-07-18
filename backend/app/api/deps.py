@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
+from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
+from app.services.profile import ProfileService
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login",
@@ -71,3 +73,15 @@ def get_user_repository(
     db: AsyncSession = Depends(get_db),
 ) -> UserRepository:
     return UserRepository(db)
+
+
+def get_refresh_token_repository(
+    db: AsyncSession = Depends(get_db),
+) -> RefreshTokenRepository:
+    return RefreshTokenRepository(db)
+
+
+def get_profile_service(
+    db: AsyncSession = Depends(get_db),
+) -> ProfileService:
+    return ProfileService(db)

@@ -29,6 +29,14 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: int = 10
+    ALLOWED_UPLOAD_EXTENSIONS: list[str] = [
+        ".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"
+    ]
+
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

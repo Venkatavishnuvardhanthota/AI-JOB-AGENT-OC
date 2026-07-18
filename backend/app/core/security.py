@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -24,6 +25,10 @@ def create_access_token(
     return jwt.encode(
         to_encode, settings.APP_SECRET_KEY, algorithm=ALGORITHM
     )
+
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(64)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
