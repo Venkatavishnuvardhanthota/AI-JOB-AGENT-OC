@@ -1,0 +1,64 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aja-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=${APP_NAME:-AI Job Application Agent}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_SECRET_KEY=${APP_SECRET_KEY:?APP_SECRET_KEY is required}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ai_job_agent
+      - DATABASE_SYNC_URL=postgresql://postgres:postgres@db:5432/ai_job_agent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - aja-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aja-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - aja-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: aja-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=ai_job_agent
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aja-network
+
+volumes:
+  postgres_data:
+    name: aja-postgres-data
+
+networks:
+  aja-network:
+    name: aja-network
+    driver: bridge
