@@ -136,3 +136,34 @@ export const jobsApi = {
     return api.get('/jobs/stats')
   },
 }
+
+export const matchingApi = {
+  getConfig(): Promise<{ config: any; updated_at: string | null }> {
+    return api.get('/matching/config')
+  },
+
+  updateConfig(config: any): Promise<{ config: any; updated_at: string | null }> {
+    return api.put('/matching/config', config)
+  },
+
+  scoreJob(jobId: string): Promise<any> {
+    return api.post(`/matching/jobs/${jobId}/score`)
+  },
+
+  scoreBatch(req: { job_ids: string[] }): Promise<{ scores: any[] }> {
+    return api.post('/matching/jobs/batch-score', req)
+  },
+
+  explainScore(jobId: string): Promise<any[]> {
+    return api.post(`/matching/jobs/${jobId}/explain`)
+  },
+
+  listScored(params?: { min_score?: number; page?: number; page_size?: number }): Promise<any[]> {
+    const q = new URLSearchParams()
+    if (params?.min_score != null) q.set('min_score', String(params.min_score))
+    if (params?.page != null) q.set('page', String(params.page))
+    if (params?.page_size != null) q.set('page_size', String(params.page_size))
+    const qs = q.toString()
+    return api.get(`/matching/jobs/scored${qs ? `?${qs}` : ''}`)
+  },
+}

@@ -220,3 +220,113 @@ export interface TaskStatusResponse {
   created_at: string
   completed_at: string | null
 }
+
+export interface SkillScore {
+  matched: string[]
+  missing: string[]
+  total_user: number
+  total_job: number
+  score: number
+}
+
+export interface KeywordScore {
+  extracted: string[]
+  matched: string[]
+  total: number
+  score: number
+}
+
+export interface ExperienceScore {
+  user_years: number
+  required_years: number | null
+  has_relevant: boolean
+  relevant_titles: string[]
+  score: number
+}
+
+export interface EducationScore {
+  user_level: string
+  required_level: string | null
+  user_field: string | null
+  required_field: string | null
+  level_match: boolean
+  field_match: boolean
+  score: number
+}
+
+export interface CompanyScore {
+  company_name: string
+  is_blacklisted: boolean
+  has_connections: boolean
+  score: number
+}
+
+export interface ScoreExplanation {
+  category: string
+  score: number
+  weight: number
+  details: string
+}
+
+export interface MatchScore {
+  overall: number
+  skill: SkillScore
+  keyword: KeywordScore
+  experience: ExperienceScore
+  education: EducationScore
+  company: CompanyScore
+  explanations: ScoreExplanation[]
+  scored_at: string | null
+  job_id: string | null
+}
+
+export interface ScoringWeights {
+  skill: number
+  keyword: number
+  experience: number
+  education: number
+  company: number
+}
+
+export interface ScoringConfig {
+  weights: ScoringWeights
+  skill_threshold: number
+  keyword_threshold: number
+  experience_threshold: number
+  education_threshold: number
+  overall_threshold: number
+  boost_exact_title_match: boolean
+  boost_current_company: boolean
+  penalty_blacklisted: boolean
+}
+
+export interface ScoringConfigResponse {
+  config: ScoringConfig
+  updated_at: string | null
+}
+
+export interface BatchScoreRequest {
+  job_ids: string[]
+}
+
+export interface BatchScoreResponse {
+  scores: MatchScore[]
+}
+
+export interface ScoredJobResponse {
+  id: string
+  title: string
+  company_name: string
+  location: string | null
+  source: string
+  salary_min: number | null
+  salary_max: number | null
+  salary_currency: string | null
+  job_type: string | null
+  remote: boolean
+  posted_at: string | null
+  skills: string[]
+  is_active: boolean
+  match_score: number
+  match_details: ScoreExplanation | null
+}

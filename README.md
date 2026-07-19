@@ -134,4 +134,9 @@ Each provider implements `BaseProvider` and reuses shared rate limiting, retries
 - **Background Refresh:** Async job search via task queue with status polling
 - **Caching:** In-memory TTL cache for search results
 - **Frontend Pages:** Job search with filters, job detail view, saved jobs list
+- **Match Scoring:** Skill, keyword, experience, education, and company fit scoring with configurable weights and thresholds
+- **Score Visualization:** SVG circular progress badges with color coding and detailed explanation panels
+- **Batch Scoring:** Score multiple jobs at once; sort search results by match score
+- **Threshold Filtering:** Filter jobs by minimum overall and per-category match scores
 - **Logging & Metrics:** Structured logging (structlog), per-provider metrics, health checks
+- **Test Coverage:** 259 backend tests, 0 lint errors

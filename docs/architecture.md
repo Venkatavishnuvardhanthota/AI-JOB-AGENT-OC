@@ -134,7 +134,7 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] 17 provider implementations (LinkedIn, Indeed, Wellfound, Greenhouse, Lever, Ashby, Workday, Google Jobs, RemoteOK, We Work Remotely, Career Pages, Y Combinator, Naukri, Foundit, Internshala, Unstop, Freshersworld)
 - [x] Job normalization and deduplication
 - [x] Job schemas (Pydantic)
-- [x] Comprehensive test suite (218 tests)
+- [x] Comprehensive test suite (259 tests)
 
 ## Phase 5 — Job Search, Storage & APIs
 
@@ -147,10 +147,28 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] Frontend: `JobDetailPage` with description, skills, requirements, benefits, mark-as-applied, activate/deactivate
 - [x] Frontend: `SavedJobsPage` with pagination and status indicators
 - [x] Frontend API client (`jobsApi`) and TypeScript types
-- [x] Backend tests (218 passing, 0 lint errors)
+- [x] Backend tests (259 passing, 0 lint errors)
 - [x] Frontend compiles clean (0 TypeScript errors)
 
-## Remaining for Phase 6
+## Phase 6 — Match Scoring System
+
+- [x] `SkillExtractor` — extracts skills from job descriptions using a comprehensive tech-skills dictionary; computes skill match scores against user's profile skills
+- [x] `KeywordExtractor` — extracts non-stopword keywords from job descriptions; computes keyword match scores against user's experience titles and skills
+- [x] `ExperienceExtractor` — extracts required years of experience and seniority level from job descriptions; computes user's total experience years from work history; scores experience fit
+- [x] `EducationExtractor` — extracts required education level and field of study; compares against user's education records; scores education fit
+- [x] `CompanyAnalyzer` — checks company against user's blacklist and past employers; scores company fit
+- [x] `MatchScorer` — configurable weighted scoring engine combining skill, keyword, experience, education, and company factors into a 0–1 match score; supports boost (exact title match, current company) and penalty (blacklisted) modifiers
+- [x] `ThresholdFilter` — filters scores below configurable per-category and overall thresholds
+- [x] Scoring schemas (`MatchScore`, `SkillScore`, `KeywordScore`, `ExperienceScore`, `EducationScore`, `CompanyScore`, `ScoreExplanation`, `ScoringConfig`, `ScoringWeights`, `ScoredJobResponse`, `BatchScoreRequest/Response`)
+- [x] Scoring API routes (`/api/v1/matching/config` GET/PUT, `/jobs/{id}/score` POST, `/jobs/batch-score` POST, `/jobs/{id}/explain` POST, `/jobs/scored` GET)
+- [x] Frontend `ScoreBadge` — SVG circular progress indicator with color coding (green ≥80%, yellow ≥40%, red <20%)
+- [x] Frontend `ScoreExplanationPanel` — category-by-category breakdown with scores, weights, and detailed text explanations
+- [x] Search results integrate score badges with batch scoring; sort-by-match button
+- [x] Job detail page shows overall match badge + toggleable scoring explanation panel
+- [x] Backend tests: 259 passing, 0 lint errors
+- [x] Frontend compiles clean (0 TypeScript errors)
+
+## Remaining for Phase 7
 
 - [ ] Resume parsing and analysis
 - [ ] Application generation

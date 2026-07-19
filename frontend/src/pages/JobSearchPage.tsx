@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { jobsApi } from '../api/client'
+import { jobsApi, matchingApi } from '../api/client'
+import { ScoreBadge } from '../components/ScoreBadge'
 
 interface JobPosting {
   id: string
@@ -19,11 +20,8 @@ interface JobPosting {
   is_active: boolean
 }
 
-interface ProviderStatus {
-  name: string
-  enabled: boolean
-  jobs_found: number | null
-  error: string | null
+interface JobScore {
+  [jobId: string]: number
 }
 
 export function JobSearchPage() {
@@ -34,9 +32,7 @@ export function JobSearchPage() {
   const [salaryMin, setSalaryMin] = useState('')
   const [salaryMax, setSalaryMax] = useState('')
   const [results, setResults] = useState<JobPosting[]>([])
-  const [providers, setProviders] = useState<ProviderStatus[]>([])
-  const [totalNew, setTotalNew] = useState(0)
-  const [duplicatesRemoved, setDuplicatesRemoved] = useState(0)
+  const [scores, setScores] = useState<JobScore>({})
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -62,6 +58,18 @@ export function JobSearchPage() {
       setTotal(res.total)
       setPage(res.page)
       setTotalPages(res.total_pages)
+      if (res.items.length > 0) {
+        try {
+          const batch = await matchingApi.scoreBatch({ job_ids: res.items.map((j: any) => j.id) })
+          const m: JobScore = {}
+          for (const s of batch.scores) {
+            if (s.job_id) m[s.job_id] = s.overall
+          }
+          setScores(m)
+        } catch {
+          // scoring unavailable
+        }
+      }
     } catch (e: any) {
       setError(e.message || 'Search failed')
     } finally {
@@ -75,9 +83,6 @@ export function JobSearchPage() {
     setError('')
     try {
       const res = await jobsApi.refresh({ query: query.trim() })
-      setProviders([])
-      setTotalNew(0)
-      setDuplicatesRemoved(0)
       const poll = setInterval(async () => {
         try {
           const status = await jobsApi.taskStatus(res.task_id)
@@ -124,6 +129,15 @@ export function JobSearchPage() {
     if (days === 1) return 'Yesterday'
     if (days < 30) return `${days}d ago`
     return `${Math.floor(days / 30)}mo ago`
+  }
+
+  const sortByScore = () => {
+    const sorted = [...results].sort((a, b) => {
+      const sa = scores[a.id] ?? 0
+      const sb = scores[b.id] ?? 0
+      return sb - sa
+    })
+    setResults(sorted)
   }
 
   return (
@@ -177,20 +191,6 @@ export function JobSearchPage() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {providers.length > 0 && (
-        <div>
-          <h3>Provider Results</h3>
-          <ul>
-            {providers.map((p) => (
-              <li key={p.name}>
-                {p.name}: {p.error ? `Error: ${p.error}` : `${p.jobs_found ?? 0} jobs found`}
-              </li>
-            ))}
-          </ul>
-          <p>Total new: {totalNew} | Duplicates removed: {duplicatesRemoved}</p>
-        </div>
-      )}
-
       {!loading && results.length > 0 && (
         <div>
           <p>{total} jobs found. Page {page} of {totalPages}</p>
@@ -198,10 +198,12 @@ export function JobSearchPage() {
             {page > 1 && <button onClick={() => doSearch(page - 1)}>Previous</button>}
             {page < totalPages && <button onClick={() => doSearch(page + 1)}>Next</button>}
             <button onClick={() => doRefresh()} disabled={loading}>Refresh Results</button>
+            {Object.keys(scores).length > 0 && <button onClick={sortByScore}>Sort by Match</button>}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th>Match</th>
                 <th>Title</th>
                 <th>Company</th>
                 <th>Location</th>
@@ -214,6 +216,13 @@ export function JobSearchPage() {
             <tbody>
               {results.map((job) => (
                 <tr key={job.id}>
+                  <td>
+                    {scores[job.id] != null ? (
+                      <ScoreBadge score={scores[job.id]} size="sm" />
+                    ) : (
+                      <span style={{ color: '#9ca3af', fontSize: 12 }}>-</span>
+                    )}
+                  </td>
                   <td><Link to={`/jobs/${job.id}`}>{job.title}</Link></td>
                   <td>{job.company_name}</td>
                   <td>{job.remote ? 'Remote' : job.location || '-'}</td>

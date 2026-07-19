@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { jobsApi } from '../api/client'
+import { jobsApi, matchingApi } from '../api/client'
+import { ScoreBadge } from '../components/ScoreBadge'
+import { ScoreExplanationPanel } from '../components/ScoreExplanation'
 
 interface JobPosting {
   id: string
@@ -37,6 +39,10 @@ export function JobDetailPage() {
   const [job, setJob] = useState<JobPosting | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [score, setScore] = useState<any>(null)
+  const [explanations, setExplanations] = useState<any[]>([])
+  const [scoring, setScoring] = useState(false)
+  const [showExplanations, setShowExplanations] = useState(false)
 
   const loadJob = useCallback(async () => {
     if (!id) return
@@ -44,10 +50,22 @@ export function JobDetailPage() {
     try {
       const data = await jobsApi.get(id)
       setJob(data)
+      setScoring(true)
+      try {
+        const [s, exp] = await Promise.all([
+          matchingApi.scoreJob(id),
+          matchingApi.explainScore(id),
+        ])
+        setScore(s)
+        setExplanations(exp)
+      } catch {
+        // scoring unavailable
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to load job')
     } finally {
       setLoading(false)
+      setScoring(false)
     }
   }, [id])
 
@@ -91,7 +109,11 @@ export function JobDetailPage() {
   return (
     <div>
       <Link to="/jobs">← Back to search</Link>
-      <h1>{job.title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+        <h1 style={{ margin: 0 }}>{job.title}</h1>
+        {score && <ScoreBadge score={score.overall} size="lg" label="Match Score" />}
+        {scoring && <span style={{ fontSize: 12, color: '#9ca3af' }}>Scoring...</span>}
+      </div>
       <p><strong>Company:</strong> {job.company_name}</p>
       <p><strong>Location:</strong> {job.remote ? 'Remote' : job.location || 'Not specified'}</p>
       <p><strong>Job Type:</strong> {job.job_type || 'Not specified'}</p>
@@ -108,7 +130,18 @@ export function JobDetailPage() {
         <button onClick={handleToggleActive}>
           {job.is_active ? 'Deactivate' : 'Activate'}
         </button>
+        {explanations.length > 0 && (
+          <button onClick={() => setShowExplanations(!showExplanations)}>
+            {showExplanations ? 'Hide Scoring Details' : 'Show Scoring Details'}
+          </button>
+        )}
       </div>
+
+      {showExplanations && explanations.length > 0 && (
+        <div style={{ margin: '12px 0' }}>
+          <ScoreExplanationPanel explanations={explanations} overall={score?.overall} />
+        </div>
+      )}
 
       {job.description && (
         <section>
