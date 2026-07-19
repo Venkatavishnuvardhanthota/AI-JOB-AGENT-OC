@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, jobs, llm, matching, portfolio, profile, resumes, users
+from app.api.v1 import auth, jobs, llm, matching, portfolio, profile, resume_optimizer, resumes, users
 
 api_router = APIRouter()
 
@@ -15,6 +15,9 @@ api_router.include_router(
 )
 api_router.include_router(
     resumes.router, prefix="/resumes", tags=["Resumes"]
+)
+api_router.include_router(
+    resume_optimizer.router, prefix="/resumes", tags=["Resumes"]
 )
 api_router.include_router(
     portfolio.router, prefix="/portfolio", tags=["Portfolio"]
