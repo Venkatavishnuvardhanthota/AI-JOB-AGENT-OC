@@ -208,6 +208,39 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] **DB Write Resiliency** — Persistence failures logged but never crash the request
 - [x] 29 new tests (389 → 418 total), 0 lint errors
 
+## Phase 10 — Interview Preparation Engine
+
+- [x] **InterviewPrep Model** — SQLAlchemy model storing all interview prep data per user per job as JSON columns
+- [x] **InterviewPrepService** — Full generation engine with LLM-driven content for all 8 categories:
+  - Behavioral questions (STAR method: Situation, Task, Action, Result)
+  - Technical questions (topic-tagged, difficulty-graded, with detailed answers)
+  - Salary expectations (market range, recommended value, factors, negotiation tips)
+  - Notice period guidance (current period, negotiability, industry standard)
+  - Strengths (evidence-backed, role-relevant, categorized)
+  - Weaknesses (improvement plan, positive framing, categorized)
+  - Career goals (short-term, long-term, company alignment, timeline)
+  - Company-specific answers (tailored Q&A from company research)
+- [x] **TruthValidator** — Standalone service to validate interview answers for consistency using LLM analysis
+- [x] **Context Builders** — `_build_resume_context()` and `_build_company_context()` produce structured summaries from raw snapshot/research data
+- [x] **Partial Generation** — Individual sections can be toggled on/off via request flags
+- [x] **LLM Fallback** — All generation methods gracefully degrade to empty results when LLM unavailable
+- [x] **API Routes** — `POST /company/interview-prep/generate`, `GET /company/interview-prep`, `GET /company/interview-prep/{id}`, `DELETE /company/interview-prep/{id}`, `POST /company/interview-prep/validate-truth`
+- [x] **Schemas** — 13 Pydantic models covering all question types, responses, and truth validation
+- [x] 38 new tests (418 → 456 total), 0 lint errors
+
+- [x] **Company Research Engine** — `CompanyResearchService` enhanced with all profiling dimensions:
+  - Industry, Products/Services, Mission, Culture
+  - Recent public news, Headquarters, Company size
+  - Hiring trends, Technology stack
+  - Funding rounds (total, last round, date, investors)
+- [x] **Summary Generation** — Natural-language summary synthesized from all research fields
+- [x] **Caching** — Two-tier: in-memory `_InMemoryCache` (per-instance TTL cache) + DB persistence via `CompanyResearch` model
+- [x] **CompanyResearch Model** — SQLAlchemy model with `company_name` unique index, JSON columns for lists/dicts
+- [x] **API Routes** — `POST /company/research`, `GET /company/research/{name}`, `GET /company/research/{name}/summary`, `DELETE /company/research/{name}`
+- [x] **Fallback Handling** — Graceful degradation when LLM unavailable (structured fallback dict with summary)
+- [x] **DB Write Resiliency** — Persistence failures logged but never crash the request
+- [x] 29 new tests (389 → 418 total), 0 lint errors
+
 ## Remaining for Future Phases
 
 - [ ] Resume parsing and analysis improvements

@@ -1,6 +1,18 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, company_research, jobs, llm, matching, portfolio, profile, resume_optimizer, resumes, users
+from app.api.v1 import (
+    auth,
+    company_research,
+    interview_prep,
+    jobs,
+    llm,
+    matching,
+    portfolio,
+    profile,
+    resume_optimizer,
+    resumes,
+    users,
+)
 
 api_router = APIRouter()
 
@@ -30,6 +42,9 @@ api_router.include_router(
 )
 api_router.include_router(
     company_research.router, prefix="/company", tags=["Company Research"]
+)
+api_router.include_router(
+    interview_prep.router, prefix="/company", tags=["Interview Preparation"]
 )
 api_router.include_router(
     llm.router, prefix="/llm", tags=["LLM"]

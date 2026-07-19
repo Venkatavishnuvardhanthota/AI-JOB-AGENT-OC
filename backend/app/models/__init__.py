@@ -7,6 +7,7 @@ from app.models.education import Education
 from app.models.embedding_document import EmbeddingDocument
 from app.models.experience import Experience
 from app.models.generated_resume import GeneratedResume
+from app.models.interview_prep import InterviewPrep
 from app.models.job_posting import JobPosting
 from app.models.language import Language
 from app.models.portfolio_item import PortfolioItem
@@ -29,6 +30,7 @@ __all__ = [
     "EmbeddingDocument",
     "Experience",
     "GeneratedResume",
+    "InterviewPrep",
     "JobPosting",
     "Language",
     "PortfolioItem",

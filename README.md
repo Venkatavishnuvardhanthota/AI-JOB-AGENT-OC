@@ -150,4 +150,5 @@ Each provider implements `BaseProvider` and reuses shared rate limiting, retries
 - **ATS Resume Generation:** End-to-end LLM-driven rewrite optimized for ATS parsing with score estimation
 - **Cover Letter Generation:** Personalized cover letters with company research, resume context, tone/length control, versioning, PDF/DOCX export
 - **Company Research Engine:** Deep company profiling with industry, products, mission, culture, news, hiring trends, tech stack, funding — with summary generation, in-memory caching, and DB persistence
-- **Test Coverage:** 418 backend tests, 0 lint errors
+- **Interview Preparation:** Behavioral questions (STAR method), technical Q&A, salary expectations, notice period guidance, strengths/weaknesses, career goals, company-specific answers, and truth validation
+- **Test Coverage:** 456 backend tests, 0 lint errors
