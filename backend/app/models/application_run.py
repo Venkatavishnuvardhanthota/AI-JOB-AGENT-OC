@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -15,9 +15,13 @@ class ApplicationRun(Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     schedule_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("application_schedules.id", ondelete="SET NULL"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("application_schedules.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_runs_user_status", "user_id", "status"),
+    )
     job_ids: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
     applications_submitted_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_jobs_target: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import JSON, Boolean, ForeignKey, String
+from sqlalchemy import JSON, Boolean, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -14,7 +14,7 @@ class InterviewPrep(Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     job_posting_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("job_postings.id", ondelete="SET NULL"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("job_postings.id", ondelete="SET NULL"), nullable=True, index=True
     )
     job_title: Mapped[str] = mapped_column(String(500), nullable=False)
     company_name: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -32,3 +32,7 @@ class InterviewPrep(Base):
 
     user = relationship("User", backref="interview_preps")
     job_posting = relationship("JobPosting", backref="interview_preps")
+
+    __table_args__ = (
+        Index("ix_interview_preps_user_company", "user_id", "company_name"),
+    )

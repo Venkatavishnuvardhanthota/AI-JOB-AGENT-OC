@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy import Date, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid as Uuid
 
@@ -28,6 +28,10 @@ class Certification(Base):
     )
     file_url: Mapped[str | None] = mapped_column(
         String(500), nullable=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_certification_name"),
     )
 
     def __repr__(self) -> str:

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
@@ -45,11 +45,15 @@ class JobPosting(Base):
         String(64), nullable=False, unique=True, index=True
     )
     raw_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="job_postings")
+
+    __table_args__ = (
+        Index("ix_job_postings_user_active_created", "user_id", "is_active", "created_at"),
+    )
 
     def __repr__(self) -> str:
         return f"<JobPosting(id={self.id}, title={self.title!r}, company={self.company_name!r})>"

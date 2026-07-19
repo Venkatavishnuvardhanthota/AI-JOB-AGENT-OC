@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -15,7 +15,12 @@ class ApplicationSchedule(Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="stopped", nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="stopped", nullable=False, index=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_schedule_name"),
+        Index("ix_schedules_user_status", "user_id", "status"),
+    )
     schedule_type: Mapped[str] = mapped_column(String(50), nullable=False)
     cron_expression: Mapped[str | None] = mapped_column(String(255), nullable=True)
     timezone: Mapped[str] = mapped_column(String(100), default="UTC", nullable=False)

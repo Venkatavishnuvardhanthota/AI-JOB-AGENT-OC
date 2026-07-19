@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, Float, ForeignKey, String, Text
+from sqlalchemy import Date, Float, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid as Uuid
 
@@ -25,6 +25,10 @@ class Education(Base):
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     gpa: Mapped[float | None] = mapped_column(Float, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_educations_user_institution", "user_id", "institution"),
+    )
 
     def __repr__(self) -> str:
         return f"<Education(id={self.id}, institution={self.institution})>"

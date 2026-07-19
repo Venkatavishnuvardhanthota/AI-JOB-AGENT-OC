@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid as Uuid
 
@@ -17,6 +17,10 @@ class Language(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     proficiency: Mapped[str] = mapped_column(
         String(20), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_language_name"),
     )
 
     def __repr__(self) -> str:

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +17,10 @@ class PromptTemplate(Base):
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     model: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_prompt_name_version"),
+    )
 
     def __repr__(self) -> str:
         return (

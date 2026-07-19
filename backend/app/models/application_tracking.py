@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -15,10 +15,10 @@ class Application(Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     job_posting_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("job_postings.id", ondelete="SET NULL"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("job_postings.id", ondelete="SET NULL"), nullable=True, index=True
     )
     run_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("application_runs.id", ondelete="SET NULL"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("application_runs.id", ondelete="SET NULL"), nullable=True, index=True
     )
     status: Mapped[str] = mapped_column(String(50), default="saved", nullable=False, index=True)
     job_title: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -27,10 +27,12 @@ class Application(Base):
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     salary_range: Mapped[str | None] = mapped_column(String(255), nullable=True)
     applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     __table_args__ = (
         UniqueConstraint("user_id", "job_posting_id", name="uq_user_job_application"),
+        Index("ix_applications_user_created", "user_id", "created_at"),
+        Index("ix_applications_user_status", "user_id", "status"),
     )
 
     user = relationship("User", backref="applications")
@@ -73,10 +75,14 @@ class ApplicationTagMapping(Base):
     __tablename__ = "application_tag_mappings"
 
     application_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, primary_key=True
+        Uuid(as_uuid=True), ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
     )
     tag_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("application_tags.id", ondelete="CASCADE"), nullable=False, primary_key=True
+        Uuid(as_uuid=True), ForeignKey("application_tags.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint("application_id", "tag_id", name="uq_app_tag_mapping"),
     )
 
     application = relationship("Application", back_populates="tag_mappings")
@@ -89,10 +95,10 @@ class ApplicationTimelineEvent(Base):
     application_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=datetime.now
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
 
     application = relationship("Application", back_populates="timeline_events")
