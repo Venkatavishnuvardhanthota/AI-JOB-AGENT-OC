@@ -139,4 +139,10 @@ Each provider implements `BaseProvider` and reuses shared rate limiting, retries
 - **Batch Scoring:** Score multiple jobs at once; sort search results by match score
 - **Threshold Filtering:** Filter jobs by minimum overall and per-category match scores
 - **Logging & Metrics:** Structured logging (structlog), per-provider metrics, health checks
-- **Test Coverage:** 259 backend tests, 0 lint errors
+- **LLM Abstraction:** OpenAI, Anthropic, Gemini, Ollama, and OpenRouter clients with a unified interface
+- **Embeddings:** Text embedding generation via OpenAI, Ollama, and Gemini
+- **Vector Database:** In-memory vector store with cosine similarity search
+- **RAG:** Retrieval Augmented Generation pipeline with context-aware LLM answers
+- **Prompt Templates:** Parameterized templates with versioning, registry, and rendering
+- **Prompt Versioning:** Auto-increment versions, activate/deactivate, DB-backed storage
+- **Test Coverage:** 314 backend tests, 0 lint errors
