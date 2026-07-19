@@ -1,5 +1,6 @@
 from app.models.base import Base
 from app.models.blacklisted_company import BlacklistedCompany
+from app.models.browser_automation import BrowserAutomationLog
 from app.models.certification import Certification
 from app.models.company_research import CompanyResearch
 from app.models.cover_letter import CoverLetter
@@ -23,6 +24,7 @@ from app.models.user_profile import UserProfile
 __all__ = [
     "Base",
     "BlacklistedCompany",
+    "BrowserAutomationLog",
     "Certification",
     "CompanyResearch",
     "CoverLetter",

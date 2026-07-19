@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     RESUME_TEMPLATE_DIR: str = "templates/resumes"
     DEFAULT_RESUME_TEMPLATE: str = "modern"
 
+    BROWSER_AUTOMATION_ENABLED: bool = False
+    BROWSER_HEADLESS: bool = True
+    BROWSER_SCREENSHOT_DIR: str = "uploads/screenshots"
+    BROWSER_DEFAULT_TIMEOUT_MS: int = 30000
+
     PROVIDER_REQUEST_TIMEOUT: int = 30
     PROVIDER_MAX_RETRIES: int = 3
     PROVIDER_RATE_LIMIT_DEFAULT: float = 1.0
