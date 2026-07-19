@@ -181,7 +181,34 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] Backend tests: 314 passing, 0 lint errors
 - [x] Frontend compiles clean (0 TypeScript errors)
 
-## Remaining for Phase 8
+## Phase 8 — Resume Optimization & Cover Letters
+
+- [x] **ATS Scoring** — `ResumeOptimizer` scores resumes against job descriptions (format, keyword, section, AI-readiness checks)
+- [x] **Keyword Analysis** — Gap analysis identifying missing resume keywords vs job description
+- [x] **ATS Resume Generation** — `ATSResumeGenerator` produces LLM-rewritten resumes optimized for ATS parsing
+- [x] **Keyword Optimization** — `ResumeKeywordOptimizer` injects target keywords per section or across the full resume
+- [x] **Cover Letter Generation** — `CoverLetterGenerator` creates personalized letters with company research, resume context, tone/length control
+- [x] **Cover Letter Versioning** — Auto-increment versions, `is_active` flag, DB-backed CRUD
+- [x] **Cover Letter Export** — PDF (Reportlab) and DOCX export with file storage
+- [x] **Company Research (Phase 8 baseline)** — Basic LLM-powered company info retrieval
+- [x] 75 new tests (314 → 389 total), 0 lint errors
+
+## Phase 9 — Company Research Engine
+
+- [x] **Company Research Engine** — `CompanyResearchService` enhanced with all profiling dimensions:
+  - Industry, Products/Services, Mission, Culture
+  - Recent public news, Headquarters, Company size
+  - Hiring trends, Technology stack
+  - Funding rounds (total, last round, date, investors)
+- [x] **Summary Generation** — Natural-language summary synthesized from all research fields
+- [x] **Caching** — Two-tier: in-memory `_InMemoryCache` (per-instance TTL cache) + DB persistence via `CompanyResearch` model
+- [x] **CompanyResearch Model** — SQLAlchemy model with `company_name` unique index, JSON columns for lists/dicts
+- [x] **API Routes** — `POST /company/research`, `GET /company/research/{name}`, `GET /company/research/{name}/summary`, `DELETE /company/research/{name}`
+- [x] **Fallback Handling** — Graceful degradation when LLM unavailable (structured fallback dict with summary)
+- [x] **DB Write Resiliency** — Persistence failures logged but never crash the request
+- [x] 29 new tests (389 → 418 total), 0 lint errors
+
+## Remaining for Future Phases
 
 - [ ] Resume parsing and analysis improvements
 - [ ] Application generation

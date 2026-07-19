@@ -1,6 +1,7 @@
 from app.models.base import Base
 from app.models.blacklisted_company import BlacklistedCompany
 from app.models.certification import Certification
+from app.models.company_research import CompanyResearch
 from app.models.cover_letter import CoverLetter
 from app.models.education import Education
 from app.models.embedding_document import EmbeddingDocument
@@ -22,6 +23,7 @@ __all__ = [
     "Base",
     "BlacklistedCompany",
     "Certification",
+    "CompanyResearch",
     "CoverLetter",
     "Education",
     "EmbeddingDocument",
