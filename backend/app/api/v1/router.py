@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    application_tracking,
     apply,
     auth,
     browser_automation,
@@ -53,6 +54,9 @@ api_router.include_router(
 )
 api_router.include_router(
     apply.router, prefix="/apply", tags=["Apply"]
+)
+api_router.include_router(
+    application_tracking.router, prefix="/applications", tags=["Application Tracking"]
 )
 api_router.include_router(
     llm.router, prefix="/llm", tags=["LLM"]

@@ -1,5 +1,12 @@
 from app.models.application_run import ApplicationRun
 from app.models.application_schedule import ApplicationSchedule
+from app.models.application_tracking import (
+    Application,
+    ApplicationNote,
+    ApplicationTag,
+    ApplicationTagMapping,
+    ApplicationTimelineEvent,
+)
 from app.models.base import Base
 from app.models.blacklisted_company import BlacklistedCompany
 from app.models.browser_automation import BrowserAutomationLog
@@ -26,8 +33,13 @@ from app.models.user_profile import UserProfile
 
 __all__ = [
     "Base",
+    "Application",
+    "ApplicationNote",
     "ApplicationRun",
     "ApplicationSchedule",
+    "ApplicationTag",
+    "ApplicationTagMapping",
+    "ApplicationTimelineEvent",
     "BlacklistedCompany",
     "Notification",
     "BrowserAutomationLog",
