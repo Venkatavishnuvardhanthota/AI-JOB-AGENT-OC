@@ -6,6 +6,7 @@ from app.api.v1 import (
     auth,
     browser_automation,
     company_research,
+    dashboard,
     interview_prep,
     jobs,
     llm,
@@ -57,6 +58,9 @@ api_router.include_router(
 )
 api_router.include_router(
     application_tracking.router, prefix="/applications", tags=["Application Tracking"]
+)
+api_router.include_router(
+    dashboard.router, prefix="/dashboard", tags=["Dashboard"]
 )
 api_router.include_router(
     llm.router, prefix="/llm", tags=["LLM"]

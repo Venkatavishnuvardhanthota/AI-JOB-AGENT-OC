@@ -261,10 +261,42 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] **Timezone Support** — Timezone field on schedules for timezone-aware scheduling
 - [x] 64 new tests (492 → 556 total), 0 lint errors
 
+## Phase 13 — Application History & Tracking
+
+- [x] **Application Tracking Models** — `Application` (with status, company, job details, is_active, applied_at), `ApplicationNote`, `ApplicationTag`, `ApplicationTagMapping` (composite PK), `ApplicationTimelineEvent` — all with UUID PKs, FKs, cascade deletes, and unique constraints
+- [x] **Duplicate Prevention** — UniqueConstraint on `(user_id, job_posting_id)`, duplicate check returns 409 on creation
+- [x] **Full CRUD API** — 22 endpoints under `/api/v1/applications/` covering applications (create/list/get/update/delete), notes (add/list), tags (CRUD + app mapping), timeline events, analytics overview, CSV export, duplicate check, search, and filter (status, company, date range, tag IDs, is_active)
+- [x] **ApplicationTrackingService** — create with duplicate validation, get with joinedload, list_by_user with 8 filter params + pagination, update with timeline event on status change, cascade delete, notes CRUD, tag mapping, timeline queries
+- [x] **ApplicationAnalyticsService** — `get_analytics()` computing total, status breakdown, top 10 companies, weekly/monthly counts, active count, interview rate, success rate
+- [x] **ApplicationExportService** — CSV export with all application fields + tags
+- [x] **Tag System** — Per-user tags with unique name constraint, hex color support, many-to-many mapping with applications
+- [x] **Timeline Events** — Automatic event creation on create, status change, note added, tag added/removed
+- [x] 46 new tests (556 → 604 total), 0 lint errors
+
+## Phase 14 — Dashboard, Statistics, Charts & Reports
+
+- [x] **Dashboard Service** — `DashboardService.get_summary()` provides aggregated overview: total/active applications, weekly/monthly counts, interviews scheduled, offers received, interview/success rates, status breakdown
+- [x] **Statistics Service** — `StatisticsService.get_statistics()` computes detailed statistics for configurable periods (week/month/year) including: period totals, status breakdown, daily/weekly/monthly trend data, previous period comparison with growth percentage, top companies, interview/success rates
+- [x] **Chart Service** — `ChartService` with 7 chart data endpoints:
+  - `get_status_distribution()` — pie/bar chart data with color-coded statuses
+  - `get_daily_trends()` — line chart data for daily application volume
+  - `get_weekly_trends()` — line chart data for weekly trends
+  - `get_monthly_trends()` — line chart data for monthly trends
+  - `get_company_distribution()` — bar chart data for top companies
+  - `get_funnel()` — funnel chart data (saved → applied → screening → interview → offer → accepted)
+  - `get_daily_statistics()` — per-day statistics with status breakdown
+- [x] **Report Service** — `ReportService.generate_report()` generates period-based reports (daily/weekly/monthly) in 3 formats:
+  - **CSV** — Summary, status breakdown, daily breakdown, top companies, and per-application detail rows
+  - **XLSX** — Multi-sheet Excel workbook (Summary, Daily Breakdown, Top Companies, Application Details) via openpyxl
+  - **PDF** — Formatted PDF with tables and headings via reportlab
+- [x] **API Routes** — 11 endpoints under `/api/v1/dashboard/`: summary, statistics (with period params), 5 chart endpoints, daily-statistics, and report generation (type + format param, file download response)
+- [x] **Cross-dialect Compatibility** — Uses `strftime` for SQLite (testing) and `date_trunc` for PostgreSQL (production) for weekly/monthly date grouping
+- [x] **Frontend-Ready Chart Data** — ChartDataResponse schema with labels, datasets, background colors, and border colors matching Chart.js conventions
+- [x] 35 new tests (604 → 640 total), 0 lint errors
+
 ## Remaining for Future Phases
 
-- [ ] Resume parsing and analysis improvements
 - [ ] Email automation
 - [ ] Interview scheduling
-- [ ] Dashboard and analytics
 - [ ] Template management
+- [ ] Advanced reporting (custom date ranges, saved reports)

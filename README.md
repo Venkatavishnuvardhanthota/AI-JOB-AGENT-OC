@@ -152,4 +152,6 @@ Each provider implements `BaseProvider` and reuses shared rate limiting, retries
 - **Company Research Engine:** Deep company profiling with industry, products, mission, culture, news, hiring trends, tech stack, funding — with summary generation, in-memory caching, and DB persistence
 - **Interview Preparation:** Behavioral questions (STAR method), technical Q&A, salary expectations, notice period guidance, strengths/weaknesses, career goals, company-specific answers, and truth validation
 - **Application Automation:** Manual apply with job selection, automated scheduling (daily/weekly/custom cron), pause/resume/stop controls, configurable daily application limits, timezone-aware scheduling, in-app notifications for run status, and application run tracking with history
-- **Test Coverage:** 556 backend tests, 0 lint errors
+- **Application History & Tracking:** Full CRUD for applications, notes, tags, timeline events, status tracking, duplicate prevention, analytics (interview/success rates, status breakdown, top companies, weekly/monthly counts), CSV export, search, and multi-filter queries
+- **Dashboard & Reports:** Aggregated summary dashboard with real-time statistics, interactive chart data (status distribution, daily/weekly/monthly trends, company distribution, application funnel), detailed statistics with period comparison and growth rates, and exportable reports in CSV, Excel (XLSX), and PDF formats for daily, weekly, and monthly periods
+- **Test Coverage:** 640 backend tests, 0 lint errors
