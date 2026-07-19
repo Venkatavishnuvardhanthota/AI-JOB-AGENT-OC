@@ -151,4 +151,5 @@ Each provider implements `BaseProvider` and reuses shared rate limiting, retries
 - **Cover Letter Generation:** Personalized cover letters with company research, resume context, tone/length control, versioning, PDF/DOCX export
 - **Company Research Engine:** Deep company profiling with industry, products, mission, culture, news, hiring trends, tech stack, funding — with summary generation, in-memory caching, and DB persistence
 - **Interview Preparation:** Behavioral questions (STAR method), technical Q&A, salary expectations, notice period guidance, strengths/weaknesses, career goals, company-specific answers, and truth validation
-- **Test Coverage:** 456 backend tests, 0 lint errors
+- **Application Automation:** Manual apply with job selection, automated scheduling (daily/weekly/custom cron), pause/resume/stop controls, configurable daily application limits, timezone-aware scheduling, in-app notifications for run status, and application run tracking with history
+- **Test Coverage:** 556 backend tests, 0 lint errors

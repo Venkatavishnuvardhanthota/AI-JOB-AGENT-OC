@@ -228,25 +228,43 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] **Schemas** — 13 Pydantic models covering all question types, responses, and truth validation
 - [x] 38 new tests (418 → 456 total), 0 lint errors
 
-- [x] **Company Research Engine** — `CompanyResearchService` enhanced with all profiling dimensions:
-  - Industry, Products/Services, Mission, Culture
-  - Recent public news, Headquarters, Company size
-  - Hiring trends, Technology stack
-  - Funding rounds (total, last round, date, investors)
-- [x] **Summary Generation** — Natural-language summary synthesized from all research fields
-- [x] **Caching** — Two-tier: in-memory `_InMemoryCache` (per-instance TTL cache) + DB persistence via `CompanyResearch` model
-- [x] **CompanyResearch Model** — SQLAlchemy model with `company_name` unique index, JSON columns for lists/dicts
-- [x] **API Routes** — `POST /company/research`, `GET /company/research/{name}`, `GET /company/research/{name}/summary`, `DELETE /company/research/{name}`
-- [x] **Fallback Handling** — Graceful degradation when LLM unavailable (structured fallback dict with summary)
-- [x] **DB Write Resiliency** — Persistence failures logged but never crash the request
-- [x] 29 new tests (389 → 418 total), 0 lint errors
+## Phase 11 — Browser Automation
+
+- [x] **Browser Automation Framework** — Playwright-based browser automation with consent verification
+- [x] **Site Configurations** — Greenhouse, Lever, Ashby support with field mappings and consent status
+- [x] **BaseBrowserClient** — Abstract interface (navigate, fill text/textarea/checkbox/dropdown/radio, upload file, submit, screenshot)
+- [x] **PlaywrightBrowserClient** — Full Playwright async implementation with headless mode, viewport config, custom user-agent
+- [x] **FormFiller** — Orchestrates form field completion, resume/cover letter/certificate uploads, and submission
+- [x] **BrowserAutomationService** — Retry logic with exponential backoff, error handling, screenshots on failure, logging
+- [x] **Consent Verification** — Only runs on sites explicitly marked with `consent_status: permitted`
+- [x] **API Routes** — `GET /company/automation/sites`, `POST /company/automation/run`, `GET /company/automation/logs`, `GET /company/automation/logs/{id}`
+- [x] 36 new tests (456 → 492 total), 0 lint errors
+
+## Phase 12 — Application Automation (Manual Apply)
+
+- [x] **ApplicationSchedule Model** — SQLAlchemy model storing per-user schedules (daily/weekly/custom cron, timezone, max applications/day, days of week, time of day, status tracking)
+- [x] **ApplicationRun Model** — SQLAlchemy model tracking individual application runs (status, job IDs, submitted count, target, error messages, timestamps)
+- [x] **Notification Model** — SQLAlchemy model for in-app notifications (type, title, message, read/unread status)
+- [x] **ScheduleService** — Full CRUD for schedules plus start, stop, pause, resume controls with next-run computation (daily/weekly/custom cron logic)
+- [x] **ApplicationRunService** — Create runs, update status (running/completed/failed/cancelled), list with pagination
+- [x] **ApplicationAutomationService** — Manual apply orchestration, scheduled apply execution, daily limit enforcement, stats aggregation
+- [x] **NotificationService** — Create, list (with unread filter), mark-read (batch), unread count
+- [x] **API Routes** — Full REST API under `/api/v1/apply/`:
+  - `POST/GET /schedules` — CRUD for schedules
+  - `POST /schedules/{id}/start|stop|pause|resume` — Schedule controls
+  - `POST /runs` — Manual apply
+  - `GET /runs` / `GET /runs/{id}` — Run history
+  - `GET /notifications` / `GET /notifications/unread-count` / `POST /notifications/mark-read` — Notifications
+  - `GET /stats` — Daily application stats
+- [x] **Background Schedule Checker** — `check_and_run_due_schedules()` method finds due schedules and executes scheduled runs
+- [x] **Daily Limit Enforcement** — Tracks applications per day, respects `max_applications_per_day` per schedule
+- [x] **Timezone Support** — Timezone field on schedules for timezone-aware scheduling
+- [x] 64 new tests (492 → 556 total), 0 lint errors
 
 ## Remaining for Future Phases
 
 - [ ] Resume parsing and analysis improvements
-- [ ] Application generation
 - [ ] Email automation
 - [ ] Interview scheduling
 - [ ] Dashboard and analytics
-- [ ] Notification system
 - [ ] Template management

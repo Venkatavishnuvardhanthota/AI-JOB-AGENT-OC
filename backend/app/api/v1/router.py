@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    apply,
     auth,
     browser_automation,
     company_research,
@@ -49,6 +50,9 @@ api_router.include_router(
 )
 api_router.include_router(
     browser_automation.router, prefix="/company", tags=["Browser Automation"]
+)
+api_router.include_router(
+    apply.router, prefix="/apply", tags=["Apply"]
 )
 api_router.include_router(
     llm.router, prefix="/llm", tags=["LLM"]
