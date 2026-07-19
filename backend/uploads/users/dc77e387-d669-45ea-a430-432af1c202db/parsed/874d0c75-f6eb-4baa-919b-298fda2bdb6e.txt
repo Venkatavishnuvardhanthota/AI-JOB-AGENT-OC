@@ -1,0 +1,4 @@
+John Doe
+john@example.com
+
+Skills: Python, JavaScript

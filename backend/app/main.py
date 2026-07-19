@@ -9,6 +9,8 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.logging import configure_logging, logger
+from app.services.job_queue import get_job_queue
+from app.services.job_scheduler import get_job_scheduler
 
 
 @asynccontextmanager
@@ -18,7 +20,11 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.RESUME_TEMPLATE_DIR, exist_ok=True)
     await init_db()
+    await get_job_queue().start()
+    await get_job_scheduler().start()
     yield
+    await get_job_scheduler().stop()
+    await get_job_queue().stop()
     await close_db()
     logger.info("Application shutdown complete.")
 

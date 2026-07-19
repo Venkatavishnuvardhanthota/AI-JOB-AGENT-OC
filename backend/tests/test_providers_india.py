@@ -1,9 +1,11 @@
 """Unit tests for the India & Y Combinator provider implementations."""
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.services.job_normalizer import JobNormalizer
 from app.services.providers.base import RawJobData
 from app.services.providers.config import PROVIDER_CONFIGS
 from app.services.providers.factory import ProviderFactory
@@ -13,8 +15,6 @@ from app.services.providers.implementations.internshala import InternshalaProvid
 from app.services.providers.implementations.naukri import NaukriProvider
 from app.services.providers.implementations.unstop import UnstopProvider
 from app.services.providers.implementations.ycombinator import YCombinatorProvider
-from app.services.job_normalizer import JobNormalizer
-
 
 # ── Config Tests ──
 
@@ -234,11 +234,13 @@ class TestInternshalaProvider:
     @pytest.mark.asyncio
     async def test_search_passes_category(self):
         provider = InternshalaProvider()
-        with patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")):
-            with patch.object(provider, "_parse_search_results", return_value=[]):
-                await provider.search("Python", category="jobs")
-                url_called = provider._get_html.call_args[0][0]
-                assert "jobs" in url_called or "internships" in url_called
+        with (
+            patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")),
+            patch.object(provider, "_parse_search_results", return_value=[]),
+        ):
+            await provider.search("Python", category="jobs")
+            url_called = provider._get_html.call_args[0][0]
+            assert "jobs" in url_called or "internships" in url_called
 
     @pytest.mark.asyncio
     async def test_parse_stipend_monthly(self):
@@ -549,24 +551,25 @@ class TestNewProviderSupport:
     def test_ycombinator_supports_keyword_search(self):
         provider = YCombinatorProvider()
         with patch.object(provider, "_get_json", AsyncMock(return_value={"jobs": []})):
-            import asyncio
             results = asyncio.run(provider.search("Python Developer"))
             assert results == []
 
     def test_naukri_supports_location_filter(self):
         provider = NaukriProvider()
-        with patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")):
-            with patch.object(provider, "_parse_search_results", return_value=[]):
-                import asyncio
-                asyncio.run(provider.search("Python", location="Bangalore"))
-                called_params = provider._get_html.call_args[1].get("params", {})
-                assert called_params.get("l") == "Bangalore"
+        with (
+            patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")),
+            patch.object(provider, "_parse_search_results", return_value=[]),
+        ):
+            asyncio.run(provider.search("Python", location="Bangalore"))
+            called_params = provider._get_html.call_args[1].get("params", {})
+            assert called_params.get("l") == "Bangalore"
 
     def test_foundit_supports_location_filter(self):
         provider = FounditProvider()
-        with patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")):
-            with patch.object(provider, "_parse_search_results", return_value=[]):
-                import asyncio
-                asyncio.run(provider.search("Python", location="Mumbai"))
-                called_params = provider._get_html.call_args[1].get("params", {})
-                assert called_params.get("city") == "Mumbai"
+        with (
+            patch.object(provider, "_get_html", AsyncMock(return_value="<html></html>")),
+            patch.object(provider, "_parse_search_results", return_value=[]),
+        ):
+            asyncio.run(provider.search("Python", location="Mumbai"))
+            called_params = provider._get_html.call_args[1].get("params", {})
+            assert called_params.get("city") == "Mumbai"

@@ -323,6 +323,7 @@ Test files:
 
 - `tests/test_provider_framework.py` — core framework tests (75 tests)
 - `tests/test_providers_india.py` — India & Y Combinator provider tests (53 tests)
+- `tests/test_jobs.py` — job search, storage, caching, scheduling, and API tests (90 tests)
 
 Coverage:
 

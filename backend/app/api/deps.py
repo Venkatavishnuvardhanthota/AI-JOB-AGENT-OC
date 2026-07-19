@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
+from app.repositories.job_posting import JobPostingRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
+from app.services.job_search import JobSearchService
 from app.services.profile import ProfileService
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -85,3 +87,15 @@ def get_profile_service(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileService:
     return ProfileService(db)
+
+
+def get_job_repository(
+    db: AsyncSession = Depends(get_db),
+) -> JobPostingRepository:
+    return JobPostingRepository(db)
+
+
+def get_job_search_service(
+    db: AsyncSession = Depends(get_db),
+) -> JobSearchService:
+    return JobSearchService(session=db)

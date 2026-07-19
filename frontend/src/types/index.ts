@@ -139,3 +139,84 @@ export interface BlacklistedCompany {
   created_at: string
   updated_at: string
 }
+
+export interface JobPosting {
+  id: string
+  title: string
+  company_name: string
+  company_url: string | null
+  company_logo_url: string | null
+  location: string | null
+  description: string | null
+  url: string | null
+  source: string
+  source_job_id: string | null
+  salary_min: number | null
+  salary_max: number | null
+  salary_currency: string | null
+  salary_period: string | null
+  posted_at: string | null
+  job_type: string | null
+  remote: boolean
+  apply_url: string | null
+  skills: string[]
+  requirements: string[]
+  benefits: string[]
+  categories: string[]
+  content_hash: string
+  is_active: boolean
+  viewed_at: string | null
+  applied_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface JobSearchRequest {
+  query: string
+  location?: string | null
+  remote_only?: boolean
+  sources?: string[] | null
+  salary_min?: number | null
+  salary_max?: number | null
+  job_type?: string | null
+  skills?: string[] | null
+  page?: number
+  page_size?: number
+}
+
+export interface JobSearchResponse {
+  items: JobPosting[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+export interface JobSearchResult {
+  jobs: JobPosting[]
+  providers: { name: string; enabled: boolean; jobs_found: number | null; error: string | null }[]
+  total_new: number
+  duplicates_removed: number
+}
+
+export interface JobUpdate {
+  is_active?: boolean
+  viewed_at?: string | null
+  applied_at?: string | null
+}
+
+export interface JobStats {
+  total: number
+  viewed: number
+  applied: number
+  active: number
+  by_source: Record<string, number>
+}
+
+export interface TaskStatusResponse {
+  task_id: string
+  status: string
+  error: string | null
+  created_at: string
+  completed_at: string | null
+}

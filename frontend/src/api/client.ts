@@ -77,3 +77,62 @@ export const api = {
     return handleResponse<T>(response)
   },
 }
+
+export const jobsApi = {
+  search(params: { query: string; location?: string | null; remote_only?: boolean; sources?: string[] | null; salary_min?: number | null; salary_max?: number | null; job_type?: string | null; skills?: string[] | null; page?: number; page_size?: number }): Promise<{ items: any[]; total: number; page: number; page_size: number; total_pages: number }> {
+    const q = new URLSearchParams()
+    q.set('query', params.query)
+    if (params.location) q.set('location', params.location)
+    if (params.remote_only) q.set('remote_only', 'true')
+    if (params.sources?.length) q.set('sources', params.sources.join(','))
+    if (params.salary_min != null) q.set('salary_min', String(params.salary_min))
+    if (params.salary_max != null) q.set('salary_max', String(params.salary_max))
+    if (params.job_type) q.set('job_type', params.job_type)
+    if (params.skills?.length) q.set('skills', params.skills.join(','))
+    if (params.page != null) q.set('page', String(params.page))
+    if (params.page_size != null) q.set('page_size', String(params.page_size))
+    return api.get(`/jobs/search?${q}`)
+  },
+
+  list(params?: { page?: number; page_size?: number; source?: string; active_only?: boolean }): Promise<{ items: any[]; total: number; page: number; page_size: number; total_pages: number }> {
+    const q = new URLSearchParams()
+    if (params?.page != null) q.set('page', String(params.page))
+    if (params?.page_size != null) q.set('page_size', String(params.page_size))
+    if (params?.source) q.set('source', params.source)
+    if (params?.active_only) q.set('active_only', 'true')
+    const qs = q.toString()
+    return api.get(`/jobs${qs ? `?${qs}` : ''}`)
+  },
+
+  get(id: string): Promise<any> {
+    return api.get(`/jobs/${id}`)
+  },
+
+  update(id: string, data: { is_active?: boolean; viewed_at?: string | null; applied_at?: string | null }): Promise<any> {
+    return api.patch(`/jobs/${id}`, data)
+  },
+
+  markApplied(id: string): Promise<any> {
+    return api.patch(`/jobs/${id}`, { applied_at: new Date().toISOString() })
+  },
+
+  saved(params?: { page?: number; page_size?: number }): Promise<{ items: any[]; total: number; page: number; page_size: number; total_pages: number }> {
+    const q = new URLSearchParams()
+    if (params?.page != null) q.set('page', String(params.page))
+    if (params?.page_size != null) q.set('page_size', String(params.page_size))
+    const qs = q.toString()
+    return api.get(`/jobs/saved${qs ? `?${qs}` : ''}`)
+  },
+
+  refresh(body: { query?: string; sources?: string[] }): Promise<{ task_id: string; status: string; error: string | null; created_at: string; completed_at: string | null }> {
+    return api.post('/jobs/refresh', body)
+  },
+
+  taskStatus(taskId: string): Promise<{ task_id: string; status: string; error: string | null; created_at: string; completed_at: string | null }> {
+    return api.get(`/jobs/refresh/status/${taskId}`)
+  },
+
+  stats(): Promise<{ total: number; viewed: number; applied: number; active: number; by_source: Record<string, number> }> {
+    return api.get('/jobs/stats')
+  },
+}

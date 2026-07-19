@@ -119,3 +119,19 @@ The system fetches jobs from **17 sources** using a pluggable provider framework
 **Career pages:** Company Career Pages (configurable scraping)
 
 Each provider implements `BaseProvider` and reuses shared rate limiting, retries, logging, metrics, error handling, and normalization. See [docs/providers.md](docs/providers.md) for full documentation.
+
+## Features
+
+- **Authentication:** JWT-based register, login, profile management
+- **Profile Management:** Education, experience, skills, projects, certifications, languages, resume upload
+- **Blacklisted Companies:** Track companies to exclude from applications
+- **17 Job Provider Integrations:** LinkedIn, Indeed, Wellfound, Greenhouse, Lever, Ashby, Workday, Google Jobs, RemoteOK, We Work Remotely, Career Pages, Y Combinator, Naukri, Foundit, Internshala, Unstop, Freshersworld
+- **Rate Limiting:** Token-bucket with configurable rates per provider
+- **Retry & Error Handling:** Exponential backoff, structured error types
+- **Job Normalization & Deduplication:** Hash-based dedup with configurable strategies
+- **Job Search:** Keyword, location, remote, salary range, job type, and skills filters with pagination
+- **Job Storage:** Full CRUD with PostgreSQL, saved jobs tracking
+- **Background Refresh:** Async job search via task queue with status polling
+- **Caching:** In-memory TTL cache for search results
+- **Frontend Pages:** Job search with filters, job detail view, saved jobs list
+- **Logging & Metrics:** Structured logging (structlog), per-provider metrics, health checks

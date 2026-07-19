@@ -1,10 +1,7 @@
 """Unit tests for the provider framework (not platform implementations)."""
 
-import asyncio
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 
 from app.services.providers.base import BaseProvider, RawJobData
@@ -21,7 +18,6 @@ from app.services.providers.factory import ProviderFactory, get_provider_factory
 from app.services.providers.health import (
     HealthStatus,
     check_all_providers,
-    check_enabled_providers,
     check_provider_health,
 )
 from app.services.providers.logging import ProviderLogger
@@ -155,7 +151,6 @@ class TestTokenBucketRateLimiter:
     async def test_acquire_waits_when_no_tokens(self):
         limiter = TokenBucketRateLimiter(rate=0.1, burst=1)
         await limiter.acquire()
-        start = time.monotonic()
         wait = await limiter.acquire()
         assert wait > 0
 

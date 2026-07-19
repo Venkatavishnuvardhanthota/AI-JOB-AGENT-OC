@@ -17,6 +17,8 @@ export function Navbar() {
         <div>
           {isAuthenticated ? (
             <>
+              <Link to="/jobs">Search Jobs</Link>
+              <Link to="/saved-jobs">Saved Jobs</Link>
               <Link to="/profile">Profile</Link>
               <span>{user?.email}</span>
               <button onClick={handleLogout}>Logout</button>

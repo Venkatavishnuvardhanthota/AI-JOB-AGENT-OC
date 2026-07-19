@@ -134,12 +134,25 @@ The [provider framework](providers.md) is a pluggable system for fetching jobs f
 - [x] 17 provider implementations (LinkedIn, Indeed, Wellfound, Greenhouse, Lever, Ashby, Workday, Google Jobs, RemoteOK, We Work Remotely, Career Pages, Y Combinator, Naukri, Foundit, Internshala, Unstop, Freshersworld)
 - [x] Job normalization and deduplication
 - [x] Job schemas (Pydantic)
-- [x] Comprehensive test suite (190 tests)
+- [x] Comprehensive test suite (218 tests)
 
-## Remaining for Phase 2
+## Phase 5 — Job Search, Storage & APIs
+
+- [x] `JobPostingRepository` — CRUD, search, filter (keyword, location, remote, salary, job_type, skills), pagination, saved-jobs query, stats aggregation
+- [x] `JobSearchService` — orchestrates provider search, normalizes, deduplicates, stores, filters, paginates
+- [x] `JobCache` — in-memory TTL cache with LRU eviction for search results
+- [x] `JobScheduler` + `JobQueue` — async background job search with task status tracking
+- [x] Jobs API routes (`/api/v1/jobs/search`, `/list`, `/{id}`, `/saved`, `/refresh`, `/refresh/status/{task_id}`, `/stats`)
+- [x] Frontend: `JobSearchPage` with keyword, location, remote, salary, job_type filters and pagination
+- [x] Frontend: `JobDetailPage` with description, skills, requirements, benefits, mark-as-applied, activate/deactivate
+- [x] Frontend: `SavedJobsPage` with pagination and status indicators
+- [x] Frontend API client (`jobsApi`) and TypeScript types
+- [x] Backend tests (218 passing, 0 lint errors)
+- [x] Frontend compiles clean (0 TypeScript errors)
+
+## Remaining for Phase 6
 
 - [ ] Resume parsing and analysis
-- [ ] Job search and matching
 - [ ] Application generation
 - [ ] Email automation
 - [ ] Interview scheduling

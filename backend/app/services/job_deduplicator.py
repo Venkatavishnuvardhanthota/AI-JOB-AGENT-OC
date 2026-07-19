@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,9 +21,9 @@ class JobDeduplicator:
     async def deduplicate(self, raw_jobs: list[RawJobData]) -> tuple[list[JobCreate], int]:
         """Deduplicate a list of raw jobs. Returns (new_jobs, duplicates_removed)."""
         normalized = self.normalizer.normalize_batch(raw_jobs)
-        return await self._filter_existing(normalized)
+        return await self.filter_existing(normalized)
 
-    async def _filter_existing(self, jobs: list[JobCreate]) -> tuple[list[JobCreate], int]:
+    async def filter_existing(self, jobs: list[JobCreate]) -> tuple[list[JobCreate], int]:
         """Filter out jobs whose content_hash already exists in the database."""
         if not jobs:
             return [], 0
