@@ -18,6 +18,8 @@ from app.schemas.resume_optimizer import (
     AtsScoreResponse,
     KeywordAnalysisRequest,
     KeywordAnalysisResponse,
+    KeywordMatch,
+    KeywordSuggestion,
     OptimizeResumeRequest,
 )
 from app.services.ats_resume_generator import ATSResumeGenerator
@@ -57,6 +59,14 @@ async def score_resume_ats(
     return score
 
 
+def _to_keyword_suggestion(kw: KeywordMatch) -> KeywordSuggestion:
+    return KeywordSuggestion(
+        keyword=kw.keyword,
+        category=kw.category,
+        priority=kw.importance,
+    )
+
+
 @router.post("/optimize/keywords", response_model=KeywordAnalysisResponse)
 async def analyze_keywords(
     request: KeywordAnalysisRequest,
@@ -67,7 +77,13 @@ async def analyze_keywords(
         resume_version_id=request.resume_version_id,
         job_description=request.job_description,
     )
-    return KeywordAnalysisResponse(**result)
+    return KeywordAnalysisResponse(
+        job_keywords=[_to_keyword_suggestion(kw) for kw in result.get("job_keywords", [])],
+        present_in_resume=result.get("present_in_resume", []),
+        missing_from_resume=[_to_keyword_suggestion(kw) for kw in result.get("missing_from_resume", [])],
+        coverage_percentage=result.get("coverage_percentage", 0.0),
+        suggestions=result.get("suggestions", []),
+    )
 
 
 @router.post("/optimize/ats-generate", response_model=AtsOptimizeResponse)

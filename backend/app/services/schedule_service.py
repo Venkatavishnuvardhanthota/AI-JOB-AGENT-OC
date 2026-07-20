@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -158,7 +158,7 @@ class ScheduleService:
             hour, minute = map(int, schedule.time_of_day.split(":"))
             candidate = from_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if candidate <= from_time:
-                candidate = candidate.replace(day=candidate.day + 1)
+                candidate = candidate + timedelta(days=1)
             return candidate
         if schedule.schedule_type == "weekly" and schedule.days_of_week and schedule.time_of_day:
             hour, minute = map(int, schedule.time_of_day.split(":"))
@@ -167,10 +167,11 @@ class ScheduleService:
             for _ in range(14):
                 if candidate.weekday() in days_set and candidate > from_time:
                     return candidate
-                candidate = candidate.replace(day=candidate.day + 1)
+                candidate = candidate + timedelta(days=1)
             return candidate
         if schedule.schedule_type == "custom" and schedule.cron_expression:
-            candidate = from_time.replace(day=from_time.day + 1, hour=0, minute=0, second=0, microsecond=0)
+            candidate = from_time + timedelta(days=1)
+            candidate = candidate.replace(hour=0, minute=0, second=0, microsecond=0)
             return candidate
         return None
 

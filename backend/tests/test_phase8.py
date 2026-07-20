@@ -450,7 +450,7 @@ class TestResumeOptimizer:
         session = MagicMock()
         optimizer = ResumeOptimizer(session)
         with patch("app.services.resume_optimizer.get_llm_client", return_value=None):
-            result = optimizer._llm_extract_keywords("Python developer needed")
+            result = await optimizer._llm_extract_keywords("Python developer needed")
         assert len(result) > 0
 
     @pytest.mark.asyncio

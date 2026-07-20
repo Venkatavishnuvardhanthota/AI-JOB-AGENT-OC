@@ -47,7 +47,7 @@ class ProfileService:
         stmt = (
             select(Education)
             .where(Education.user_id == user_id)
-            .order_by(Education.start_date.desc().nullslast())
+            .order_by(Education.start_date.desc().nulls_last())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -56,7 +56,7 @@ class ProfileService:
         stmt = (
             select(Experience)
             .where(Experience.user_id == user_id)
-            .order_by(Experience.start_date.desc().nullslast())
+            .order_by(Experience.start_date.desc().nulls_last())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -65,7 +65,7 @@ class ProfileService:
         stmt = (
             select(Project)
             .where(Project.user_id == user_id)
-            .order_by(Project.start_date.desc().nullslast())
+            .order_by(Project.start_date.desc().nulls_last())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -79,7 +79,7 @@ class ProfileService:
         stmt = (
             select(Certification)
             .where(Certification.user_id == user_id)
-            .order_by(Certification.issue_date.desc().nullslast())
+            .order_by(Certification.issue_date.desc().nulls_last())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

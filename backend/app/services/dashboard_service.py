@@ -54,7 +54,7 @@ class DashboardService:
 
         active = await self.session.execute(
             select(func.count(Application.id)).where(
-                Application.user_id == user_id, Application.is_active is True
+                Application.user_id == user_id, Application.is_active == True
             )
         )
         active_count = active.scalar() or 0

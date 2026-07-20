@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { jobsApi, matchingApi } from '../api/client'
 import { ScoreBadge } from '../components/ScoreBadge'
@@ -38,6 +38,7 @@ export function JobSearchPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const doSearch = useCallback(async (pageNum = 1) => {
     if (!query.trim()) return
@@ -77,25 +78,41 @@ export function JobSearchPage() {
     }
   }, [query, location, remoteOnly, jobType, salaryMin, salaryMax])
 
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+    }
+  }, [])
+
   const doRefresh = async () => {
     if (!query.trim()) return
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
     setLoading(true)
     setError('')
     try {
       const res = await jobsApi.refresh({ query: query.trim() })
-      const poll = setInterval(async () => {
+      pollRef.current = setInterval(async () => {
         try {
           const status = await jobsApi.taskStatus(res.task_id)
           if (status.status === 'completed') {
-            clearInterval(poll)
+            if (pollRef.current) clearInterval(pollRef.current)
+            pollRef.current = null
             doSearch(1)
           } else if (status.status === 'failed') {
-            clearInterval(poll)
+            if (pollRef.current) clearInterval(pollRef.current)
+            pollRef.current = null
             setError(status.error || 'Refresh failed')
             setLoading(false)
           }
         } catch {
-          clearInterval(poll)
+          if (pollRef.current) clearInterval(pollRef.current)
+          pollRef.current = null
           setError('Status check failed')
           setLoading(false)
         }

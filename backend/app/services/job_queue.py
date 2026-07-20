@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -22,7 +22,7 @@ class Task:
     id: str
     name: str
     status: TaskStatus = TaskStatus.PENDING
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: datetime | None = None
     completed_at: datetime | None = None
     result: Any = None
@@ -32,10 +32,11 @@ class Task:
 class JobQueue:
     """Simple in-process async task queue for background job processing."""
 
-    def __init__(self, max_concurrent: int = 2) -> None:
+    def __init__(self, max_concurrent: int = 2, max_retained_tasks: int = 100) -> None:
         self._queue: asyncio.Queue[tuple[str, Callable[..., Awaitable], dict]] = asyncio.Queue()
         self._tasks: dict[str, Task] = {}
         self._max_concurrent = max_concurrent
+        self._max_retained_tasks = max_retained_tasks
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._worker_task: asyncio.Task | None = None
 
@@ -47,7 +48,6 @@ class JobQueue:
     async def stop(self) -> None:
         if self._worker_task:
             self._worker_task.cancel()
-            import contextlib
             with contextlib.suppress(asyncio.CancelledError):
                 await self._worker_task
             self._worker_task = None
@@ -59,6 +59,7 @@ class JobQueue:
         self._tasks[task_id] = task
         await self._queue.put((task_id, fn, kwargs))
         logger.debug("Enqueued task %s: %s", task_id, name)
+        self._cleanup_old_tasks()
         return task_id
 
     def get_task(self, task_id: str) -> Task | None:
@@ -70,6 +71,18 @@ class JobQueue:
             tasks = [t for t in tasks if t.status == status]
         tasks.sort(key=lambda t: t.created_at, reverse=True)
         return tasks[:limit]
+
+    def _cleanup_old_tasks(self) -> None:
+        if len(self._tasks) <= self._max_retained_tasks:
+            return
+        completed = [
+            t for t in self._tasks.values()
+            if t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+        ]
+        completed.sort(key=lambda t: t.completed_at or t.created_at)
+        remove_count = len(self._tasks) - self._max_retained_tasks
+        for t in completed[:remove_count]:
+            self._tasks.pop(t.id, None)
 
     async def _worker_loop(self) -> None:
         while True:
@@ -87,19 +100,21 @@ class JobQueue:
         if not task:
             return
         task.status = TaskStatus.RUNNING
-        task.started_at = datetime.utcnow()
+        task.started_at = datetime.now(timezone.utc)
         try:
             result = await fn(**kwargs)
             task.status = TaskStatus.COMPLETED
             task.result = result
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(timezone.utc)
             logger.info("Task %s completed successfully", task_id)
         except Exception as e:
             task.status = TaskStatus.FAILED
             task.error = str(e)
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(timezone.utc)
             logger.exception("Task %s failed: %s", task_id, e)
 
+
+import contextlib
 
 _job_queue: JobQueue | None = None
 

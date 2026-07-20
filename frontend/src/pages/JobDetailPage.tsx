@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { jobsApi, matchingApi } from '../api/client'
 import { ScoreBadge } from '../components/ScoreBadge'
@@ -43,12 +43,17 @@ export function JobDetailPage() {
   const [explanations, setExplanations] = useState<any[]>([])
   const [scoring, setScoring] = useState(false)
   const [showExplanations, setShowExplanations] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   const loadJob = useCallback(async () => {
     if (!id) return
+    abortRef.current?.abort()
+    const abort = new AbortController()
+    abortRef.current = abort
     setLoading(true)
     try {
       const data = await jobsApi.get(id)
+      if (abort.signal.aborted) return
       setJob(data)
       setScoring(true)
       try {
@@ -56,21 +61,26 @@ export function JobDetailPage() {
           matchingApi.scoreJob(id),
           matchingApi.explainScore(id),
         ])
+        if (abort.signal.aborted) return
         setScore(s)
         setExplanations(exp)
       } catch {
         // scoring unavailable
       }
     } catch (e: any) {
+      if (abort.signal.aborted) return
       setError(e.message || 'Failed to load job')
     } finally {
-      setLoading(false)
-      setScoring(false)
+      if (!abort.signal.aborted) {
+        setLoading(false)
+        setScoring(false)
+      }
     }
   }, [id])
 
   useEffect(() => {
     loadJob()
+    return () => { abortRef.current?.abort() }
   }, [loadJob])
 
   const handleMarkApplied = async () => {
@@ -91,6 +101,11 @@ export function JobDetailPage() {
     } catch (e: any) {
       setError(e.message || 'Failed to update job')
     }
+  }
+
+  const stripHtml = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    return doc.body.textContent || ''
   }
 
   if (loading) return <div>Loading job details...</div>
@@ -146,7 +161,7 @@ export function JobDetailPage() {
       {job.description && (
         <section>
           <h2>Description</h2>
-          <div dangerouslySetInnerHTML={{ __html: job.description }} />
+          <div style={{ whiteSpace: 'pre-wrap' }}>{stripHtml(job.description)}</div>
         </section>
       )}
 

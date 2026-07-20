@@ -43,15 +43,31 @@ class FileStorageService:
         ext = self._validate_extension(filename)
         upload_dir = self._ensure_dir(subdir)
         file_id = custom_filename or str(uuid.uuid4())
-        dest = upload_dir / f"{file_id}{ext}"
+        sanitized_name = Path(file_id).name
+        dest = upload_dir / f"{sanitized_name}{ext}"
+        resolved = dest.resolve()
+        if not str(resolved).startswith(str(self.base_dir.resolve())):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file path.",
+            )
         content = await file.read()
         self._validate_size(content)
-        with open(dest, "wb") as f:
+        with open(resolved, "wb") as f:
             f.write(content)
-        return str(dest)
+        return str(resolved)
+
+    def _validate_path(self, path: Path) -> None:
+        resolved = path.resolve()
+        if not str(resolved).startswith(str(self.base_dir.resolve())):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file path.",
+            )
 
     def delete(self, file_path: str) -> bool:
         path = Path(file_path)
+        self._validate_path(path)
         if path.exists() and path.is_file():
             path.unlink()
             return True
@@ -59,6 +75,7 @@ class FileStorageService:
 
     def get_file_size(self, file_path: str) -> int | None:
         path = Path(file_path)
+        self._validate_path(path)
         if path.exists() and path.is_file():
             return path.stat().st_size
         return None

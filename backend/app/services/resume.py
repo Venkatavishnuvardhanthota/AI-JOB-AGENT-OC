@@ -91,15 +91,14 @@ class ResumeService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_version(self, version_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion | None:
+    async def get_version(self, version_id: uuid.UUID, user_id: uuid.UUID | None = None) -> ResumeVersion | None:
         stmt = (
             select(ResumeVersion)
             .join(ResumeMaster)
-            .where(
-                ResumeVersion.id == version_id,
-                ResumeMaster.user_id == user_id,
-            )
+            .where(ResumeVersion.id == version_id)
         )
+        if user_id is not None:
+            stmt = stmt.where(ResumeMaster.user_id == user_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

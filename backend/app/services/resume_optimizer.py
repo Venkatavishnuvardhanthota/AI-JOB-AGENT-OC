@@ -40,7 +40,7 @@ class ResumeOptimizer:
             }
         snapshot = version.snapshot_data
         resume_text = self._snapshot_to_text(snapshot)
-        job_keywords = self._extract_keywords_from_jd(job_description)
+        job_keywords = await self._extract_keywords_from_jd(job_description)
         present = []
         missing = []
         resume_lower = resume_text.lower()
@@ -74,7 +74,7 @@ class ResumeOptimizer:
             )
         snapshot = version.snapshot_data
         resume_text = self._snapshot_to_text(snapshot)
-        job_keywords = self._extract_keywords_from_jd(job_description)
+        job_keywords = await self._extract_keywords_from_jd(job_description)
         client = get_llm_client()
         section_scores = []
         all_matched = []
@@ -148,18 +148,27 @@ class ResumeOptimizer:
         optimized = await self._llm_rewrite(
             snapshot, job_description, company_name, job_title, client,
         )
-        before_score = self._calc_keyword_score(
-            self._extract_keywords_from_jd(job_description),
-            [],
-        )
+        jd_keywords = self._extract_keywords_from_jd(job_description)
+        before_text = self._snapshot_to_text(snapshot)
+        before_matched = [
+            kw for kw in jd_keywords
+            if kw.keyword.lower() in before_text.lower()
+        ]
+        before_missing = [
+            kw for kw in jd_keywords
+            if kw.keyword.lower() not in before_text.lower()
+        ]
+        before_score = self._calc_keyword_score(before_matched, before_missing)
         after_text = self._snapshot_to_text(
             optimized.get("optimized_snapshot", snapshot),
         )
-        after_matched = sum(
-            1 for kw in self._extract_keywords_from_jd(job_description)
+        after_matched_count = sum(
+            1 for kw in jd_keywords
             if kw.keyword.lower() in after_text.lower()
         )
-        improvement = max(0, after_matched - before_score)
+        total_kw = len(jd_keywords)
+        after_pct = round(after_matched_count / total_kw * 100) if total_kw else 100
+        improvement = max(0, after_pct - before_score)
         return {
             "optimized_snapshot": optimized.get("optimized_snapshot", snapshot),
             "changes_summary": optimized.get(
@@ -199,13 +208,13 @@ class ResumeOptimizer:
             parts.append(lang.get("name", ""))
         return " ".join(p for p in parts if p)
 
-    def _extract_keywords_from_jd(
+    async def _extract_keywords_from_jd(
         self, job_description: str,
     ) -> list[KeywordMatch]:
         client = get_llm_client()
         if client:
             try:
-                return self._llm_extract_keywords(job_description)
+                return await self._llm_extract_keywords(job_description)
             except Exception as e:
                 logger.warning(
                     "LLM keyword extraction failed, using regex fallback: %s", e,
@@ -235,7 +244,7 @@ class ResumeOptimizer:
                 ))
         return keywords
 
-    def _llm_extract_keywords(self, job_description: str) -> list[KeywordMatch]:
+    async def _llm_extract_keywords(self, job_description: str) -> list[KeywordMatch]:
         client = get_llm_client()
         if not client:
             return self._regex_extract_keywords(job_description)
@@ -259,7 +268,7 @@ class ResumeOptimizer:
             max_tokens=2000,
         )
         import json
-        response = client.complete(request)
+        response = await client.complete(request)
         content = response.content.strip()
         if content.startswith("```"):
             content = self._strip_code_fence(content)
