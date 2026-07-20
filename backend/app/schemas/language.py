@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LanguageBase(BaseModel):
-    name: str
-    proficiency: str
+    language: str = Field(max_length=100)
+    proficiency: str | None = Field(None, max_length=100)
 
 
 class LanguageCreate(LanguageBase):
@@ -14,14 +14,15 @@ class LanguageCreate(LanguageBase):
 
 
 class LanguageUpdate(BaseModel):
-    name: str | None = None
-    proficiency: str | None = None
+    language: str | None = Field(None, max_length=100)
+    proficiency: str | None = Field(None, max_length=100)
 
 
 class LanguageResponse(LanguageBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

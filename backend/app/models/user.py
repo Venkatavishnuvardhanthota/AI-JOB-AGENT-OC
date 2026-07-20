@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -9,32 +9,18 @@ from app.models.base import Base
 class User(Base):
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
-    hashed_password: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )
-    full_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
-    last_login: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    profile: Mapped["UserProfile"] = relationship(  # noqa: F821
-        "UserProfile",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
-    job_postings: Mapped[list["JobPosting"]] = relationship(  # noqa: F821
-        "JobPosting",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-
-    def __repr__(self) -> str:
-        return f"<User(id={self.id}, email={self.email})>"
+    profile = relationship("CareerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    resumes = relationship("ResumeVersion", back_populates="user", cascade="all, delete-orphan")
+    applications = relationship("Application", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    scheduler_jobs = relationship("SchedulerJob", back_populates="user", cascade="all, delete-orphan")
+    audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    cover_letters = relationship("CoverLetter", back_populates="user", cascade="all, delete-orphan")

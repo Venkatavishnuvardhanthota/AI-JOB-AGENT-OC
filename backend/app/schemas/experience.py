@@ -1,18 +1,18 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ExperienceBase(BaseModel):
-    company: str
-    title: str
-    location: str | None = None
+    company: str = Field(max_length=255)
+    title: str = Field(max_length=255)
+    location: str | None = Field(None, max_length=255)
+    employment_type: str | None = Field(None, max_length=100)
     start_date: date | None = None
     end_date: date | None = None
-    is_current: bool = False
+    currently_working: bool | None = None
     description: str | None = None
-    company_url: str | None = None
 
 
 class ExperienceCreate(ExperienceBase):
@@ -20,20 +20,21 @@ class ExperienceCreate(ExperienceBase):
 
 
 class ExperienceUpdate(BaseModel):
-    company: str | None = None
-    title: str | None = None
-    location: str | None = None
+    company: str | None = Field(None, max_length=255)
+    title: str | None = Field(None, max_length=255)
+    location: str | None = Field(None, max_length=255)
+    employment_type: str | None = Field(None, max_length=100)
     start_date: date | None = None
     end_date: date | None = None
-    is_current: bool | None = None
+    currently_working: bool | None = None
     description: str | None = None
-    company_url: str | None = None
 
 
 class ExperienceResponse(ExperienceBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

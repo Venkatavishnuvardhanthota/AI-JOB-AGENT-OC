@@ -1,8 +1,8 @@
-from datetime import date
+import uuid
 
-from sqlalchemy import Boolean, Date, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Uuid as Uuid
+from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -10,21 +10,13 @@ from app.models.base import Base
 class Project(Base):
     __tablename__ = "projects"
 
-    user_id: Mapped[str] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("career_profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    github_url: Mapped[str | None] = mapped_column(
-        String(500), nullable=True
-    )
-    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    technologies: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    github_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    demo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    def __repr__(self) -> str:
-        return f"<Project(id={self.id}, name={self.name})>"
+    profile = relationship("CareerProfile", back_populates="projects")

@@ -1,17 +1,15 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ProjectBase(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
     description: str | None = None
-    url: str | None = None
+    technologies: list[str] | None = None
     github_url: str | None = None
-    start_date: date | None = None
-    end_date: date | None = None
-    is_current: bool = False
+    demo_url: str | None = None
 
 
 class ProjectCreate(ProjectBase):
@@ -19,19 +17,18 @@ class ProjectCreate(ProjectBase):
 
 
 class ProjectUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(None, max_length=255)
     description: str | None = None
-    url: str | None = None
+    technologies: list[str] | None = None
     github_url: str | None = None
-    start_date: date | None = None
-    end_date: date | None = None
-    is_current: bool | None = None
+    demo_url: str | None = None
 
 
 class ProjectResponse(ProjectBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

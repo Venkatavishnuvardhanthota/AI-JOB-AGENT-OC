@@ -5,12 +5,12 @@ from pydantic import BaseModel, Field
 
 
 class EducationBase(BaseModel):
-    institution: str
-    degree: str
-    field_of_study: str | None = None
+    institution: str = Field(max_length=255)
+    degree: str = Field(max_length=255)
+    field_of_study: str | None = Field(None, max_length=255)
     start_date: date | None = None
     end_date: date | None = None
-    gpa: float | None = Field(None, ge=0.0, le=4.0)
+    grade: str | None = Field(None, max_length=50)
     description: str | None = None
 
 
@@ -19,19 +19,20 @@ class EducationCreate(EducationBase):
 
 
 class EducationUpdate(BaseModel):
-    institution: str | None = None
-    degree: str | None = None
-    field_of_study: str | None = None
+    institution: str | None = Field(None, max_length=255)
+    degree: str | None = Field(None, max_length=255)
+    field_of_study: str | None = Field(None, max_length=255)
     start_date: date | None = None
     end_date: date | None = None
-    gpa: float | None = Field(None, ge=0.0, le=4.0)
+    grade: str | None = Field(None, max_length=50)
     description: str | None = None
 
 
 class EducationResponse(EducationBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

@@ -9,20 +9,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "AI Job Application Agent"
-    APP_VERSION: str = "0.1.0"
+    APP_NAME: str = "AI Job Agent"
+    APP_VERSION: str = "2.0.0"
     APP_DEBUG: bool = True
     APP_SECRET_KEY: str = "change-me-to-a-secure-random-key"
     APP_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent"
-    )
-    DATABASE_SYNC_URL: str = (
-        "postgresql://postgres:postgres@localhost:5432/ai_job_agent"
-    )
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent"
+    DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@localhost:5432/ai_job_agent"
 
-    LOG_LEVEL: str = "DEBUG"
+    LOG_LEVEL: str = "INFO"
 
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
@@ -31,9 +27,7 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
-    ALLOWED_UPLOAD_EXTENSIONS: list[str] = [
-        ".pdf", ".doc", ".docx", ".txt", ".png", ".jpg", ".jpeg"
-    ]
+    ALLOWED_UPLOAD_EXTENSIONS: list[str] = [".pdf", ".doc", ".docx", ".txt"]
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     RESUME_TEMPLATE_DIR: str = "templates/resumes"
@@ -48,12 +42,19 @@ class Settings(BaseSettings):
     APPLICATIONS_SCHEDULER_INTERVAL_MINUTES: int = 15
     NOTIFICATIONS_ENABLED: bool = True
 
-    PROVIDER_REQUEST_TIMEOUT: int = 30
-    PROVIDER_MAX_RETRIES: int = 3
-    PROVIDER_RATE_LIMIT_DEFAULT: float = 1.0
-    ENABLED_PROVIDERS: list[str] = [
-        "linkedin", "indeed", "wellfound", "greenhouse", "lever",
-        "ashby", "remoteok", "weworkremotely",
+    AI_DEFAULT_PROVIDER: str = "openrouter"
+    AI_DEFAULT_MODEL: str = "gpt-4o"
+    AI_FALLBACK_MODEL: str = "gpt-3.5-turbo"
+    AI_MAX_RETRIES: int = 3
+    AI_TIMEOUT_SECONDS: int = 60
+
+    ENABLED_JOB_PROVIDERS: list[str] = [
+        "linkedin",
+        "greenhouse",
+        "lever",
+        "ashby",
+        "wellfound",
+        "workday",
     ]
 
     @property

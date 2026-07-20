@@ -1,15 +1,15 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CertificationBase(BaseModel):
-    name: str
-    issuer: str | None = None
+    name: str = Field(max_length=255)
+    issuer: str | None = Field(None, max_length=255)
+    credential_id: str | None = Field(None, max_length=255)
     issue_date: date | None = None
-    expiry_date: date | None = None
-    credential_id: str | None = None
+    expiration_date: date | None = None
     credential_url: str | None = None
 
 
@@ -18,19 +18,19 @@ class CertificationCreate(CertificationBase):
 
 
 class CertificationUpdate(BaseModel):
-    name: str | None = None
-    issuer: str | None = None
+    name: str | None = Field(None, max_length=255)
+    issuer: str | None = Field(None, max_length=255)
+    credential_id: str | None = Field(None, max_length=255)
     issue_date: date | None = None
-    expiry_date: date | None = None
-    credential_id: str | None = None
+    expiration_date: date | None = None
     credential_url: str | None = None
 
 
 class CertificationResponse(CertificationBase):
     id: uuid.UUID
-    user_id: uuid.UUID
-    file_url: str | None = None
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

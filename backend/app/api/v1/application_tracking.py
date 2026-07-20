@@ -193,6 +193,7 @@ async def export_csv(
     service: ApplicationExportService = Depends(get_export_service),
 ):
     from fastapi.responses import PlainTextResponse
+
     csv_content = await service.export_csv(current_user.id)
     return PlainTextResponse(
         content=csv_content,

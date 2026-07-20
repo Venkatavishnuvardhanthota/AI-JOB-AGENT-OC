@@ -1,37 +1,21 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
-class UserBase(BaseModel):
-    email: EmailStr
-    full_name: str | None = None
-    is_active: bool = True
+class UserResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    first_name: str
+    last_name: str
+    is_active: bool
+    created_at: datetime
 
-
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, max_length=128)
+    class Config:
+        from_attributes = True
 
 
 class UserUpdate(BaseModel):
-    email: EmailStr | None = None
-    full_name: str | None = None
-    password: str | None = Field(None, min_length=8, max_length=128)
-    is_active: bool | None = None
-
-
-class UserResponse(UserBase):
-    id: uuid.UUID
-    created_at: datetime
-    updated_at: datetime
-    last_login: datetime | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class UserListResponse(BaseModel):
-    items: list[UserResponse]
-    total: int
-    page: int
-    page_size: int
+    first_name: str | None = Field(None, min_length=1, max_length=100)
+    last_name: str | None = Field(None, min_length=1, max_length=100)

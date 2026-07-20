@@ -5,9 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class SkillBase(BaseModel):
-    name: str
-    category: str | None = None
-    proficiency: int | None = Field(None, ge=1, le=5)
+    name: str = Field(max_length=150)
+    category: str | None = Field(None, max_length=100)
+    proficiency: str | None = Field(None, max_length=50)
+    years_experience: float | None = None
 
 
 class SkillCreate(SkillBase):
@@ -15,15 +16,17 @@ class SkillCreate(SkillBase):
 
 
 class SkillUpdate(BaseModel):
-    name: str | None = None
-    category: str | None = None
-    proficiency: int | None = Field(None, ge=1, le=5)
+    name: str | None = Field(None, max_length=150)
+    category: str | None = Field(None, max_length=100)
+    proficiency: str | None = Field(None, max_length=50)
+    years_experience: float | None = None
 
 
 class SkillResponse(SkillBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    profile_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

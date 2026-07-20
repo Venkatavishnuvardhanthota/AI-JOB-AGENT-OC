@@ -124,9 +124,7 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         return result.scalar_one_or_none()
 
     async def get_by_source_and_id(self, source: str, source_job_id: str) -> JobPosting | None:
-        stmt = select(self.model).where(
-            and_(self.model.source == source, self.model.source_job_id == source_job_id)
-        )
+        stmt = select(self.model).where(and_(self.model.source == source, self.model.source_job_id == source_job_id))
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -150,7 +148,9 @@ class JobPostingRepository(BaseRepository[JobPosting]):
             filters.append(self.model.applied_at.is_(None))
 
         return await self.list(
-            filters=filters, skip=skip, limit=limit,
+            filters=filters,
+            skip=skip,
+            limit=limit,
             order_by=self.model.posted_at.desc().nullslast(),
         )
 
@@ -170,18 +170,18 @@ class JobPostingRepository(BaseRepository[JobPosting]):
         total_stmt = select(func.count()).select_from(self.model).where(base_filter)
         total = (await self.session.execute(total_stmt)).scalar_one()
 
-        viewed_stmt = select(func.count()).select_from(self.model).where(
-            and_(self.model.viewed_at.isnot(None), base_filter)
+        viewed_stmt = (
+            select(func.count()).select_from(self.model).where(and_(self.model.viewed_at.isnot(None), base_filter))
         )
         viewed = (await self.session.execute(viewed_stmt)).scalar_one()
 
-        applied_stmt = select(func.count()).select_from(self.model).where(
-            and_(self.model.applied_at.isnot(None), base_filter)
+        applied_stmt = (
+            select(func.count()).select_from(self.model).where(and_(self.model.applied_at.isnot(None), base_filter))
         )
         applied = (await self.session.execute(applied_stmt)).scalar_one()
 
-        active_stmt = select(func.count()).select_from(self.model).where(
-            and_(self.model.is_active.is_(True), base_filter)
+        active_stmt = (
+            select(func.count()).select_from(self.model).where(and_(self.model.is_active.is_(True), base_filter))
         )
         active = (await self.session.execute(active_stmt)).scalar_one()
 

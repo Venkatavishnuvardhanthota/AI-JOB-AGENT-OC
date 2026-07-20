@@ -1,103 +1,61 @@
 import uuid
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.blacklisted_company import BlacklistedCompany
-from app.models.certification import Certification
-from app.models.education import Education
-from app.models.experience import Experience
-from app.models.language import Language
-from app.models.project import Project
-from app.models.skill import Skill
-from app.models.user_profile import UserProfile
-from app.repositories.base import BaseRepository
+from app.models.career_profile import CareerProfile
+from app.repositories.career_profile import CareerProfileRepository
+from app.repositories.certification import CertificationRepository
+from app.repositories.education import EducationRepository
+from app.repositories.experience import ExperienceRepository
+from app.repositories.job_preference import JobPreferenceRepository
+from app.repositories.language import LanguageRepository
+from app.repositories.project import ProjectRepository
+from app.repositories.skill import SkillRepository
+from app.services.audit import AuditService
 
 
-class ProfileService:
+class CareerProfileService:
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.profile_repo = CareerProfileRepository(session)
+        self.education_repo = EducationRepository(session)
+        self.experience_repo = ExperienceRepository(session)
+        self.project_repo = ProjectRepository(session)
+        self.skill_repo = SkillRepository(session)
+        self.certification_repo = CertificationRepository(session)
+        self.language_repo = LanguageRepository(session)
+        self.preference_repo = JobPreferenceRepository(session)
+        self.audit_service = AuditService(session)
 
-    async def get_or_create_profile(self, user_id: uuid.UUID) -> UserProfile:
-        stmt = select(UserProfile).where(UserProfile.user_id == user_id)
-        result = await self.session.execute(stmt)
-        profile = result.scalar_one_or_none()
+    async def get_profile(self, user_id: uuid.UUID) -> CareerProfile:
+        profile = await self.profile_repo.get_by_user(user_id)
         if not profile:
-            profile = UserProfile(user_id=user_id)
-            self.session.add(profile)
-            await self.session.flush()
-            await self.session.refresh(profile)
+            profile = CareerProfile(user_id=user_id)
+            profile = await self.profile_repo.create(profile)
         return profile
 
-    async def update_profile(
-        self, user_id: uuid.UUID, **kwargs
-    ) -> UserProfile:
-        profile = await self.get_or_create_profile(user_id)
-        for key, value in kwargs.items():
-            if value is not None:
+    async def update_profile(self, user_id: uuid.UUID, data: dict) -> CareerProfile:
+        profile = await self.get_profile(user_id)
+        for key, value in data.items():
+            if value is not None and hasattr(profile, key):
                 setattr(profile, key, value)
-        await self.session.flush()
-        await self.session.refresh(profile)
+        await self.profile_repo.update(profile)
+        await self.audit_service.log("PROFILE_UPDATED", user_id=user_id, outcome="success")
         return profile
 
-    def get_repo(self, model) -> BaseRepository:
-        return BaseRepository(model, self.session)
-
-    async def get_educations(self, user_id: uuid.UUID):
-        stmt = (
-            select(Education)
-            .where(Education.user_id == user_id)
-            .order_by(Education.start_date.desc().nulls_last())
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_experiences(self, user_id: uuid.UUID):
-        stmt = (
-            select(Experience)
-            .where(Experience.user_id == user_id)
-            .order_by(Experience.start_date.desc().nulls_last())
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_projects(self, user_id: uuid.UUID):
-        stmt = (
-            select(Project)
-            .where(Project.user_id == user_id)
-            .order_by(Project.start_date.desc().nulls_last())
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_skills(self, user_id: uuid.UUID):
-        stmt = select(Skill).where(Skill.user_id == user_id).order_by(Skill.name)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_certifications(self, user_id: uuid.UUID):
-        stmt = (
-            select(Certification)
-            .where(Certification.user_id == user_id)
-            .order_by(Certification.issue_date.desc().nulls_last())
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_languages(self, user_id: uuid.UUID):
-        stmt = (
-            select(Language)
-            .where(Language.user_id == user_id)
-            .order_by(Language.name)
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_blacklisted_companies(self, user_id: uuid.UUID):
-        stmt = (
-            select(BlacklistedCompany)
-            .where(BlacklistedCompany.user_id == user_id)
-            .order_by(BlacklistedCompany.company_name)
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+    async def calculate_completeness(self, user_id: uuid.UUID) -> dict:
+        profile = await self.get_profile(user_id)
+        sections = {
+            "Personal Information": bool(profile.professional_summary),
+            "Education": len(profile.education) > 0,
+            "Experience": len(profile.experience) > 0,
+            "Skills": len(profile.skills) > 0,
+            "Projects": len(profile.projects) > 0,
+            "Certifications": len(profile.certifications) > 0,
+            "Languages": len(profile.languages) > 0,
+        }
+        filled = sum(1 for completed in sections.values() if completed)
+        total = len(sections)
+        percentage = int((filled / total) * 100) if total > 0 else 0
+        missing = [name for name, completed in sections.items() if not completed]
+        return {"percentage": percentage, "missing_sections": missing}

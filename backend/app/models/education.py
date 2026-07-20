@@ -1,34 +1,25 @@
+import uuid
 from datetime import date
 
-from sqlalchemy import Date, Float, ForeignKey, Index, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Uuid as Uuid
+from sqlalchemy import Date, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
 
 class Education(Base):
-    __tablename__ = "educations"
+    __tablename__ = "education"
 
-    user_id: Mapped[str] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("career_profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
     institution: Mapped[str] = mapped_column(String(255), nullable=False)
     degree: Mapped[str] = mapped_column(String(255), nullable=False)
-    field_of_study: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    field_of_study: Mapped[str | None] = mapped_column(String(255), nullable=True)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    gpa: Mapped[float | None] = mapped_column(Float, nullable=True)
+    grade: Mapped[str | None] = mapped_column(String(50), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    __table_args__ = (
-        Index("ix_educations_user_institution", "user_id", "institution"),
-    )
-
-    def __repr__(self) -> str:
-        return f"<Education(id={self.id}, institution={self.institution})>"
+    profile = relationship("CareerProfile", back_populates="education")

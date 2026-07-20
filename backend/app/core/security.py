@@ -17,14 +17,10 @@ def create_access_token(
     expires_delta: timedelta | None = None,
 ) -> str:
     expire = datetime.now(timezone.utc) + (
-        expires_delta
-        if expires_delta
-        else timedelta(minutes=settings.APP_ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta if expires_delta else timedelta(minutes=settings.APP_ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode: dict[str, Any] = {"exp": expire, "sub": subject}
-    return jwt.encode(
-        to_encode, settings.APP_SECRET_KEY, algorithm=ALGORITHM
-    )
+    return jwt.encode(to_encode, settings.APP_SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_refresh_token() -> str:
@@ -41,9 +37,7 @@ def get_password_hash(password: str) -> str:
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
     try:
-        payload = jwt.decode(
-            token, settings.APP_SECRET_KEY, algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.APP_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
         return None

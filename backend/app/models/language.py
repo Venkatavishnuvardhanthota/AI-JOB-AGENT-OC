@@ -1,6 +1,8 @@
-from sqlalchemy import ForeignKey, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import Uuid as Uuid
+import uuid
+
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -8,20 +10,10 @@ from app.models.base import Base
 class Language(Base):
     __tablename__ = "languages"
 
-    user_id: Mapped[str] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("career_profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    proficiency: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )
+    language: Mapped[str] = mapped_column(String(100), nullable=False)
+    proficiency: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uq_user_language_name"),
-    )
-
-    def __repr__(self) -> str:
-        return f"<Language(id={self.id}, name={self.name})>"
+    profile = relationship("CareerProfile", back_populates="languages")
