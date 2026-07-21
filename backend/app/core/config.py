@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Job Agent"
     APP_VERSION: str = "2.0.0"
     APP_DEBUG: bool = True
-    APP_SECRET_KEY: str = "change-me-to-a-secure-random-key"
+    APP_SECRET_KEY: str = ""
     APP_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent"
@@ -61,6 +62,13 @@ class Settings(BaseSettings):
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    @field_validator("APP_SECRET_KEY")
+    @classmethod
+    def validate_secret(cls, v: str) -> str:
+        if not v:
+            raise ValueError("APP_SECRET_KEY must be set in environment or .env file")
+        return v
 
 
 settings = Settings()

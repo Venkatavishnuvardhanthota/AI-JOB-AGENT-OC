@@ -7,9 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError, ValidationError
 from app.core.security import create_access_token, create_refresh_token, get_password_hash, verify_password
-from app.models import User
-from app.repositories import RefreshTokenRepository, UserRepository
 from app.services.audit import AuditService
+from database.models.refresh_token import RefreshToken
+from database.models.user import User
+from database.repositories import RefreshTokenRepository, UserRepository
 
 
 class AuthService:
@@ -43,11 +44,12 @@ class AuthService:
         if not user.is_active:
             raise AuthenticationError("Account is inactive.")
 
+        user.last_login_at = datetime.now(timezone.utc)
+        await self.user_repo.update(user)
+
         access_token = create_access_token(subject=str(user.id))
         refresh_token = create_refresh_token()
         token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
-
-        from app.models import RefreshToken
 
         rt = RefreshToken(
             user_id=user.id,
@@ -91,6 +93,18 @@ class AuthService:
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found.")
+        return user
+
+    async def update_profile(
+        self, user_id: uuid.UUID, first_name: str | None = None, last_name: str | None = None
+    ) -> User:
+        user = await self.get_current_user(user_id)
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        await self.user_repo.update(user)
+        await self.audit_service.log("PROFILE_UPDATE", user_id=user_id, outcome="success")
         return user
 
     async def delete_account(self, user_id: uuid.UUID) -> None:
