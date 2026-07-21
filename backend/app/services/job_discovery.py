@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.job import JobRepository
+from app.repositories import JobRepository
 from app.services.audit import AuditService
 
 

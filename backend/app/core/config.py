@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent"
     DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@localhost:5432/ai_job_agent"
+    TEST_DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent_test"
 
     LOG_LEVEL: str = "INFO"
 

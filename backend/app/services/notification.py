@@ -2,8 +2,8 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.notification import Notification
-from app.repositories.notification import NotificationRepository
+from app.models import Notification
+from app.repositories import NotificationRepository
 
 
 class NotificationService:

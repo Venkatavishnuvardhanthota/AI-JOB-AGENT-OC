@@ -2,8 +2,8 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.scheduler_job import SchedulerJob
-from app.repositories.scheduler import SchedulerRepository
+from app.models import SchedulerJob
+from app.repositories import SchedulerRepository
 from app.services.audit import AuditService
 
 

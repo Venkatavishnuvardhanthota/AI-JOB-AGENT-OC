@@ -7,9 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError, ValidationError
 from app.core.security import create_access_token, create_refresh_token, get_password_hash, verify_password
-from app.models.user import User
-from app.repositories.refresh_token import RefreshTokenRepository
-from app.repositories.user import UserRepository
+from app.models import User
+from app.repositories import RefreshTokenRepository, UserRepository
 from app.services.audit import AuditService
 
 
@@ -48,7 +47,7 @@ class AuthService:
         refresh_token = create_refresh_token()
         token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
 
-        from app.models.refresh_token import RefreshToken
+        from app.models import RefreshToken
 
         rt = RefreshToken(
             user_id=user.id,

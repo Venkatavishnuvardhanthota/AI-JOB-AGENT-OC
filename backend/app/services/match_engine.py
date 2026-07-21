@@ -3,8 +3,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.repositories.career_profile import CareerProfileRepository
-from app.repositories.job import JobRepository
+from app.repositories import CareerProfileRepository, JobRepository
 from app.services.audit import AuditService
 
 

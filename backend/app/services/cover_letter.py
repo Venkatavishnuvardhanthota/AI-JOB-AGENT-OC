@@ -3,8 +3,8 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.models.cover_letter import CoverLetter
-from app.repositories.cover_letter import CoverLetterRepository
+from app.models import CoverLetter
+from app.repositories import CoverLetterRepository
 from app.services.audit import AuditService
 
 

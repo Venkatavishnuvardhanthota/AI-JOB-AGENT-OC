@@ -3,16 +3,15 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.models.resume_version import ResumeVersion
-from app.repositories.career_profile import CareerProfileRepository
-from app.repositories.resume import ResumeRepository
+from app.models import ResumeVersion
+from app.repositories import CareerProfileRepository, ResumeVersionRepository
 from app.services.audit import AuditService
 
 
 class ResumeService:
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.resume_repo = ResumeRepository(session)
+        self.resume_repo = ResumeVersionRepository(session)
         self.profile_repo = CareerProfileRepository(session)
         self.audit_service = AuditService(session)
 

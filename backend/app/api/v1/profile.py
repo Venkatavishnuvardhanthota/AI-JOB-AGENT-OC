@@ -3,14 +3,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
-from app.models.user import User
-from app.repositories.certification import CertificationRepository
-from app.repositories.education import EducationRepository
-from app.repositories.experience import ExperienceRepository
-from app.repositories.job_preference import JobPreferenceRepository
-from app.repositories.language import LanguageRepository
-from app.repositories.project import ProjectRepository
-from app.repositories.skill import SkillRepository
+from app.models import User
+from app.repositories import (
+    CertificationRepository,
+    EducationRepository,
+    ExperienceRepository,
+    JobPreferenceRepository,
+    LanguageRepository,
+    ProjectRepository,
+    SkillRepository,
+)
 from app.schemas.career_profile import CareerProfileResponse, CareerProfileUpdate
 from app.schemas.certification import CertificationCreate, CertificationResponse, CertificationUpdate
 from app.schemas.education import EducationCreate, EducationResponse, EducationUpdate
@@ -53,7 +55,7 @@ async def add_education(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.education import Education
+    from app.models import Education
 
     edu = Education(profile_id=profile.id, **body.model_dump())
     repo = EducationRepository(db)
@@ -96,7 +98,7 @@ async def add_experience(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.experience import Experience
+    from app.models import Experience
 
     exp = Experience(profile_id=profile.id, **body.model_dump())
     repo = ExperienceRepository(db)
@@ -139,7 +141,7 @@ async def add_project(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.project import Project
+    from app.models import Project
 
     proj = Project(profile_id=profile.id, **body.model_dump())
     repo = ProjectRepository(db)
@@ -182,7 +184,7 @@ async def add_skill(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.skill import Skill
+    from app.models import Skill
 
     skill = Skill(profile_id=profile.id, **body.model_dump())
     repo = SkillRepository(db)
@@ -222,7 +224,7 @@ async def add_certification(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.certification import Certification
+    from app.models import Certification
 
     cert = Certification(profile_id=profile.id, **body.model_dump())
     repo = CertificationRepository(db)
@@ -265,7 +267,7 @@ async def add_language(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from app.models.language import Language
+    from app.models import Language
 
     lang = Language(profile_id=profile.id, **body.model_dump())
     repo = LanguageRepository(db)
@@ -311,7 +313,7 @@ async def update_preferences(
     repo = JobPreferenceRepository(db)
     prefs = await repo.get_by_profile(profile.id)
     if not prefs:
-        from app.models.job_preference import JobPreference
+        from app.models import JobPreference
 
         prefs = JobPreference(profile_id=profile.id)
         await repo.create(prefs)

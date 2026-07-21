@@ -2,9 +2,7 @@ import pytest
 from httpx import AsyncClient
 
 
-async def _register_and_login(
-    client: AsyncClient, email: str = "profile_test@example.com"
-) -> tuple[str, str]:
+async def _register_and_login(client: AsyncClient, email: str = "profile_test@example.com") -> tuple[str, str]:
     password = "testpassword123"
     await client.post(
         "/api/v1/auth/register",
@@ -25,9 +23,7 @@ def _auth_header(token: str) -> dict:
 @pytest.mark.asyncio
 async def test_get_profile_creates_default(client: AsyncClient):
     token, _ = await _register_and_login(client)
-    response = await client.get(
-        "/api/v1/profile", headers=_auth_header(token)
-    )
+    response = await client.get("/api/v1/profile", headers=_auth_header(token))
     assert response.status_code == 200
     data = response.json()
     assert data["phone"] is None
@@ -271,9 +267,7 @@ async def test_blacklist_crud(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_cannot_access_others_data(client: AsyncClient):
-    token1, _ = await _register_and_login(
-        client, "user1_profile@example.com"
-    )
+    token1, _ = await _register_and_login(client, "user1_profile@example.com")
 
     create_resp = await client.post(
         "/api/v1/profile/skills",
@@ -282,9 +276,7 @@ async def test_cannot_access_others_data(client: AsyncClient):
     )
     skill_id = create_resp.json()["id"]
 
-    token2, _ = await _register_and_login(
-        client, "user2_profile@example.com"
-    )
+    token2, _ = await _register_and_login(client, "user2_profile@example.com")
 
     response = await client.put(
         f"/api/v1/profile/skills/{skill_id}",

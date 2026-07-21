@@ -2,15 +2,17 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.career_profile import CareerProfile
-from app.repositories.career_profile import CareerProfileRepository
-from app.repositories.certification import CertificationRepository
-from app.repositories.education import EducationRepository
-from app.repositories.experience import ExperienceRepository
-from app.repositories.job_preference import JobPreferenceRepository
-from app.repositories.language import LanguageRepository
-from app.repositories.project import ProjectRepository
-from app.repositories.skill import SkillRepository
+from app.models import CareerProfile
+from app.repositories import (
+    CareerProfileRepository,
+    CertificationRepository,
+    EducationRepository,
+    ExperienceRepository,
+    JobPreferenceRepository,
+    LanguageRepository,
+    ProjectRepository,
+    SkillRepository,
+)
 from app.services.audit import AuditService
 
 

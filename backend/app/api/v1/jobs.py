@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
-from app.models.user import User
-from app.repositories.job import JobRepository
+from app.models import User
+from app.repositories import JobRepository
 from app.schemas.job import JobResponse
 from app.services.company_research import CompanyResearchService
 from app.services.job_discovery import JobDiscoveryService

@@ -3,11 +3,8 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
-from app.models.application import Application
-from app.repositories.application import ApplicationRepository
-from app.repositories.application_answer import ApplicationAnswerRepository
-from app.repositories.attachment import AttachmentRepository
-from app.repositories.job import JobRepository
+from app.models import Application
+from app.repositories import ApplicationAnswerRepository, ApplicationRepository, AttachmentRepository, JobRepository
 from app.services.audit import AuditService
 
 

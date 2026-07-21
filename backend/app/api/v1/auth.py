@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
-from app.models.user import User
+from app.models import User
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -63,7 +63,7 @@ async def update_me(
         user.first_name = body.first_name
     if body.last_name is not None:
         user.last_name = body.last_name
-    from app.repositories.user import UserRepository
+    from app.repositories import UserRepository
 
     await UserRepository(db).update(user)
     return {"success": True, "data": UserResponse.model_validate(user).model_dump()}
