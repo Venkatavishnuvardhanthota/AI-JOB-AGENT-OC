@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     AI_FALLBACK_MODEL: str = "gpt-3.5-turbo"
     AI_MAX_RETRIES: int = 3
     AI_TIMEOUT_SECONDS: int = 60
+    AI_TEMPERATURE: float | None = None
+    AI_MAX_TOKENS: int | None = None
 
     ENABLED_JOB_PROVIDERS: list[str] = [
         "linkedin",
