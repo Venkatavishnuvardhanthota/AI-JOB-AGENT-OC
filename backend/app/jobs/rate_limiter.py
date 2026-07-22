@@ -17,20 +17,15 @@ class TokenBucketRateLimiter:
         self._lock = asyncio.Lock()
 
     async def acquire(self) -> None:
-        async with self._lock:
-            self._refill()
-            if self._tokens >= 1.0:
-                self._tokens -= 1.0
-                return
-            wait_time = (1.0 - self._tokens) / self._rate
-            self._tokens = 0.0
+        while True:
+            async with self._lock:
+                self._refill()
+                if self._tokens >= 1.0:
+                    self._tokens -= 1.0
+                    return
+                wait_time = (1.0 - self._tokens) / self._rate
 
-        await asyncio.sleep(wait_time)
-
-        async with self._lock:
-            self._refill()
-            if self._tokens >= 1.0:
-                self._tokens -= 1.0
+            await asyncio.sleep(wait_time)
 
     def _refill(self) -> None:
         now = time.monotonic()

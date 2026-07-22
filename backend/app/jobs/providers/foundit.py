@@ -135,8 +135,13 @@ class FounditJobProvider(BaseJobProvider):
             salary_str = raw.get("salary", raw.get("salaryText", ""))
             if isinstance(salary_str, str) and salary_str:
                 try:
-                    cleaned = salary_str.replace("\u20b9", "").replace(",", "") \
-                        .replace("L", "00000").replace("l", "00000").strip()
+                    cleaned = (
+                        salary_str.replace("\u20b9", "")
+                        .replace(",", "")
+                        .replace("L", "00000")
+                        .replace("l", "00000")
+                        .strip()
+                    )
                     parts = cleaned.split("-")
                     min_sal = float(parts[0].strip()) if parts else None
                     max_sal = float(parts[1].strip()) if len(parts) > 1 else None

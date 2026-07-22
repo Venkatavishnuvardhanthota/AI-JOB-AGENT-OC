@@ -25,6 +25,7 @@ from app.jobs.orchestration.provider_selector import ProviderSelector
 from app.jobs.orchestration.search_cache import SearchCache
 from app.jobs.orchestration.search_metrics import SearchMetrics
 from app.jobs.orchestration.search_orchestrator import SearchOrchestrator
+from app.jobs.orchestration.search_ranking import RankingFactors
 from app.jobs.registry import JobProviderRegistry
 from app.jobs.service import JobDiscoveryService
 
@@ -182,6 +183,15 @@ def get_search_orchestrator() -> SearchOrchestrator:
     )
     selector = ProviderSelector(registry, config, health)
     metrics = SearchMetrics() if config.metrics_enabled else None
+    rw = config.ranking_weights
+    ranker_factors = RankingFactors(
+        freshness_weight=rw.freshness_weight,
+        salary_weight=rw.salary_weight,
+        remote_weight=rw.remote_weight,
+        keyword_weight=rw.keyword_weight,
+        provider_weight=rw.provider_weight,
+        provider_quality=dict(rw.provider_quality),
+    )
     return SearchOrchestrator(
         registry=registry,
         config=config,
@@ -189,6 +199,7 @@ def get_search_orchestrator() -> SearchOrchestrator:
         cache=cache,
         metrics=metrics,
         health=health,
+        ranker_factors=ranker_factors,
     )
 
 

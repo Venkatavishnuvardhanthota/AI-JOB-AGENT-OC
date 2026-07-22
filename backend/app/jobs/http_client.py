@@ -91,29 +91,21 @@ class JobHTTPClient:
                     continue
 
                 if response.status_code == 401:
-                    raise ProviderUnavailableError(
-                        "Authentication failed: invalid or missing API key"
-                    )
+                    raise ProviderUnavailableError("Authentication failed: invalid or missing API key")
                 if response.status_code == 403:
-                    raise ProviderUnavailableError(
-                        "Access forbidden: API key may lack permissions"
-                    )
+                    raise ProviderUnavailableError("Access forbidden: API key may lack permissions")
                 if response.status_code == 404:
                     raise ProviderUnavailableError(f"Resource not found: {path}")
                 if response.status_code >= 500 and attempt == self._max_retries:
-                    raise ProviderUnavailableError(
-                        f"Provider returned {response.status_code}: {response.text[:200]}"
-                    )
+                    raise ProviderUnavailableError(f"Provider returned {response.status_code}: {response.text[:200]}")
 
                 response.raise_for_status()
                 return response.json()
 
             except httpx.TimeoutException:
-                last_exception = ProviderUnavailableError(
-                    f"Request timed out after {self._client.timeout.read}s"
-                )
+                last_exception = ProviderUnavailableError(f"Request timed out after {self._client.timeout.read}s")
                 if attempt < self._max_retries:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning("Timeout, retrying", path=path, attempt=attempt, wait=wait)
                     await asyncio.sleep(wait)
                     continue
@@ -121,7 +113,7 @@ class JobHTTPClient:
             except (httpx.ConnectError, httpx.RemoteProtocolError) as exc:
                 last_exception = ProviderUnavailableError(f"Connection failed: {exc}")
                 if attempt < self._max_retries:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning("Connection error, retrying", path=path, attempt=attempt, wait=wait)
                     await asyncio.sleep(wait)
                     continue
@@ -130,14 +122,12 @@ class JobHTTPClient:
                 raise
 
             except httpx.HTTPStatusError as exc:
-                raise ProviderUnavailableError(
-                    f"HTTP {exc.response.status_code}: {exc.response.text[:200]}"
-                ) from exc
+                raise ProviderUnavailableError(f"HTTP {exc.response.status_code}: {exc.response.text[:200]}") from exc
 
             except Exception as exc:
                 last_exception = ProviderUnavailableError(f"Unexpected error: {exc}")
                 if attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
 
         raise last_exception or ProviderUnavailableError("Request failed after all retries")
@@ -149,7 +139,7 @@ class JobHTTPClient:
                 return float(retry_after)
             except ValueError:
                 pass
-        return float(2 ** attempt)
+        return float(2**attempt)
 
     async def close(self) -> None:
         await self._client.aclose()

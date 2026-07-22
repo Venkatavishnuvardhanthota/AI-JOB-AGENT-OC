@@ -128,12 +128,14 @@ class SearchRanking:
         if not keywords:
             return 0.5
 
-        text = " ".join([
-            posting.title.lower(),
-            posting.company.name.lower(),
-            posting.description or "",
-            " ".join(posting.skills),
-        ])
+        text = " ".join(
+            [
+                posting.title.lower(),
+                posting.company.name.lower(),
+                posting.description or "",
+                " ".join(posting.skills),
+            ]
+        )
 
         matches = sum(1 for kw in keywords if kw in text)
         return min(1.0, matches / max(len(keywords), 1))

@@ -43,6 +43,7 @@ class TestTokenBucketRateLimiter:
         limiter = TokenBucketRateLimiter(rate=100, burst=10)
         initial = limiter._tokens
         import asyncio
+
         asyncio.run(limiter.acquire())
         assert limiter._tokens < initial
 
@@ -52,6 +53,26 @@ class TestTokenBucketRateLimiter:
         limiter._last_refill = 0
         limiter._refill()
         assert limiter._tokens > 0
+
+    async def test_concurrent_acquire_rate_limits(self):
+        limiter = TokenBucketRateLimiter(rate=1, burst=1)
+        acquired = [False] * 5
+
+        async def acquire(idx):
+            await limiter.acquire()
+            acquired[idx] = True
+
+        import asyncio
+
+        tasks = [asyncio.create_task(acquire(i)) for i in range(5)]
+        await asyncio.sleep(0.05)
+        count_early = sum(acquired)
+        await asyncio.sleep(5.0)
+        count_later = sum(acquired)
+        for t in tasks:
+            t.cancel()
+        assert count_early <= 2, f"Expected <=2 acquires early, got {count_early}"
+        assert count_later >= 3, f"Expected >=3 acquires later, got {count_later}"
 
 
 class TestJobHTTPClient:
@@ -393,9 +414,7 @@ class TestAdzunaJobProvider:
             assert result is True
 
     async def test_health_check_failure(self, provider):
-        with patch.object(
-            provider._client, "get", AsyncMock(side_effect=ProviderUnavailableError("fail"))
-        ):
+        with patch.object(provider._client, "get", AsyncMock(side_effect=ProviderUnavailableError("fail"))):
             result = await provider.health_check()
             assert result is False
 

@@ -52,9 +52,7 @@ class SearchAggregator:
         paginated = all_results[request.offset : request.offset + request.limit]
 
         providers_queried = list(provider_results.keys())
-        providers_succeeded = [
-            p for p, results in provider_results.items() if results is not None
-        ]
+        providers_succeeded = [p for p, results in provider_results.items() if results is not None]
         providers_failed = [
             {"provider": p, "error": "No results returned"}
             for p, results in provider_results.items()

@@ -62,8 +62,7 @@ class BaseJobProvider(JobProvider):
         return {}
 
     @abstractmethod
-    async def search_jobs(self, request: JobSearchRequest) -> JobSearchResponse:
-        ...
+    async def search_jobs(self, request: JobSearchRequest) -> JobSearchResponse: ...
 
     async def health_check(self) -> bool:
         try:

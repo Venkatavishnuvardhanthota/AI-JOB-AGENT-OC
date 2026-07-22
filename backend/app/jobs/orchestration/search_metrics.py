@@ -55,9 +55,7 @@ class SearchMetrics:
 
     def summary(self) -> dict:
         with self._lock:
-            avg_duration = (
-                self._total_duration_ms / self._search_count if self._search_count > 0 else 0.0
-            )
+            avg_duration = self._total_duration_ms / self._search_count if self._search_count > 0 else 0.0
 
             provider_stats: dict = {}
             for provider, lats in self._provider_latency.items():

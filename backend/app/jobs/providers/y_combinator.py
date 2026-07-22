@@ -115,7 +115,7 @@ class YCombinatorJobProvider(BaseJobProvider):
         )
 
     def _parse_location(self, raw: dict) -> LocationInfo:
-        display = (raw.get("location") or raw.get("locations") or "")
+        display = raw.get("location") or raw.get("locations") or ""
         remote = RemoteType.REMOTE if raw.get("remote") else RemoteType.ON_SITE
 
         if isinstance(display, list):

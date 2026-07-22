@@ -31,10 +31,10 @@ class SearchOrchestrator:
     ) -> None:
         self._registry = registry
         self._config = config
-        self._selector = selector or ProviderSelector(registry, config)
+        self._health = health or ProviderHealthManager()
+        self._selector = selector or ProviderSelector(registry, config, self._health)
         self._cache = cache or SearchCache(ttl_seconds=config.cache_ttl_seconds)
         self._metrics = metrics or SearchMetrics()
-        self._health = health or ProviderHealthManager()
         self._aggregator = SearchAggregator(config, factors=ranker_factors)
 
     async def search(self, request: JobSearchRequest) -> JobSearchResponse:
@@ -111,9 +111,7 @@ class SearchOrchestrator:
             self._cache.set(request, response)
 
         if self._metrics:
-            jobs_before = sum(
-                len(r) for r in provider_results.values() if r is not None
-            )
+            jobs_before = sum(len(r) for r in provider_results.values() if r is not None)
             jobs_after = len(response.results)
             self._metrics.record_search(
                 duration_ms=elapsed_ms,

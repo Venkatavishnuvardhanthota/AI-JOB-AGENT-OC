@@ -124,8 +124,11 @@ class InternshalaJobProvider(BaseJobProvider):
         else:
             display = str(loc_raw) if loc_raw else ""
 
-        remote = RemoteType.REMOTE if raw.get("remote") or raw.get("isRemote") or raw.get("workFromHome") \
+        remote = (
+            RemoteType.REMOTE
+            if raw.get("remote") or raw.get("isRemote") or raw.get("workFromHome")
             else RemoteType.ON_SITE
+        )
         return LocationInfo(display_name=display, remote_type=remote)
 
     def _parse_salary(self, raw: dict) -> SalaryInfo | None:

@@ -77,6 +77,7 @@ class TestSearchCache:
         cache = SearchCache(ttl_seconds=300)
         req = JobSearchRequest(query="python")
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         resp = JobSearchResponse(
             results=[make_posting()],
             metadata=SearchMetadata(total_results=1),
@@ -91,6 +92,7 @@ class TestSearchCache:
         cache = SearchCache(ttl_seconds=0)
         req = JobSearchRequest(query="python")
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         resp = JobSearchResponse(
             results=[make_posting()],
             metadata=SearchMetadata(total_results=1),
@@ -102,6 +104,7 @@ class TestSearchCache:
         cache = SearchCache(ttl_seconds=300)
         req = JobSearchRequest(query="nothing")
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         resp = JobSearchResponse(
             results=[],
             metadata=SearchMetadata(total_results=0),
@@ -114,6 +117,7 @@ class TestSearchCache:
         req1 = JobSearchRequest(query="python")
         req2 = JobSearchRequest(query="java")
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         resp1 = JobSearchResponse(
             results=[make_posting(title="Python Dev")],
             metadata=SearchMetadata(total_results=1),
@@ -124,6 +128,7 @@ class TestSearchCache:
     def test_invalidate_all(self):
         cache = SearchCache(ttl_seconds=300)
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         for q in ["python", "java", "go"]:
             req = JobSearchRequest(query=q)
             resp = JobSearchResponse(
@@ -139,6 +144,7 @@ class TestSearchCache:
     def test_max_size_eviction(self):
         cache = SearchCache(ttl_seconds=300, max_size=2)
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         for q in ["a", "b", "c"]:
             req = JobSearchRequest(query=q)
             resp = JobSearchResponse(
@@ -161,11 +167,15 @@ class TestSearchCache:
         cache = SearchCache(ttl_seconds=300)
         assert cache.stats()["hit_ratio"] == 0.0
         from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
         req = JobSearchRequest(query="python")
-        cache.set(req, JobSearchResponse(
-            results=[make_posting()],
-            metadata=SearchMetadata(total_results=1),
-        ))
+        cache.set(
+            req,
+            JobSearchResponse(
+                results=[make_posting()],
+                metadata=SearchMetadata(total_results=1),
+            ),
+        )
         cache.get(req)
         cache.get(req)
         cache.get(JobSearchRequest(query="other"))
@@ -401,8 +411,11 @@ class TestSearchRanking:
     def test_rank_custom_factors(self):
         ranker = SearchRanking()
         custom = RankingFactors(
-            freshness_weight=1.0, salary_weight=0.0, remote_weight=0.0,
-            keyword_weight=0.0, provider_weight=0.0,
+            freshness_weight=1.0,
+            salary_weight=0.0,
+            remote_weight=0.0,
+            keyword_weight=0.0,
+            provider_weight=0.0,
         )
         now = datetime.now(timezone.utc)
         old = make_posting(title="Old", posted_date=datetime(2024, 1, 1, tzinfo=timezone.utc))
@@ -543,8 +556,10 @@ class TestSearchAggregator:
     def test_aggregate_pagination(self):
         config = make_config()
         agg = SearchAggregator(config)
-        postings = [make_posting(provider="p1", title=f"Job{i}", provider_job_id=str(i),
-                                 url=f"https://ex.com/job/{i}") for i in range(10)]
+        postings = [
+            make_posting(provider="p1", title=f"Job{i}", provider_job_id=str(i), url=f"https://ex.com/job/{i}")
+            for i in range(10)
+        ]
         results = {"p1": postings}
         response = agg.aggregate(results, JobSearchRequest(limit=3))
         assert len(response.results) == 3
@@ -569,8 +584,9 @@ class TestSearchAggregator:
         results = {
             "p1": [
                 make_posting(title="Java Dev", provider_job_id="j1", url="https://ex.com/job/j1", description="java"),
-                make_posting(title="Python Dev", provider_job_id="p1",
-                             url="https://ex.com/job/p1", description="python"),
+                make_posting(
+                    title="Python Dev", provider_job_id="p1", url="https://ex.com/job/p1", description="python"
+                ),
             ],
         }
         response = agg.aggregate(results, JobSearchRequest(query="python"))
@@ -599,6 +615,7 @@ class TestSearchOrchestrator:
     def registry(self):
         reg = JobProviderRegistry()
         from app.jobs.providers.mock import MockJobProvider
+
         reg.register(MockJobProvider(make_config()))
         return reg
 
@@ -664,6 +681,7 @@ class TestSearchOrchestrator:
 
             async def search_jobs(self, request):
                 from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
                 return JobSearchResponse(
                     results=[make_posting(provider="good", title="Good Job", description="good job posting")],
                     metadata=SearchMetadata(providers_queried=["good"], providers_succeeded=["good"]),
@@ -674,6 +692,7 @@ class TestSearchOrchestrator:
 
             async def provider_info(self):
                 from app.jobs.schemas import JobProviderInfo
+
                 return JobProviderInfo(name="good", display_name="Good")
 
         class BadProvider:
@@ -693,6 +712,7 @@ class TestSearchOrchestrator:
 
             async def provider_info(self):
                 from app.jobs.schemas import JobProviderInfo
+
                 return JobProviderInfo(name="bad", display_name="Bad")
 
         registry.register(GoodProvider(config))
@@ -723,8 +743,10 @@ class TestSearchOrchestrator:
 
             async def search_jobs(self, request):
                 import asyncio
+
                 await asyncio.sleep(10)
                 from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
                 return JobSearchResponse(
                     results=[make_posting(provider="slow")],
                     metadata=SearchMetadata(),
@@ -735,6 +757,7 @@ class TestSearchOrchestrator:
 
             async def provider_info(self):
                 from app.jobs.schemas import JobProviderInfo
+
                 return JobProviderInfo(name="slow", display_name="Slow")
 
         class FastProvider:
@@ -748,6 +771,7 @@ class TestSearchOrchestrator:
 
             async def search_jobs(self, request):
                 from app.jobs.schemas import JobSearchResponse, SearchMetadata
+
                 return JobSearchResponse(
                     results=[make_posting(provider="fast", title="Fast Job", description="fast job posting")],
                     metadata=SearchMetadata(),
@@ -758,6 +782,7 @@ class TestSearchOrchestrator:
 
             async def provider_info(self):
                 from app.jobs.schemas import JobProviderInfo
+
                 return JobProviderInfo(name="fast", display_name="Fast")
 
         registry.register(SlowProvider(config))
@@ -771,19 +796,29 @@ class TestSearchOrchestrator:
     async def test_ranking_applied(self):
         config = make_config(enabled_providers=["mock"])
         registry = JobProviderRegistry()
-        mock_provider = type("RankedMock", (), {
-            "name": "mock",
-            "display_name": "Mock",
-            "supports_pagination": False,
-            "supports_filters": False,
-            "config": config,
-        })
-        mock_provider.search_jobs = AsyncMock(return_value=type("R", (), {
-            "results": [
-                make_posting(title="Job A", posted_date=datetime(2025, 6, 1, tzinfo=timezone.utc)),
-                make_posting(title="Job B", posted_date=datetime(2024, 1, 1, tzinfo=timezone.utc)),
-            ],
-        })())
+        mock_provider = type(
+            "RankedMock",
+            (),
+            {
+                "name": "mock",
+                "display_name": "Mock",
+                "supports_pagination": False,
+                "supports_filters": False,
+                "config": config,
+            },
+        )
+        mock_provider.search_jobs = AsyncMock(
+            return_value=type(
+                "R",
+                (),
+                {
+                    "results": [
+                        make_posting(title="Job A", posted_date=datetime(2025, 6, 1, tzinfo=timezone.utc)),
+                        make_posting(title="Job B", posted_date=datetime(2024, 1, 1, tzinfo=timezone.utc)),
+                    ],
+                },
+            )()
+        )
         mock_provider.health_check = AsyncMock(return_value=True)
         mock_provider.provider_info = AsyncMock(return_value=type("I", (), {"name": "mock", "display_name": "Mock"})())
         registry.register(mock_provider)
@@ -792,14 +827,109 @@ class TestSearchOrchestrator:
         assert response.results[0].title == "Job A"
 
 
+class TestPostedWithinFilter:
+    def test_naive_datetime(self):
+        from app.jobs.filters import PostedWithinFilter
+
+        now = datetime.utcnow()
+        recent = make_posting(title="Recent", posted_date=now)
+        old = make_posting(title="Old", posted_date=datetime(2020, 1, 1))
+        filt = PostedWithinFilter(days=7)
+        result = filt.apply([recent, old])
+        titles = [p.title for p in result]
+        assert "Recent" in titles
+        assert "Old" not in titles
+
+    def test_aware_datetime(self):
+        from app.jobs.filters import PostedWithinFilter
+
+        now = datetime.now(timezone.utc)
+        recent = make_posting(title="Recent", posted_date=now)
+        old = make_posting(title="Old", posted_date=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        filt = PostedWithinFilter(days=7)
+        result = filt.apply([recent, old])
+        titles = [p.title for p in result]
+        assert "Recent" in titles
+        assert "Old" not in titles
+
+    def test_mixed_aware_naive(self):
+        from app.jobs.filters import PostedWithinFilter
+
+        aware = make_posting(title="Aware", posted_date=datetime.now(timezone.utc))
+        naive = make_posting(title="Naive", posted_date=datetime.utcnow())
+        filt = PostedWithinFilter(days=7)
+        result = filt.apply([aware, naive])
+        assert len(result) == 2
+
+    def test_none_date(self):
+        from app.jobs.filters import PostedWithinFilter
+
+        none_posting = JobPosting(
+            title="None",
+            provider="mock",
+            company=CompanyInfo(name="Acme"),
+            posted_date=None,
+        )
+        filt = PostedWithinFilter(days=7)
+        result = filt.apply([none_posting])
+        assert len(result) == 1
+
+    def test_old_posting_excluded(self):
+        from app.jobs.filters import PostedWithinFilter
+
+        old = make_posting(title="Old", posted_date=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        filt = PostedWithinFilter(days=1)
+        result = filt.apply([old])
+        assert len(result) == 0
+
+
+class TestProviderSelectorWithHealth:
+    def test_health_integration(self):
+        config = make_config(enabled_providers=["healthy_provider", "sick_provider"])
+        registry = JobProviderRegistry()
+        health = ProviderHealthManager(min_samples=1, failure_threshold=0.1, cooldown_seconds=60)
+        health.record_failure("sick_provider")
+        selector = ProviderSelector(registry, config, health)
+
+        hp_cfg = config
+        sp_cfg = config
+
+        class HealthyProvider:
+            name = "healthy_provider"
+            display_name = "Healthy"
+            description = ""
+            version = "1.0.0"
+            supports_pagination = False
+            supports_filters = False
+            config = hp_cfg
+
+        class SickProvider:
+            name = "sick_provider"
+            display_name = "Sick"
+            description = ""
+            version = "1.0.0"
+            supports_pagination = False
+            supports_filters = False
+            config = sp_cfg
+
+        hp = HealthyProvider()
+        sp = SickProvider()
+        registry.register(hp)
+        registry.register(sp)
+        selected = selector.select(JobSearchRequest(query="test"))
+        assert "sick_provider" not in selected
+
+
 class TestJobDiscoveryServiceWithOrchestrator:
     async def test_service_with_orchestrator(self):
         config = make_config(enabled_providers=["mock"])
         registry = JobProviderRegistry()
         from app.jobs.providers.mock import MockJobProvider
+
         registry.register(MockJobProvider(config))
         orch = SearchOrchestrator(registry=registry, config=config)
         from app.jobs.service import JobDiscoveryService
+
         service = JobDiscoveryService(registry=registry, config=config, orchestrator=orch)
         response = await service.search(JobSearchRequest(query="engineer"))
         assert len(response.results) > 0
@@ -809,8 +939,10 @@ class TestJobDiscoveryServiceWithOrchestrator:
         config = make_config(enabled_providers=["mock"])
         registry = JobProviderRegistry()
         from app.jobs.providers.mock import MockJobProvider
+
         registry.register(MockJobProvider(config))
         from app.jobs.service import JobDiscoveryService
+
         service = JobDiscoveryService(registry=registry, config=config)
         response = await service.search(JobSearchRequest(query="engineer"))
         assert len(response.results) > 0
@@ -819,10 +951,12 @@ class TestJobDiscoveryServiceWithOrchestrator:
         config = make_config(enabled_providers=["mock"])
         registry = JobProviderRegistry()
         from app.jobs.providers.mock import MockJobProvider
+
         registry.register(MockJobProvider(config))
         orch = SearchOrchestrator(registry=registry, config=config)
         from app.jobs.exceptions import SearchValidationError
         from app.jobs.service import JobDiscoveryService
+
         service = JobDiscoveryService(registry=registry, config=config, orchestrator=orch)
         with pytest.raises(SearchValidationError):
             await service.search(JobSearchRequest())

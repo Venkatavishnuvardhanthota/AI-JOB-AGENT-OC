@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import structlog
 
@@ -20,8 +20,7 @@ class JobFilter(ABC):
     name: str
 
     @abstractmethod
-    def apply(self, postings: list[JobPosting]) -> list[JobPosting]:
-        ...
+    def apply(self, postings: list[JobPosting]) -> list[JobPosting]: ...
 
 
 class KeywordFilter(JobFilter):
@@ -122,14 +121,16 @@ class PostedWithinFilter(JobFilter):
     name = "posted_within_days"
 
     def __init__(self, days: int) -> None:
-        self._cutoff = datetime.utcnow() - timedelta(days=days)
+        self._cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     def apply(self, postings: list[JobPosting]) -> list[JobPosting]:
-        return [
-            p
-            for p in postings
-            if p.posted_date is None or p.posted_date >= self._cutoff
-        ]
+        return [p for p in postings if p.posted_date is None or self._to_aware(p.posted_date) >= self._cutoff]
+
+    @staticmethod
+    def _to_aware(dt: datetime) -> datetime:
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
 
 
 class JobFilterChain:

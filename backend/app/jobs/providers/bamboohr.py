@@ -91,8 +91,9 @@ class BambooHRJobProvider(BaseJobProvider):
         location = self._parse_location(raw)
         salary = self._parse_salary(raw)
         title = raw.get("title", raw.get("jobTitle", raw.get("name", "Untitled Position")))
-        description = raw.get("description", raw.get("jobDescription",
-            raw.get("descriptionHtml", raw.get("descriptionPlain", ""))))
+        description = raw.get(
+            "description", raw.get("jobDescription", raw.get("descriptionHtml", raw.get("descriptionPlain", "")))
+        )
         url = raw.get("url", raw.get("applyUrl", raw.get("jobUrl", "")))
 
         return JobPosting(
@@ -153,8 +154,9 @@ class BambooHRJobProvider(BaseJobProvider):
         return None
 
     def _normalize_employment(self, raw: dict) -> EmploymentType:
-        emp_type = raw.get("employmentType",
-            raw.get("type", raw.get("employment_type", raw.get("employmentStatus", ""))))
+        emp_type = raw.get(
+            "employmentType", raw.get("type", raw.get("employment_type", raw.get("employmentStatus", "")))
+        )
         if isinstance(emp_type, dict):
             emp_type = emp_type.get("name", "")
         emp_str = str(emp_type).lower() if emp_type else ""
