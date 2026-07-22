@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.models import User
 from app.schemas.career_profile import CareerProfileResponse, CareerProfileUpdate
 from app.schemas.certification import CertificationCreate, CertificationResponse, CertificationUpdate
 from app.schemas.education import EducationCreate, EducationResponse, EducationUpdate
@@ -15,7 +16,6 @@ from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.schemas.skill import SkillCreate, SkillResponse, SkillUpdate
 from app.schemas.social_link import SocialLinkCreate, SocialLinkResponse, SocialLinkUpdate
 from app.services.profile import CareerProfileService
-from database.models.user import User
 
 router = APIRouter()
 
@@ -310,8 +310,8 @@ async def update_preferences(
 ):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
-    from database.models.job_preference import JobPreference
-    from database.repositories import JobPreferenceRepository
+    from app.models import JobPreference
+    from app.repositories import JobPreferenceRepository
 
     repo = JobPreferenceRepository(db)
     prefs = await repo.get_by_profile(profile.id)

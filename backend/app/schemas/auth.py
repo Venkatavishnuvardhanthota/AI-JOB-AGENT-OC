@@ -63,3 +63,5 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(min_length=8)
+
+    _validate_password = field_validator("new_password")(validate_password_strength)

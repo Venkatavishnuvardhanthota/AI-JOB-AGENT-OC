@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 
 from database.models.audit_log import AuditLog
@@ -10,7 +12,7 @@ class AuditRepository(BaseRepository):
     async def log(
         self,
         event_type: str,
-        user_id: str | None = None,
+        user_id: uuid.UUID | None = None,
         entity: str | None = None,
         entity_id: str | None = None,
         outcome: str | None = None,

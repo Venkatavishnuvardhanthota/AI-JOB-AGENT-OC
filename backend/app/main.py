@@ -1,13 +1,22 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.database import close_db, init_db
+from app.core.exceptions import (
+    AppError,
+    AuthenticationError,
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from app.core.logging import configure_logging, logger
 
 
@@ -31,6 +40,40 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message, "code": exc.code, "details": exc.details},
+    )
+
+
+@app.exception_handler(NotFoundError)
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=404, content={"detail": exc.message, "code": exc.code})
+
+
+@app.exception_handler(ValidationError)
+async def validation_handler(request: Request, exc: ValidationError):
+    return JSONResponse(status_code=400, content={"detail": exc.message, "code": exc.code, "details": exc.details})
+
+
+@app.exception_handler(AuthenticationError)
+async def auth_error_handler(request: Request, exc: AuthenticationError):
+    return JSONResponse(status_code=401, content={"detail": exc.message, "code": exc.code})
+
+
+@app.exception_handler(AuthorizationError)
+async def authorization_handler(request: Request, exc: AuthorizationError):
+    return JSONResponse(status_code=403, content={"detail": exc.message, "code": exc.code})
+
+
+@app.exception_handler(ConflictError)
+async def conflict_handler(request: Request, exc: ConflictError):
+    return JSONResponse(status_code=409, content={"detail": exc.message, "code": exc.code})
+
 
 app.add_middleware(
     CORSMiddleware,

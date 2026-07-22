@@ -3,16 +3,17 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.services.audit import AuditService
-from database.models.career_profile import CareerProfile
-from database.models.certification import Certification
-from database.models.education import Education
-from database.models.experience import Experience
-from database.models.language import Language
-from database.models.project import Project
-from database.models.skill import Skill
-from database.models.social_link import SocialLink
-from database.repositories import (
+from app.models import (
+    CareerProfile,
+    Certification,
+    Education,
+    Experience,
+    Language,
+    Project,
+    Skill,
+    SocialLink,
+)
+from app.repositories import (
     CareerProfileRepository,
     CertificationRepository,
     EducationRepository,
@@ -23,6 +24,7 @@ from database.repositories import (
     SkillRepository,
     SocialLinkRepository,
 )
+from app.services.audit import AuditService
 
 
 class CareerProfileService:
@@ -352,7 +354,7 @@ class CareerProfileService:
             if field in counts:
                 score = weight if counts[field] > 0 else 0
             else:
-                score = weight if getattr(profile, field, None) else 0
+                score = weight if getattr(profile, field, None) is not None else 0
 
             breakdown[field] = score
             if score == 0:

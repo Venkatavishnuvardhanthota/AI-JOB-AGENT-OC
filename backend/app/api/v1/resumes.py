@@ -247,10 +247,14 @@ async def delete_section(
 
 
 @router.get("/templates")
-async def list_templates():
-    templates = [
-        {"id": "modern", "name": "Modern"},
-        {"id": "professional", "name": "Professional"},
-        {"id": "creative", "name": "Creative"},
-    ]
-    return {"success": True, "data": templates}
+async def list_templates(
+    db: AsyncSession = Depends(get_db),
+):
+    from app.repositories import ResumeTemplateRepository
+
+    repo = ResumeTemplateRepository(db)
+    templates = await repo.list_by_user(uuid.UUID(int=0))
+    return {
+        "success": True,
+        "data": [{"id": str(t.id), "name": t.name} for t in templates],
+    }

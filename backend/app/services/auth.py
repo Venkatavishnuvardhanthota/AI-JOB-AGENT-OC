@@ -7,10 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError, ValidationError
 from app.core.security import create_access_token, create_refresh_token, get_password_hash, verify_password
+from app.models import RefreshToken, User
+from app.repositories import RefreshTokenRepository, UserRepository
 from app.services.audit import AuditService
-from database.models.refresh_token import RefreshToken
-from database.models.user import User
-from database.repositories import RefreshTokenRepository, UserRepository
 
 
 class AuthService:
@@ -76,8 +75,24 @@ class AuthService:
         if not stored:
             raise AuthenticationError("Invalid or expired refresh token.")
 
+        await self.refresh_token_repo.revoke(stored.id)
+
+        new_refresh_token = create_refresh_token()
+        new_token_hash = hashlib.sha256(new_refresh_token.encode()).hexdigest()
+        rt = RefreshToken(
+            user_id=stored.user_id,
+            token_hash=new_token_hash,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        )
+        await self.refresh_token_repo.create(rt)
+
         access_token = create_access_token(subject=str(stored.user_id))
-        return {"access_token": access_token, "expires_in": settings.access_token_expire_seconds}
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "expires_in": settings.access_token_expire_seconds,
+            "token_type": "Bearer",
+        }
 
     async def change_password(self, user_id: uuid.UUID, current_password: str, new_password: str) -> None:
         user = await self.user_repo.get_by_id(user_id)

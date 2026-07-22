@@ -19,6 +19,14 @@ class RefreshTokenRepository(BaseRepository):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
+    async def revoke(self, token_id: uuid.UUID) -> None:
+        stmt = select(RefreshToken).where(RefreshToken.id == token_id)
+        result = await self.session.execute(stmt)
+        token = result.unique().scalar_one_or_none()
+        if token:
+            token.is_revoked = True
+            await self.session.flush()
+
     async def revoke_all_for_user(self, user_id: uuid.UUID) -> None:
         stmt = select(RefreshToken).where(RefreshToken.user_id == user_id, RefreshToken.is_revoked.is_(False))
         result = await self.session.execute(stmt)

@@ -3,11 +3,10 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
+from app.models import ResumeSection, ResumeVersion
+from app.repositories import ResumeSectionRepository, ResumeVersionRepository
 from app.schemas.resume import ResumeImportData
 from app.services.audit import AuditService
-from database.models.resume_section import ResumeSection
-from database.models.resume_version import ResumeVersion
-from database.repositories import ResumeSectionRepository, ResumeVersionRepository
 
 
 class ResumeService:

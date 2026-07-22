@@ -27,7 +27,7 @@ class ResumeVersion(Base):
         UUID(as_uuid=True), ForeignKey("resume_versions.id", ondelete="SET NULL"), nullable=True
     )
     generated_for_job_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, index=True
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True, index=True
     )
     archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
@@ -36,7 +36,8 @@ class ResumeVersion(Base):
     sections = relationship(
         "ResumeSection", back_populates="resume", cascade="all, delete-orphan", order_by="ResumeSection.sort_order"
     )
-    previous_version = relationship("ResumeVersion", remote_side="ResumeVersion.id", backref="next_versions")
+    previous_version = relationship("ResumeVersion", remote_side="ResumeVersion.id", back_populates="next_versions")
+    next_versions = relationship("ResumeVersion", remote_side="ResumeVersion.previous_version_id", back_populates="previous_version")
 
     __table_args__ = (
         UniqueConstraint("user_id", "version", name="uq_resume_user_version"),
