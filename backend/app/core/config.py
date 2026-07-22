@@ -130,6 +130,26 @@ class Settings(BaseSettings):
     UNSTOP_RATE_LIMIT_RATE: float = 10.0
     UNSTOP_RATE_LIMIT_BURST: int = 5
 
+    WORKDAY_BASE_URL: str = "https://wd5.myworkdayjobs.com/wday/cxs"
+    WORKDAY_PAGE_SIZE: int = 20
+    WORKDAY_RATE_LIMIT_RATE: float = 5.0
+    WORKDAY_RATE_LIMIT_BURST: int = 3
+
+    SMARTRECRUITERS_BASE_URL: str = "https://api.smartrecruiters.com/v1"
+    SMARTRECRUITERS_PAGE_SIZE: int = 20
+    SMARTRECRUITERS_RATE_LIMIT_RATE: float = 10.0
+    SMARTRECRUITERS_RATE_LIMIT_BURST: int = 5
+
+    BAMBOOHR_BASE_URL: str = "https://api.bamboohr.com/api/gateway.php"
+    BAMBOOHR_PAGE_SIZE: int = 20
+    BAMBOOHR_RATE_LIMIT_RATE: float = 5.0
+    BAMBOOHR_RATE_LIMIT_BURST: int = 3
+
+    RECRUITEE_BASE_URL: str = "https://api.recruitee.com/c"
+    RECRUITEE_PAGE_SIZE: int = 20
+    RECRUITEE_RATE_LIMIT_RATE: float = 10.0
+    RECRUITEE_RATE_LIMIT_BURST: int = 5
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

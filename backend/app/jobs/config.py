@@ -82,6 +82,38 @@ class UnstopConfig(BaseModel):
     rate_limit_burst: int = Field(default=5, ge=1)
 
 
+class WorkdayConfig(BaseModel):
+    base_url: str = "https://wd5.myworkdayjobs.com/wday/cxs"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=5.0, ge=0)
+    rate_limit_burst: int = Field(default=3, ge=1)
+    tenant: str = "default"
+
+
+class SmartRecruitersConfig(BaseModel):
+    base_url: str = "https://api.smartrecruiters.com/v1"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+    company_id: str = "default"
+
+
+class BambooHRConfig(BaseModel):
+    base_url: str = "https://api.bamboohr.com/api/gateway.php"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=5.0, ge=0)
+    rate_limit_burst: int = Field(default=3, ge=1)
+    company_subdomain: str = "default"
+
+
+class RecruiteeConfig(BaseModel):
+    base_url: str = "https://api.recruitee.com/c"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+    company_id: str = "default"
+
+
 class JobDiscoveryConfig(BaseModel):
     enabled_providers: list[str] = Field(
         default_factory=list, description="List of enabled job provider names"
@@ -108,3 +140,7 @@ class JobDiscoveryConfig(BaseModel):
     internshala: InternshalaConfig = Field(default_factory=InternshalaConfig)
     freshersworld: FreshersworldConfig = Field(default_factory=FreshersworldConfig)
     unstop: UnstopConfig = Field(default_factory=UnstopConfig)
+    workday: WorkdayConfig = Field(default_factory=WorkdayConfig)
+    smartrecruiters: SmartRecruitersConfig = Field(default_factory=SmartRecruitersConfig)
+    bamboohr: BambooHRConfig = Field(default_factory=BambooHRConfig)
+    recruitee: RecruiteeConfig = Field(default_factory=RecruiteeConfig)

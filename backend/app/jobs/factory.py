@@ -16,6 +16,7 @@ class JobProviderFactory:
     def register_all(self) -> None:
         from app.jobs.providers.adzuna import AdzunaJobProvider
         from app.jobs.providers.ashby import AshbyJobProvider
+        from app.jobs.providers.bamboohr import BambooHRJobProvider
         from app.jobs.providers.foundit import FounditJobProvider
         from app.jobs.providers.freshersworld import FreshersworldJobProvider
         from app.jobs.providers.greenhouse import GreenhouseJobProvider
@@ -23,8 +24,11 @@ class JobProviderFactory:
         from app.jobs.providers.lever import LeverJobProvider
         from app.jobs.providers.mock import MockJobProvider
         from app.jobs.providers.naukri import NaukriJobProvider
+        from app.jobs.providers.recruitee import RecruiteeJobProvider
+        from app.jobs.providers.smartrecruiters import SmartRecruitersJobProvider
         from app.jobs.providers.unstop import UnstopJobProvider
         from app.jobs.providers.wellfound import WellfoundJobProvider
+        from app.jobs.providers.workday import WorkdayJobProvider
         from app.jobs.providers.y_combinator import YCombinatorJobProvider
 
         registrations: list[tuple[str, type]] = [
@@ -64,6 +68,18 @@ class JobProviderFactory:
 
         if "unstop" in enabled:
             registrations.append(("unstop", UnstopJobProvider))
+
+        if "workday" in enabled:
+            registrations.append(("workday", WorkdayJobProvider))
+
+        if "smartrecruiters" in enabled:
+            registrations.append(("smartrecruiters", SmartRecruitersJobProvider))
+
+        if "bamboohr" in enabled:
+            registrations.append(("bamboohr", BambooHRJobProvider))
+
+        if "recruitee" in enabled:
+            registrations.append(("recruitee", RecruiteeJobProvider))
 
         for name, provider_class in registrations:
             if not self._registry.is_registered(name):

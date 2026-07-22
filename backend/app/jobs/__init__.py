@@ -2,6 +2,7 @@ from app.jobs.base_provider import BaseJobProvider
 from app.jobs.config import (
     AdzunaConfig,
     AshbyConfig,
+    BambooHRConfig,
     FounditConfig,
     FreshersworldConfig,
     GreenhouseConfig,
@@ -9,8 +10,11 @@ from app.jobs.config import (
     JobDiscoveryConfig,
     LeverConfig,
     NaukriConfig,
+    RecruiteeConfig,
+    SmartRecruitersConfig,
     UnstopConfig,
     WellfoundConfig,
+    WorkdayConfig,
     YCombinatorConfig,
 )
 from app.jobs.deduplication import DeduplicationEngine
@@ -31,6 +35,7 @@ from app.jobs.normalization import JobNormalizer
 from app.jobs.providers import (
     AdzunaJobProvider,
     AshbyJobProvider,
+    BambooHRJobProvider,
     FounditJobProvider,
     FreshersworldJobProvider,
     GreenhouseJobProvider,
@@ -38,8 +43,11 @@ from app.jobs.providers import (
     LeverJobProvider,
     MockJobProvider,
     NaukriJobProvider,
+    RecruiteeJobProvider,
+    SmartRecruitersJobProvider,
     UnstopJobProvider,
     WellfoundJobProvider,
+    WorkdayJobProvider,
     YCombinatorJobProvider,
 )
 from app.jobs.rate_limiter import TokenBucketRateLimiter
@@ -105,5 +113,13 @@ __all__ = [
     "InternshalaJobProvider",
     "NaukriJobProvider",
     "UnstopJobProvider",
+    "BambooHRJobProvider",
+    "RecruiteeJobProvider",
+    "SmartRecruitersJobProvider",
+    "WorkdayJobProvider",
+    "BambooHRConfig",
+    "RecruiteeConfig",
+    "SmartRecruitersConfig",
+    "WorkdayConfig",
     "get_job_discovery_service",
 ]

@@ -5,6 +5,7 @@ from functools import lru_cache
 from app.jobs.config import (
     AdzunaConfig,
     AshbyConfig,
+    BambooHRConfig,
     FounditConfig,
     FreshersworldConfig,
     GreenhouseConfig,
@@ -12,8 +13,11 @@ from app.jobs.config import (
     JobDiscoveryConfig,
     LeverConfig,
     NaukriConfig,
+    RecruiteeConfig,
+    SmartRecruitersConfig,
     UnstopConfig,
     WellfoundConfig,
+    WorkdayConfig,
     YCombinatorConfig,
 )
 from app.jobs.registry import JobProviderRegistry
@@ -101,6 +105,30 @@ def _get_config() -> JobDiscoveryConfig:
             page_size=settings.UNSTOP_PAGE_SIZE,
             rate_limit_rate=settings.UNSTOP_RATE_LIMIT_RATE,
             rate_limit_burst=settings.UNSTOP_RATE_LIMIT_BURST,
+        ),
+        workday=WorkdayConfig(
+            base_url=settings.WORKDAY_BASE_URL,
+            page_size=settings.WORKDAY_PAGE_SIZE,
+            rate_limit_rate=settings.WORKDAY_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.WORKDAY_RATE_LIMIT_BURST,
+        ),
+        smartrecruiters=SmartRecruitersConfig(
+            base_url=settings.SMARTRECRUITERS_BASE_URL,
+            page_size=settings.SMARTRECRUITERS_PAGE_SIZE,
+            rate_limit_rate=settings.SMARTRECRUITERS_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.SMARTRECRUITERS_RATE_LIMIT_BURST,
+        ),
+        bamboohr=BambooHRConfig(
+            base_url=settings.BAMBOOHR_BASE_URL,
+            page_size=settings.BAMBOOHR_PAGE_SIZE,
+            rate_limit_rate=settings.BAMBOOHR_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.BAMBOOHR_RATE_LIMIT_BURST,
+        ),
+        recruitee=RecruiteeConfig(
+            base_url=settings.RECRUITEE_BASE_URL,
+            page_size=settings.RECRUITEE_PAGE_SIZE,
+            rate_limit_rate=settings.RECRUITEE_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.RECRUITEE_RATE_LIMIT_BURST,
         ),
     )
 
