@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import Uuid
 
@@ -15,13 +15,13 @@ class Base(DeclarativeBase):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=func.now(),
+        default=datetime.now(timezone.utc),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
@@ -30,7 +30,7 @@ class Base(DeclarativeBase):
     )
 
     def soft_delete(self) -> None:
-        self.deleted_at = datetime.now()
+        self.deleted_at = datetime.now(timezone.utc)
 
     @property
     def is_deleted(self) -> bool:

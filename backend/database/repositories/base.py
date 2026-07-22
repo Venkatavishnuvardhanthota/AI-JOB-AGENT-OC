@@ -21,14 +21,11 @@ class BaseRepository:
     async def create(self, model: Base) -> Base:
         self.session.add(model)
         await self.session.flush()
-        await self.session.refresh(model)
         return model
 
     async def bulk_create(self, models: list[Base]) -> list[Base]:
         self.session.add_all(models)
         await self.session.flush()
-        for m in models:
-            await self.session.refresh(m)
         return models
 
     async def get_by_id(self, id: uuid.UUID) -> Base | None:
@@ -73,7 +70,6 @@ class BaseRepository:
 
     async def update(self, model: Base) -> Base:
         await self.session.flush()
-        await self.session.refresh(model)
         return model
 
     async def update_fields(self, id: uuid.UUID, **values) -> Base | None:

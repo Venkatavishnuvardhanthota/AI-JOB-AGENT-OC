@@ -3,56 +3,215 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.models import ResumeVersion
-from app.repositories import CareerProfileRepository, ResumeVersionRepository
+from app.schemas.resume import ResumeImportData
 from app.services.audit import AuditService
+from database.models.resume_section import ResumeSection
+from database.models.resume_version import ResumeVersion
+from database.repositories import ResumeSectionRepository, ResumeVersionRepository
 
 
 class ResumeService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.resume_repo = ResumeVersionRepository(session)
-        self.profile_repo = CareerProfileRepository(session)
+        self.section_repo = ResumeSectionRepository(session)
         self.audit_service = AuditService(session)
 
-    async def list_resumes(self, user_id: uuid.UUID, archived: bool | None = None) -> list[ResumeVersion]:
-        return await self.resume_repo.list_versions(user_id, archived=archived)
+    # ── Resume CRUD ──
 
-    async def get_resume(self, resume_id: uuid.UUID) -> ResumeVersion:
-        resume = await self.resume_repo.get_by_id(resume_id)
-        if not resume:
+    async def list_resumes(self, user_id: uuid.UUID, archived: bool | None = None) -> list[ResumeVersion]:
+        return await self.resume_repo.list_by_user(user_id, archived=archived)
+
+    async def get_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
             raise NotFoundError("Resume not found.")
         return resume
 
-    async def generate_resume(
-        self, user_id: uuid.UUID, job_id: uuid.UUID | None, template: str, title: str | None
+    async def create_resume(
+        self, user_id: uuid.UUID, title: str | None, description: str | None = None,
+        template: str | None = None, resume_type: str | None = None,
+        change_summary: str | None = None,
+        sections: list[dict] | None = None,
     ) -> ResumeVersion:
         latest_version = await self.resume_repo.latest_version(user_id)
         resume = ResumeVersion(
             user_id=user_id,
             version=latest_version + 1,
             title=title or f"Resume v{latest_version + 1}",
+            description=description,
             template=template,
-            generated_for_job_id=job_id,
+            resume_type=resume_type,
+            change_summary=change_summary,
+            is_default=latest_version == 0,
         )
         created = await self.resume_repo.create(resume)
+
+        if sections:
+            for i, section_data in enumerate(sections):
+                section = ResumeSection(
+                    resume_id=created.id,
+                    section_type=section_data.get("section_type", "custom"),
+                    title=section_data.get("title"),
+                    content=section_data.get("content"),
+                    sort_order=section_data.get("sort_order", i),
+                    visible=section_data.get("visible", True),
+                )
+                await self.section_repo.create(section)
+
         await self.audit_service.log(
-            "RESUME_GENERATED",
-            user_id=user_id,
-            entity="resume",
-            entity_id=created.id,
-            outcome="success",
+            "RESUME_CREATED", user_id=user_id, entity="resume", entity_id=created.id, outcome="success",
         )
-        return created
+        return await self.resume_repo.get_with_sections(created.id)
 
-    async def archive_resume(self, resume_id: uuid.UUID) -> ResumeVersion:
-        resume = await self.resume_repo.archive(resume_id)
-        if not resume:
+    async def update_resume(
+        self, resume_id: uuid.UUID, user_id: uuid.UUID, data: dict,
+    ) -> ResumeVersion:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
             raise NotFoundError("Resume not found.")
+        for key, value in data.items():
+            if value is not None and hasattr(resume, key):
+                setattr(resume, key, value)
+        await self.resume_repo.update(resume)
+        await self.audit_service.log(
+            "RESUME_UPDATED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+        )
+        return await self.resume_repo.get_with_sections(resume_id)
+
+    async def delete_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        await self.resume_repo.delete(resume)
+        await self.audit_service.log(
+            "RESUME_DELETED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+        )
+
+    # ── Status Management ──
+
+    async def archive_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        resume.status = "archived"
+        resume.archived = True
+        await self.resume_repo.update(resume)
+        await self.audit_service.log(
+            "RESUME_ARCHIVED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+        )
         return resume
 
-    async def restore_resume(self, resume_id: uuid.UUID) -> ResumeVersion:
-        resume = await self.resume_repo.restore(resume_id)
-        if not resume:
+    async def restore_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
             raise NotFoundError("Resume not found.")
+        resume.status = "active"
+        resume.archived = False
+        await self.resume_repo.update(resume)
+        await self.audit_service.log(
+            "RESUME_RESTORED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+        )
         return resume
+
+    async def set_default_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        return await self.resume_repo.set_default(resume_id, user_id)
+
+    # ── Versioning ──
+
+    async def create_version(
+        self, resume_id: uuid.UUID, user_id: uuid.UUID, change_summary: str | None = None,
+    ) -> ResumeVersion:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        latest_version = await self.resume_repo.latest_version(user_id)
+        new_resume = ResumeVersion(
+            user_id=user_id,
+            version=latest_version + 1,
+            title=resume.title,
+            description=resume.description,
+            template=resume.template,
+            resume_type=resume.resume_type,
+            source=resume.source,
+            status="draft",
+            change_summary=change_summary,
+            previous_version_id=resume.id,
+        )
+        created = await self.resume_repo.create(new_resume)
+        for section in resume.sections:
+            new_section = ResumeSection(
+                resume_id=created.id,
+                section_type=section.section_type,
+                title=section.title,
+                content=section.content,
+                sort_order=section.sort_order,
+                visible=section.visible,
+            )
+            await self.section_repo.create(new_section)
+        await self.audit_service.log(
+            "VERSION_CREATED", user_id=user_id, entity="resume", entity_id=created.id, outcome="success",
+        )
+        return await self.resume_repo.get_with_sections(created.id)
+
+    # ── Sections ──
+
+    async def add_section(
+        self, resume_id: uuid.UUID, user_id: uuid.UUID, section_data: dict,
+    ) -> ResumeSection:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        section = ResumeSection(
+            resume_id=resume_id,
+            section_type=section_data.get("section_type", "custom"),
+            title=section_data.get("title"),
+            content=section_data.get("content"),
+            sort_order=section_data.get("sort_order", 0),
+            visible=section_data.get("visible", True),
+        )
+        return await self.section_repo.create(section)
+
+    async def update_section(
+        self, section_id: uuid.UUID, user_id: uuid.UUID, data: dict,
+    ) -> ResumeSection:
+        section = await self.section_repo.get_by_id(section_id)
+        if not section:
+            raise NotFoundError("Section not found.")
+        resume = await self.resume_repo.get_by_id(section.resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Section not found.")
+        for key, value in data.items():
+            if value is not None and hasattr(section, key):
+                setattr(section, key, value)
+        await self.section_repo.update(section)
+        return section
+
+    async def delete_section(self, section_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        section = await self.section_repo.get_by_id(section_id)
+        if not section:
+            raise NotFoundError("Section not found.")
+        resume = await self.resume_repo.get_by_id(section.resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Section not found.")
+        await self.section_repo.delete(section)
+
+    # ── Import / Export ──
+
+    async def import_resume(self, user_id: uuid.UUID, data: ResumeImportData) -> ResumeVersion:
+        sections_data = [s.model_dump() for s in data.sections]
+        return await self.create_resume(
+            user_id=user_id,
+            title=data.title,
+            description=data.description,
+            template=data.template,
+            resume_type=data.resume_type,
+            change_summary=data.change_summary or "Imported resume",
+            sections=sections_data,
+        )
+
+    async def export_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
+        return await self.get_resume(resume_id, user_id)

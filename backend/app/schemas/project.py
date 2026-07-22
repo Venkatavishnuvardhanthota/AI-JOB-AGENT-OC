@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,9 @@ class ProjectBase(BaseModel):
     technologies: list[str] | None = None
     github_url: str | None = None
     demo_url: str | None = None
+    live_url: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
 
 
 class ProjectCreate(ProjectBase):
@@ -22,6 +25,9 @@ class ProjectUpdate(BaseModel):
     technologies: list[str] | None = None
     github_url: str | None = None
     demo_url: str | None = None
+    live_url: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
 
 
 class ProjectResponse(ProjectBase):

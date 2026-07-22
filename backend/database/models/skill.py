@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +15,8 @@ class Skill(Base):
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     proficiency: Mapped[str | None] = mapped_column(String(50), nullable=True)
     years_experience: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    skill_level: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    display_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     profile = relationship("CareerProfile", back_populates="skills")
 

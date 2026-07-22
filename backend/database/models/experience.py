@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import Boolean, Date, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base
@@ -19,6 +19,9 @@ class Experience(Base):
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     currently_working: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    responsibilities: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    achievements: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    technologies_used: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     profile = relationship("CareerProfile", back_populates="experience")

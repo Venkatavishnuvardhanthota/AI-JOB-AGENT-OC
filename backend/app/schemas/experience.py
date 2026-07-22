@@ -12,6 +12,9 @@ class ExperienceBase(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     currently_working: bool | None = None
+    responsibilities: list[str] | None = None
+    achievements: list[str] | None = None
+    technologies_used: list[str] | None = None
     description: str | None = None
 
 
@@ -27,6 +30,9 @@ class ExperienceUpdate(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     currently_working: bool | None = None
+    responsibilities: list[str] | None = None
+    achievements: list[str] | None = None
+    technologies_used: list[str] | None = None
     description: str | None = None
 
 

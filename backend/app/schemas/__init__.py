@@ -48,12 +48,21 @@ from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.schemas.resume import (
     ResumeCompareResponse,
     ResumeCreate,
+    ResumeExportData,
+    ResumeImportData,
     ResumeListResponse,
     ResumePreviewResponse,
     ResumeResponse,
+    ResumeSectionCreate,
+    ResumeSectionReorder,
+    ResumeSectionResponse,
+    ResumeSectionUpdate,
+    ResumeUpdate,
+    ResumeVersionCreate,
     TemplateResponse,
 )
 from app.schemas.skill import SkillCreate, SkillResponse, SkillUpdate
+from app.schemas.social_link import SocialLinkCreate, SocialLinkResponse, SocialLinkUpdate
 from app.schemas.user import UserResponse, UserUpdate
 
 __all__ = [
@@ -90,13 +99,24 @@ __all__ = [
     "LanguageCreate",
     "LanguageUpdate",
     "LanguageResponse",
+    "SocialLinkCreate",
+    "SocialLinkUpdate",
+    "SocialLinkResponse",
     "JobPreferenceUpdate",
     "JobPreferenceResponse",
     "ResumeCreate",
+    "ResumeUpdate",
     "ResumeResponse",
     "ResumeListResponse",
     "ResumePreviewResponse",
     "ResumeCompareResponse",
+    "ResumeExportData",
+    "ResumeImportData",
+    "ResumeVersionCreate",
+    "ResumeSectionCreate",
+    "ResumeSectionUpdate",
+    "ResumeSectionResponse",
+    "ResumeSectionReorder",
     "TemplateResponse",
     "JobSearchParams",
     "JobResponse",

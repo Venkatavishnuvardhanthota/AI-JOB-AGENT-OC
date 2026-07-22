@@ -9,6 +9,8 @@ class SkillBase(BaseModel):
     category: str | None = Field(None, max_length=100)
     proficiency: str | None = Field(None, max_length=50)
     years_experience: float | None = None
+    skill_level: str | None = Field(None, max_length=50)
+    display_order: int | None = None
 
 
 class SkillCreate(SkillBase):
@@ -20,6 +22,8 @@ class SkillUpdate(BaseModel):
     category: str | None = Field(None, max_length=100)
     proficiency: str | None = Field(None, max_length=50)
     years_experience: float | None = None
+    skill_level: str | None = Field(None, max_length=50)
+    display_order: int | None = None
 
 
 class SkillResponse(SkillBase):

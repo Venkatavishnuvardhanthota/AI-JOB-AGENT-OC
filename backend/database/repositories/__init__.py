@@ -22,11 +22,13 @@ from database.repositories.notification import NotificationRepository
 from database.repositories.project import ProjectRepository
 from database.repositories.provider_configuration import ProviderConfigurationRepository
 from database.repositories.refresh_token import RefreshTokenRepository
+from database.repositories.resume_section import ResumeSectionRepository
 from database.repositories.resume_template import ResumeTemplateRepository
 from database.repositories.resume_version import ResumeVersionRepository
 from database.repositories.saved_search import SavedSearchRepository
 from database.repositories.scheduler import SchedulerRepository
 from database.repositories.skill import SkillRepository
+from database.repositories.social_link import SocialLinkRepository
 from database.repositories.user import UserRepository
 from database.repositories.user_preference import UserPreferenceRepository
 
@@ -41,6 +43,7 @@ __all__ = [
     "CertificationRepository",
     "LanguageRepository",
     "JobPreferenceRepository",
+    "ResumeSectionRepository",
     "ResumeVersionRepository",
     "ResumeTemplateRepository",
     "JobRepository",
@@ -61,5 +64,6 @@ __all__ = [
     "AuditRepository",
     "NotificationRepository",
     "SchedulerRepository",
+    "SocialLinkRepository",
     "RefreshTokenRepository",
 ]

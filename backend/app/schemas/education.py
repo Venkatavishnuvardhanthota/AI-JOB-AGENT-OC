@@ -10,6 +10,7 @@ class EducationBase(BaseModel):
     field_of_study: str | None = Field(None, max_length=255)
     start_date: date | None = None
     end_date: date | None = None
+    currently_studying: bool | None = None
     grade: str | None = Field(None, max_length=50)
     description: str | None = None
 
@@ -24,6 +25,7 @@ class EducationUpdate(BaseModel):
     field_of_study: str | None = Field(None, max_length=255)
     start_date: date | None = None
     end_date: date | None = None
+    currently_studying: bool | None = None
     grade: str | None = Field(None, max_length=50)
     description: str | None = None
 

@@ -20,7 +20,8 @@ class CareerProfileRepository(BaseRepository):
                 joinedload(CareerProfile.skills),
                 joinedload(CareerProfile.certifications),
                 joinedload(CareerProfile.languages),
+                joinedload(CareerProfile.social_links),
                 joinedload(CareerProfile.preferences),
             )
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(stmt, execution_options={"populate_existing": True})
         return result.unique().scalar_one_or_none()

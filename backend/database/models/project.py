@@ -1,6 +1,7 @@
 import uuid
+from datetime import date
 
-from sqlalchemy import ForeignKey, Index, String, Text
+from sqlalchemy import Date, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +17,9 @@ class Project(Base):
     technologies: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     github_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     demo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    live_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     profile = relationship("CareerProfile", back_populates="projects")
 

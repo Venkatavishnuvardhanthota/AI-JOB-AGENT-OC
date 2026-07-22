@@ -21,11 +21,13 @@ from database.models.notification import Notification
 from database.models.project import Project
 from database.models.provider_configuration import ProviderConfiguration
 from database.models.refresh_token import RefreshToken
+from database.models.resume_section import ResumeSection
 from database.models.resume_template import ResumeTemplate
 from database.models.resume_version import ResumeVersion
 from database.models.saved_search import SavedSearch
 from database.models.scheduler_job import SchedulerJob
 from database.models.skill import Skill
+from database.models.social_link import SocialLink
 from database.models.user import User
 from database.models.user_preference import UserPreference
 
@@ -39,6 +41,8 @@ __all__ = [
     "Certification",
     "Language",
     "JobPreference",
+    "SocialLink",
+    "ResumeSection",
     "ResumeVersion",
     "ResumeTemplate",
     "Job",
