@@ -47,6 +47,41 @@ class AshbyConfig(BaseModel):
     rate_limit_burst: int = Field(default=5, ge=1)
 
 
+class NaukriConfig(BaseModel):
+    base_url: str = "https://www.naukri.com"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=5.0, ge=0)
+    rate_limit_burst: int = Field(default=3, ge=1)
+
+
+class FounditConfig(BaseModel):
+    base_url: str = "https://www.foundit.in"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=5.0, ge=0)
+    rate_limit_burst: int = Field(default=3, ge=1)
+
+
+class InternshalaConfig(BaseModel):
+    base_url: str = "https://internshala.com"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
+class FreshersworldConfig(BaseModel):
+    base_url: str = "https://www.freshersworld.com"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=5.0, ge=0)
+    rate_limit_burst: int = Field(default=3, ge=1)
+
+
+class UnstopConfig(BaseModel):
+    base_url: str = "https://unstop.com"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
 class JobDiscoveryConfig(BaseModel):
     enabled_providers: list[str] = Field(
         default_factory=list, description="List of enabled job provider names"
@@ -68,3 +103,8 @@ class JobDiscoveryConfig(BaseModel):
     greenhouse: GreenhouseConfig = Field(default_factory=GreenhouseConfig)
     lever: LeverConfig = Field(default_factory=LeverConfig)
     ashby: AshbyConfig = Field(default_factory=AshbyConfig)
+    naukri: NaukriConfig = Field(default_factory=NaukriConfig)
+    foundit: FounditConfig = Field(default_factory=FounditConfig)
+    internshala: InternshalaConfig = Field(default_factory=InternshalaConfig)
+    freshersworld: FreshersworldConfig = Field(default_factory=FreshersworldConfig)
+    unstop: UnstopConfig = Field(default_factory=UnstopConfig)

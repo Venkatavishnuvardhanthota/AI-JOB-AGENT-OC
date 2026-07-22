@@ -5,9 +5,14 @@ from functools import lru_cache
 from app.jobs.config import (
     AdzunaConfig,
     AshbyConfig,
+    FounditConfig,
+    FreshersworldConfig,
     GreenhouseConfig,
+    InternshalaConfig,
     JobDiscoveryConfig,
     LeverConfig,
+    NaukriConfig,
+    UnstopConfig,
     WellfoundConfig,
     YCombinatorConfig,
 )
@@ -66,6 +71,36 @@ def _get_config() -> JobDiscoveryConfig:
             page_size=settings.ASHBY_PAGE_SIZE,
             rate_limit_rate=settings.ASHBY_RATE_LIMIT_RATE,
             rate_limit_burst=settings.ASHBY_RATE_LIMIT_BURST,
+        ),
+        naukri=NaukriConfig(
+            base_url=settings.NAUKRI_BASE_URL,
+            page_size=settings.NAUKRI_PAGE_SIZE,
+            rate_limit_rate=settings.NAUKRI_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.NAUKRI_RATE_LIMIT_BURST,
+        ),
+        foundit=FounditConfig(
+            base_url=settings.FOUNDIT_BASE_URL,
+            page_size=settings.FOUNDIT_PAGE_SIZE,
+            rate_limit_rate=settings.FOUNDIT_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.FOUNDIT_RATE_LIMIT_BURST,
+        ),
+        internshala=InternshalaConfig(
+            base_url=settings.INTERNSHALA_BASE_URL,
+            page_size=settings.INTERNSHALA_PAGE_SIZE,
+            rate_limit_rate=settings.INTERNSHALA_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.INTERNSHALA_RATE_LIMIT_BURST,
+        ),
+        freshersworld=FreshersworldConfig(
+            base_url=settings.FRESHERWORLD_BASE_URL,
+            page_size=settings.FRESHERWORLD_PAGE_SIZE,
+            rate_limit_rate=settings.FRESHERWORLD_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.FRESHERWORLD_RATE_LIMIT_BURST,
+        ),
+        unstop=UnstopConfig(
+            base_url=settings.UNSTOP_BASE_URL,
+            page_size=settings.UNSTOP_PAGE_SIZE,
+            rate_limit_rate=settings.UNSTOP_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.UNSTOP_RATE_LIMIT_BURST,
         ),
     )
 

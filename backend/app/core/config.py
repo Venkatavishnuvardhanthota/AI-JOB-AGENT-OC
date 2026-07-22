@@ -105,6 +105,31 @@ class Settings(BaseSettings):
     ASHBY_RATE_LIMIT_RATE: float = 10.0
     ASHBY_RATE_LIMIT_BURST: int = 5
 
+    NAUKRI_BASE_URL: str = "https://www.naukri.com"
+    NAUKRI_PAGE_SIZE: int = 20
+    NAUKRI_RATE_LIMIT_RATE: float = 5.0
+    NAUKRI_RATE_LIMIT_BURST: int = 3
+
+    FOUNDIT_BASE_URL: str = "https://www.foundit.in"
+    FOUNDIT_PAGE_SIZE: int = 20
+    FOUNDIT_RATE_LIMIT_RATE: float = 5.0
+    FOUNDIT_RATE_LIMIT_BURST: int = 3
+
+    INTERNSHALA_BASE_URL: str = "https://internshala.com"
+    INTERNSHALA_PAGE_SIZE: int = 20
+    INTERNSHALA_RATE_LIMIT_RATE: float = 10.0
+    INTERNSHALA_RATE_LIMIT_BURST: int = 5
+
+    FRESHERWORLD_BASE_URL: str = "https://www.freshersworld.com"
+    FRESHERWORLD_PAGE_SIZE: int = 20
+    FRESHERWORLD_RATE_LIMIT_RATE: float = 5.0
+    FRESHERWORLD_RATE_LIMIT_BURST: int = 3
+
+    UNSTOP_BASE_URL: str = "https://unstop.com"
+    UNSTOP_PAGE_SIZE: int = 20
+    UNSTOP_RATE_LIMIT_RATE: float = 10.0
+    UNSTOP_RATE_LIMIT_BURST: int = 5
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

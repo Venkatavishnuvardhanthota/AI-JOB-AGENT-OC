@@ -16,9 +16,14 @@ class JobProviderFactory:
     def register_all(self) -> None:
         from app.jobs.providers.adzuna import AdzunaJobProvider
         from app.jobs.providers.ashby import AshbyJobProvider
+        from app.jobs.providers.foundit import FounditJobProvider
+        from app.jobs.providers.freshersworld import FreshersworldJobProvider
         from app.jobs.providers.greenhouse import GreenhouseJobProvider
+        from app.jobs.providers.internshala import InternshalaJobProvider
         from app.jobs.providers.lever import LeverJobProvider
         from app.jobs.providers.mock import MockJobProvider
+        from app.jobs.providers.naukri import NaukriJobProvider
+        from app.jobs.providers.unstop import UnstopJobProvider
         from app.jobs.providers.wellfound import WellfoundJobProvider
         from app.jobs.providers.y_combinator import YCombinatorJobProvider
 
@@ -44,6 +49,21 @@ class JobProviderFactory:
 
         if "ashby" in enabled:
             registrations.append(("ashby", AshbyJobProvider))
+
+        if "naukri" in enabled:
+            registrations.append(("naukri", NaukriJobProvider))
+
+        if "foundit" in enabled:
+            registrations.append(("foundit", FounditJobProvider))
+
+        if "internshala" in enabled:
+            registrations.append(("internshala", InternshalaJobProvider))
+
+        if "freshersworld" in enabled:
+            registrations.append(("freshersworld", FreshersworldJobProvider))
+
+        if "unstop" in enabled:
+            registrations.append(("unstop", UnstopJobProvider))
 
         for name, provider_class in registrations:
             if not self._registry.is_registered(name):
