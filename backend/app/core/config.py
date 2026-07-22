@@ -80,6 +80,31 @@ class Settings(BaseSettings):
     ADZUNA_RATE_LIMIT_RATE: float = 5.0
     ADZUNA_RATE_LIMIT_BURST: int = 3
 
+    WELLFOUND_BASE_URL: str = "https://api.angel.co/1"
+    WELLFOUND_PAGE_SIZE: int = 20
+    WELLFOUND_RATE_LIMIT_RATE: float = 10.0
+    WELLFOUND_RATE_LIMIT_BURST: int = 5
+
+    Y_COMBINATOR_BASE_URL: str = "https://www.workatastartup.com"
+    Y_COMBINATOR_PAGE_SIZE: int = 20
+    Y_COMBINATOR_RATE_LIMIT_RATE: float = 10.0
+    Y_COMBINATOR_RATE_LIMIT_BURST: int = 5
+
+    GREENHOUSE_BASE_URL: str = "https://boards-api.greenhouse.io/v1/boards"
+    GREENHOUSE_PAGE_SIZE: int = 20
+    GREENHOUSE_RATE_LIMIT_RATE: float = 10.0
+    GREENHOUSE_RATE_LIMIT_BURST: int = 5
+
+    LEVER_BASE_URL: str = "https://api.lever.co/v0"
+    LEVER_PAGE_SIZE: int = 20
+    LEVER_RATE_LIMIT_RATE: float = 10.0
+    LEVER_RATE_LIMIT_BURST: int = 5
+
+    ASHBY_BASE_URL: str = "https://api.ashbyhq.com/posting-api"
+    ASHBY_PAGE_SIZE: int = 20
+    ASHBY_RATE_LIMIT_RATE: float = 10.0
+    ASHBY_RATE_LIMIT_BURST: int = 5
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

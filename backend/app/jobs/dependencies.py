@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from app.jobs.config import AdzunaConfig, JobDiscoveryConfig
+from app.jobs.config import (
+    AdzunaConfig,
+    AshbyConfig,
+    GreenhouseConfig,
+    JobDiscoveryConfig,
+    LeverConfig,
+    WellfoundConfig,
+    YCombinatorConfig,
+)
 from app.jobs.registry import JobProviderRegistry
 from app.jobs.service import JobDiscoveryService
 
@@ -28,6 +36,36 @@ def _get_config() -> JobDiscoveryConfig:
             page_size=settings.ADZUNA_PAGE_SIZE,
             rate_limit_rate=settings.ADZUNA_RATE_LIMIT_RATE,
             rate_limit_burst=settings.ADZUNA_RATE_LIMIT_BURST,
+        ),
+        wellfound=WellfoundConfig(
+            base_url=settings.WELLFOUND_BASE_URL,
+            page_size=settings.WELLFOUND_PAGE_SIZE,
+            rate_limit_rate=settings.WELLFOUND_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.WELLFOUND_RATE_LIMIT_BURST,
+        ),
+        y_combinator=YCombinatorConfig(
+            base_url=settings.Y_COMBINATOR_BASE_URL,
+            page_size=settings.Y_COMBINATOR_PAGE_SIZE,
+            rate_limit_rate=settings.Y_COMBINATOR_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.Y_COMBINATOR_RATE_LIMIT_BURST,
+        ),
+        greenhouse=GreenhouseConfig(
+            base_url=settings.GREENHOUSE_BASE_URL,
+            page_size=settings.GREENHOUSE_PAGE_SIZE,
+            rate_limit_rate=settings.GREENHOUSE_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.GREENHOUSE_RATE_LIMIT_BURST,
+        ),
+        lever=LeverConfig(
+            base_url=settings.LEVER_BASE_URL,
+            page_size=settings.LEVER_PAGE_SIZE,
+            rate_limit_rate=settings.LEVER_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.LEVER_RATE_LIMIT_BURST,
+        ),
+        ashby=AshbyConfig(
+            base_url=settings.ASHBY_BASE_URL,
+            page_size=settings.ASHBY_PAGE_SIZE,
+            rate_limit_rate=settings.ASHBY_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.ASHBY_RATE_LIMIT_BURST,
         ),
     )
 

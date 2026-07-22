@@ -12,6 +12,41 @@ class AdzunaConfig(BaseModel):
     rate_limit_burst: int = Field(default=3, ge=1)
 
 
+class WellfoundConfig(BaseModel):
+    base_url: str = "https://api.angel.co/1"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
+class YCombinatorConfig(BaseModel):
+    base_url: str = "https://www.workatastartup.com"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
+class GreenhouseConfig(BaseModel):
+    base_url: str = "https://boards-api.greenhouse.io/v1/boards"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
+class LeverConfig(BaseModel):
+    base_url: str = "https://api.lever.co/v0"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
+class AshbyConfig(BaseModel):
+    base_url: str = "https://api.ashbyhq.com/posting-api"
+    page_size: int = Field(default=20, ge=1, le=50)
+    rate_limit_rate: float = Field(default=10.0, ge=0)
+    rate_limit_burst: int = Field(default=5, ge=1)
+
+
 class JobDiscoveryConfig(BaseModel):
     enabled_providers: list[str] = Field(
         default_factory=list, description="List of enabled job provider names"
@@ -28,3 +63,8 @@ class JobDiscoveryConfig(BaseModel):
     dedup_field_weight_company: float = Field(default=0.3, ge=0.0, le=1.0)
     dedup_field_weight_location: float = Field(default=0.2, ge=0.0, le=1.0)
     adzuna: AdzunaConfig = Field(default_factory=AdzunaConfig)
+    wellfound: WellfoundConfig = Field(default_factory=WellfoundConfig)
+    y_combinator: YCombinatorConfig = Field(default_factory=YCombinatorConfig)
+    greenhouse: GreenhouseConfig = Field(default_factory=GreenhouseConfig)
+    lever: LeverConfig = Field(default_factory=LeverConfig)
+    ashby: AshbyConfig = Field(default_factory=AshbyConfig)
