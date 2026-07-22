@@ -20,6 +20,11 @@ from app.jobs.config import (
     WorkdayConfig,
     YCombinatorConfig,
 )
+from app.jobs.orchestration.health_manager import ProviderHealthManager
+from app.jobs.orchestration.provider_selector import ProviderSelector
+from app.jobs.orchestration.search_cache import SearchCache
+from app.jobs.orchestration.search_metrics import SearchMetrics
+from app.jobs.orchestration.search_orchestrator import SearchOrchestrator
 from app.jobs.registry import JobProviderRegistry
 from app.jobs.service import JobDiscoveryService
 
@@ -159,4 +164,41 @@ def get_job_discovery_service() -> JobDiscoveryService:
     registry = _get_registry()
     config = _get_config()
     ensure_providers_registered()
-    return JobDiscoveryService(registry=registry, config=config)
+    orchestrator = get_search_orchestrator()
+    return JobDiscoveryService(registry=registry, config=config, orchestrator=orchestrator)
+
+
+def get_search_orchestrator() -> SearchOrchestrator:
+    registry = _get_registry()
+    config = _get_config()
+    ensure_providers_registered()
+    cache = SearchCache(ttl_seconds=config.cache_ttl_seconds)
+    health = ProviderHealthManager(
+        window_seconds=config.health_thresholds.window_seconds,
+        failure_threshold=config.health_thresholds.failure_threshold,
+        min_samples=config.health_thresholds.min_samples,
+        cooldown_seconds=config.health_thresholds.cooldown_seconds,
+        latency_threshold_ms=config.health_thresholds.latency_threshold_ms,
+    )
+    selector = ProviderSelector(registry, config, health)
+    metrics = SearchMetrics() if config.metrics_enabled else None
+    return SearchOrchestrator(
+        registry=registry,
+        config=config,
+        selector=selector,
+        cache=cache,
+        metrics=metrics,
+        health=health,
+    )
+
+
+def get_cache_stats() -> dict:
+    return get_search_orchestrator().get_cache_stats()
+
+
+def get_metrics_summary() -> dict:
+    return get_search_orchestrator().get_metrics_summary()
+
+
+def get_health_summary() -> dict:
+    return get_search_orchestrator().get_health_summary()

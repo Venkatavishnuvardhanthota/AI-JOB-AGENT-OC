@@ -8,6 +8,7 @@ from app.jobs.config import JobDiscoveryConfig
 from app.jobs.deduplication import DeduplicationEngine
 from app.jobs.exceptions import ProviderNotFoundError, SearchValidationError
 from app.jobs.filters import JobFilterChain
+from app.jobs.orchestration.search_orchestrator import SearchOrchestrator
 from app.jobs.registry import JobProviderRegistry
 from app.jobs.schemas import (
     JobProviderInfo,
@@ -24,13 +25,19 @@ class JobDiscoveryService:
         self,
         registry: JobProviderRegistry,
         config: JobDiscoveryConfig,
+        orchestrator: SearchOrchestrator | None = None,
     ) -> None:
         self._registry = registry
         self._config = config
         self._dedup = DeduplicationEngine(config)
+        self._orchestrator = orchestrator
 
     async def search(self, request: JobSearchRequest) -> JobSearchResponse:
         self._validate(request)
+
+        if self._orchestrator:
+            return await self._orchestrator.search(request)
+
         providers_to_query = self._resolve_providers(request.providers)
         metadata = SearchMetadata(
             providers_queried=providers_to_query,

@@ -3,6 +3,23 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class RankingWeights(BaseModel):
+    freshness_weight: float = Field(default=0.25, ge=0.0, le=1.0)
+    salary_weight: float = Field(default=0.20, ge=0.0, le=1.0)
+    remote_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    keyword_weight: float = Field(default=0.25, ge=0.0, le=1.0)
+    provider_weight: float = Field(default=0.15, ge=0.0, le=1.0)
+    provider_quality: dict[str, float] = Field(default_factory=dict)
+
+
+class HealthThresholds(BaseModel):
+    window_seconds: int = Field(default=300, ge=1)
+    failure_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    min_samples: int = Field(default=5, ge=1)
+    cooldown_seconds: int = Field(default=60, ge=1)
+    latency_threshold_ms: float = Field(default=10000.0, ge=0.0)
+
+
 class AdzunaConfig(BaseModel):
     app_id: str = ""
     api_key: str = ""
@@ -129,6 +146,12 @@ class JobDiscoveryConfig(BaseModel):
     dedup_field_weight_title: float = Field(default=0.5, ge=0.0, le=1.0)
     dedup_field_weight_company: float = Field(default=0.3, ge=0.0, le=1.0)
     dedup_field_weight_location: float = Field(default=0.2, ge=0.0, le=1.0)
+    cache_ttl_seconds: int = Field(default=300, ge=0, description="Search cache TTL in seconds (0 disables)")
+    max_concurrency: int = Field(default=5, ge=1, le=50, description="Max concurrent provider searches")
+    provider_timeout_seconds: int = Field(default=15, ge=1, description="Timeout per provider in seconds")
+    metrics_enabled: bool = Field(default=True, description="Enable search metrics collection")
+    ranking_weights: RankingWeights = Field(default_factory=RankingWeights)
+    health_thresholds: HealthThresholds = Field(default_factory=HealthThresholds)
     adzuna: AdzunaConfig = Field(default_factory=AdzunaConfig)
     wellfound: WellfoundConfig = Field(default_factory=WellfoundConfig)
     y_combinator: YCombinatorConfig = Field(default_factory=YCombinatorConfig)
