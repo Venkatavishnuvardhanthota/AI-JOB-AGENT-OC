@@ -47,10 +47,18 @@ class Settings(BaseSettings):
     AI_DEFAULT_PROVIDER: str = "openrouter"
     AI_DEFAULT_MODEL: str = "gpt-4o"
     AI_FALLBACK_MODEL: str = "gpt-3.5-turbo"
+    AI_FALLBACK_PROVIDER: str = ""
     AI_MAX_RETRIES: int = 3
     AI_TIMEOUT_SECONDS: int = 60
     AI_TEMPERATURE: float | None = None
     AI_MAX_TOKENS: int | None = None
+
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai"
+    OPENROUTER_DEFAULT_MODEL: str = "gpt-4o"
+
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_DEFAULT_MODEL: str = "llama3"
 
     ENABLED_JOB_PROVIDERS: list[str] = [
         "linkedin",

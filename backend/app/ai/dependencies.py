@@ -19,11 +19,17 @@ def _get_config() -> AIConfig:
         default_provider=settings.AI_DEFAULT_PROVIDER,
         default_model=settings.AI_DEFAULT_MODEL,
         fallback_model=settings.AI_FALLBACK_MODEL,
+        fallback_provider=settings.AI_FALLBACK_PROVIDER or None,
         max_retries=settings.AI_MAX_RETRIES,
         timeout_seconds=settings.AI_TIMEOUT_SECONDS,
         temperature=settings.AI_TEMPERATURE,
         max_tokens=settings.AI_MAX_TOKENS,
         enabled_providers=settings.ENABLED_JOB_PROVIDERS,
+        openrouter_api_key=settings.OPENROUTER_API_KEY,
+        openrouter_base_url=settings.OPENROUTER_BASE_URL,
+        openrouter_default_model=settings.OPENROUTER_DEFAULT_MODEL,
+        ollama_base_url=settings.OLLAMA_BASE_URL,
+        ollama_default_model=settings.OLLAMA_DEFAULT_MODEL,
     )
 
 
@@ -35,7 +41,18 @@ def get_ai_config() -> AIConfig:
     return _get_config()
 
 
+def ensure_providers_registered() -> None:
+    from app.ai.factory import AIProviderFactory
+
+    registry = _get_registry()
+    if registry.count() == 0:
+        config = _get_config()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+
+
 def get_ai_service() -> AIService:
     registry = _get_registry()
     config = _get_config()
+    ensure_providers_registered()
     return AIService(registry=registry, config=config)

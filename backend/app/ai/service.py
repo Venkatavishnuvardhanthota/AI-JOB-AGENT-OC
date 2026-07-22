@@ -3,11 +3,19 @@ from __future__ import annotations
 import structlog
 
 from app.ai.config import AIConfig
-from app.ai.exceptions import AIServiceValidationError, ProviderNotFoundError
+from app.ai.exceptions import (
+    AIServiceValidationError,
+    GenerationError,
+    ProviderNotFoundError,
+    ProviderUnavailableError,
+    TimeoutError,
+)
 from app.ai.registry import AIProviderRegistry
 from app.ai.schemas import AIRequest, AIResponse, ProviderInfo
 
 logger = structlog.get_logger(__name__)
+
+FALLBACK_ELIGIBLE = (TimeoutError, ProviderUnavailableError, GenerationError)
 
 
 class AIService:
@@ -22,8 +30,6 @@ class AIService:
         if not request.prompt.strip():
             raise AIServiceValidationError("Prompt must not be empty.")
 
-        provider = self._registry.resolve(provider_name)
-
         resolved = AIRequest(
             prompt=request.prompt,
             system_prompt=request.system_prompt,
@@ -34,14 +40,46 @@ class AIService:
             stop_sequences=request.stop_sequences,
         )
 
-        logger.info(
-            "Generating AI content",
-            provider=provider_name,
-            model=model,
-            prompt_length=len(resolved.prompt),
-        )
+        return await self._generate_with_fallback(resolved, provider_name)
 
-        return await provider.generate(resolved)
+    async def _generate_with_fallback(self, request: AIRequest, primary_provider: str) -> AIResponse:
+        providers_to_try = [primary_provider]
+
+        if primary_provider == self._config.default_provider:
+            fallback_name = self._config.fallback_provider
+            if fallback_name and fallback_name != primary_provider:
+                providers_to_try.append(fallback_name)
+
+        last_error: Exception | None = None
+        for i, name in enumerate(providers_to_try):
+            try:
+                provider = self._registry.resolve(name)
+                resolved = request.model_copy(update={"provider": name})
+
+                logger.info(
+                    "Generating AI content",
+                    provider=name,
+                    model=resolved.model,
+                    prompt_length=len(resolved.prompt),
+                    attempt=i + 1,
+                    total=len(providers_to_try),
+                )
+
+                response = await provider.generate(resolved)
+                if i > 0:
+                    logger.info("Fallback succeeded", from_provider=providers_to_try[0], to_provider=name)
+                return response
+            except FALLBACK_ELIGIBLE as exc:
+                last_error = exc
+                logger.warning(
+                    "Provider failed, trying fallback" if i < len(providers_to_try) - 1 else "All providers failed",
+                    provider=name,
+                    error=str(exc),
+                    attempt=i + 1,
+                )
+                continue
+
+        raise last_error or ProviderUnavailableError("All providers failed to generate content")
 
     async def health_check(self, provider_name: str | None = None) -> dict[str, bool]:
         targets = [provider_name] if provider_name else self._registry.list_providers()
