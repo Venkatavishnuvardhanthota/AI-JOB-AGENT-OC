@@ -69,6 +69,17 @@ class Settings(BaseSettings):
         "workday",
     ]
 
+    JOB_REQUEST_TIMEOUT_SECONDS: int = 30
+    JOB_RETRY_COUNT: int = 2
+    JOB_DEFAULT_SEARCH_LIMIT: int = 25
+
+    ADZUNA_APP_ID: str = ""
+    ADZUNA_API_KEY: str = ""
+    ADZUNA_BASE_URL: str = "https://api.adzuna.com/v1/api/jobs"
+    ADZUNA_PAGE_SIZE: int = 20
+    ADZUNA_RATE_LIMIT_RATE: float = 5.0
+    ADZUNA_RATE_LIMIT_BURST: int = 3
+
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60

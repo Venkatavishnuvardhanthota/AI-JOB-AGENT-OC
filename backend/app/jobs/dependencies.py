@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from app.jobs.config import JobDiscoveryConfig
+from app.jobs.config import AdzunaConfig, JobDiscoveryConfig
 from app.jobs.registry import JobProviderRegistry
 from app.jobs.service import JobDiscoveryService
 
@@ -18,6 +18,17 @@ def _get_config() -> JobDiscoveryConfig:
 
     return JobDiscoveryConfig(
         enabled_providers=settings.ENABLED_JOB_PROVIDERS,
+        request_timeout_seconds=settings.JOB_REQUEST_TIMEOUT_SECONDS,
+        retry_count=settings.JOB_RETRY_COUNT,
+        default_search_limit=settings.JOB_DEFAULT_SEARCH_LIMIT,
+        adzuna=AdzunaConfig(
+            app_id=settings.ADZUNA_APP_ID,
+            api_key=settings.ADZUNA_API_KEY,
+            base_url=settings.ADZUNA_BASE_URL,
+            page_size=settings.ADZUNA_PAGE_SIZE,
+            rate_limit_rate=settings.ADZUNA_RATE_LIMIT_RATE,
+            rate_limit_burst=settings.ADZUNA_RATE_LIMIT_BURST,
+        ),
     )
 
 
@@ -32,10 +43,11 @@ def get_job_discovery_config() -> JobDiscoveryConfig:
 def ensure_providers_registered() -> None:
     registry = _get_registry()
     if registry.count() == 0:
-        from app.jobs.providers.mock import MockJobProvider
+        from app.jobs.factory import JobProviderFactory
 
         config = _get_config()
-        registry.register(MockJobProvider(config))
+        factory = JobProviderFactory(registry, config)
+        factory.register_all()
         import structlog
 
         logger = structlog.get_logger(__name__)
