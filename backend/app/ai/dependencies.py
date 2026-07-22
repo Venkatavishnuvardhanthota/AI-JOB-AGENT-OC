@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 
 from app.ai.config import AIConfig
+from app.ai.prompts.registry import PromptTemplateRegistry
 from app.ai.registry import AIProviderRegistry
 from app.ai.service import AIService
 
@@ -51,8 +52,18 @@ def ensure_providers_registered() -> None:
         factory.register_all()
 
 
+@lru_cache
+def _get_prompt_registry() -> PromptTemplateRegistry:
+    return PromptTemplateRegistry()
+
+
+def get_prompt_registry() -> PromptTemplateRegistry:
+    return _get_prompt_registry()
+
+
 def get_ai_service() -> AIService:
     registry = _get_registry()
     config = _get_config()
+    prompt_registry = _get_prompt_registry()
     ensure_providers_registered()
-    return AIService(registry=registry, config=config)
+    return AIService(registry=registry, config=config, prompt_registry=prompt_registry)

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import structlog
+from pydantic import BaseModel
 
 from app.ai.config import AIConfig
 from app.ai.exceptions import (
@@ -10,8 +13,13 @@ from app.ai.exceptions import (
     ProviderUnavailableError,
     TimeoutError,
 )
+from app.ai.prompts.parser import ResponseParser
+from app.ai.prompts.renderer import PromptRenderer
 from app.ai.registry import AIProviderRegistry
 from app.ai.schemas import AIRequest, AIResponse, ProviderInfo
+
+if TYPE_CHECKING:
+    from app.ai.prompts.registry import PromptTemplateRegistry
 
 logger = structlog.get_logger(__name__)
 
@@ -19,9 +27,17 @@ FALLBACK_ELIGIBLE = (TimeoutError, ProviderUnavailableError, GenerationError)
 
 
 class AIService:
-    def __init__(self, registry: AIProviderRegistry, config: AIConfig) -> None:
+    def __init__(
+        self,
+        registry: AIProviderRegistry,
+        config: AIConfig,
+        prompt_registry: PromptTemplateRegistry | None = None,
+    ) -> None:
         self._registry = registry
         self._config = config
+        self._prompt_registry = prompt_registry
+        self._renderer = PromptRenderer()
+        self._parser = ResponseParser()
 
     async def generate(self, request: AIRequest) -> AIResponse:
         provider_name = request.provider or self._config.default_provider
@@ -80,6 +96,65 @@ class AIService:
                 continue
 
         raise last_error or ProviderUnavailableError("All providers failed to generate content")
+
+    async def generate_prompted(
+        self,
+        template_name: str,
+        variables: dict[str, str],
+        *,
+        system_prompt: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        provider: str | None = None,
+    ) -> AIResponse:
+        if self._prompt_registry is None:
+            raise GenerationError("Prompt registry is not configured on this AIService instance.")
+
+        template = self._prompt_registry.get(template_name)
+        rendered = self._renderer.render(template, variables)
+        effective_system = system_prompt or template.system_prompt
+
+        request = AIRequest(
+            prompt=rendered,
+            system_prompt=effective_system,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            provider=provider,
+        )
+
+        logger.info(
+            "Generating from prompt template",
+            template=template_name,
+            variables=list(variables.keys()),
+        )
+
+        return await self.generate(request)
+
+    async def generate_structured(
+        self,
+        template_name: str,
+        variables: dict[str, str],
+        response_model: type[BaseModel],
+        *,
+        system_prompt: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        provider: str | None = None,
+    ) -> BaseModel:
+        response = await self.generate_prompted(
+            template_name=template_name,
+            variables=variables,
+            system_prompt=system_prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            provider=provider,
+        )
+
+        return self._parser.parse(response.content, response_model)
 
     async def health_check(self, provider_name: str | None = None) -> dict[str, bool]:
         targets = [provider_name] if provider_name else self._registry.list_providers()

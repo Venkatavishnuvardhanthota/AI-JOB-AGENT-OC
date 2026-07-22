@@ -44,3 +44,31 @@ class AIServiceValidationError(AIError):
     status_code = 400
     code = "AI_VALIDATION_ERROR"
     message = "Invalid AI request parameters."
+
+
+class PromptTemplateError(AIError):
+    status_code = 400
+    code = "PROMPT_TEMPLATE_ERROR"
+    message = "Invalid prompt template."
+
+
+class MissingVariableError(PromptTemplateError):
+    code = "MISSING_VARIABLE"
+    message = "Required template variables are missing."
+
+
+class RenderError(PromptTemplateError):
+    code = "RENDER_ERROR"
+    message = "Failed to render prompt template."
+
+
+class ResponseParsingError(AIError):
+    status_code = 502
+    code = "RESPONSE_PARSING_ERROR"
+    message = "Failed to parse AI response."
+
+
+class ResponseValidationError(AIError):
+    status_code = 502
+    code = "RESPONSE_VALIDATION_ERROR"
+    message = "AI response failed validation."
