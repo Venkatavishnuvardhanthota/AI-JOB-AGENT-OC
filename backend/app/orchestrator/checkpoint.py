@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from threading import Lock
 
 from app.orchestrator.exceptions import CheckpointError
@@ -12,6 +13,8 @@ class CheckpointManager:
     def __init__(self, checkpoint_dir: str = ".orchestrator_checkpoints") -> None:
         self._checkpoint_dir = checkpoint_dir
         self._lock = Lock()
+        self._counter = 0
+        self._create_order: dict[tuple[str, str], int] = {}
         os.makedirs(self._checkpoint_dir, exist_ok=True)
 
     def create_checkpoint(self, context: OrchestrationContext, stage: PipelineStage) -> CheckpointData:
@@ -26,6 +29,8 @@ class CheckpointManager:
             path = self._path(checkpoint.orchestration_id, checkpoint.checkpoint_id)
             with self._lock, open(path, "w") as f:
                 json.dump(checkpoint.model_dump(), f, default=str)
+                self._counter += 1
+                self._create_order[(checkpoint.orchestration_id, checkpoint.checkpoint_id)] = self._counter
         except OSError as e:
             raise CheckpointError(f"Failed to save checkpoint: {e}") from e
         context.checkpoint = checkpoint
@@ -61,7 +66,15 @@ class CheckpointManager:
                         results.append((data, path))
         except OSError:
             pass
-        return [r[0] for r in sorted(results, key=lambda r: (os.path.getmtime(r[1]), r[0].checkpoint_id))]
+        def _sort_key(
+            item: tuple[CheckpointData, str],
+        ) -> tuple[int, str]:
+            data, _ = item
+            seq = self._create_order.get((data.orchestration_id, data.checkpoint_id))
+            if seq is not None:
+                return (0, seq, data.checkpoint_id)
+            return (1, int(os.path.getmtime(item[1]) * 1000), data.checkpoint_id)
+        return [r[0] for r in sorted(results, key=_sort_key)]
 
     def delete_checkpoint(self, checkpoint_id: str) -> None:
         path = self._find_path(checkpoint_id)
