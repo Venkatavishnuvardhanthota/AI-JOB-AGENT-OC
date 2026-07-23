@@ -1,119 +1,70 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { jobsApi } from '../api/client'
-
-interface JobPosting {
-  id: string
-  title: string
-  company_name: string
-  location: string | null
-  source: string
-  job_type: string | null
-  remote: boolean
-  posted_at: string | null
-  applied_at: string | null
-  salary_min: number | null
-  salary_max: number | null
-  salary_currency: string | null
-  salary_period: string | null
-  is_active: boolean
-}
+import { useSavedJobs } from '@/api/hooks'
+import { PageHeader } from '@/components/layout/page-header'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/layout/empty-state'
+import { Eye, MapPin, DollarSign, Clock } from 'lucide-react'
+import { timeAgo, formatSalary } from '@/lib/utils'
 
 export function SavedJobsPage() {
-  const [jobs, setJobs] = useState<JobPosting[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data, isLoading } = useSavedJobs({ page, page_size: 20 })
 
-  const loadJobs = useCallback(async (pageNum = 1) => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await jobsApi.saved({ page: pageNum, page_size: 20 })
-      setJobs(res.items)
-      setTotal(res.total)
-      setPage(res.page)
-      setTotalPages(res.total_pages)
-    } catch (e: any) {
-      setError(e.message || 'Failed to load saved jobs')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const items = (data as any)?.items || []
+  const total = (data as any)?.total || 0
+  const totalPages = (data as any)?.total_pages || 1
 
-  useEffect(() => {
-    loadJobs(1)
-  }, [loadJobs])
+  if (isLoading) return <div className="space-y-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
 
-  const formatSalary = (j: JobPosting) => {
-    if (j.salary_min == null && j.salary_max == null) return ''
-    const cur = j.salary_currency || 'USD'
-    const per = j.salary_period ? `/${j.salary_period}` : ''
-    if (j.salary_min != null && j.salary_max != null) return `${cur} ${j.salary_min.toLocaleString()} - ${j.salary_max.toLocaleString()}${per}`
-    if (j.salary_min != null) return `${cur} ${j.salary_min.toLocaleString()}+${per}`
-    return `${cur} ${j.salary_max!.toLocaleString()} max${per}`
+  if (!isLoading && items.length === 0) {
+    return (
+      <EmptyState
+        icon={Eye}
+        title="No saved jobs"
+        description="Save jobs you're interested in to track them here."
+        action={<Link to="/jobs/search"><Button>Search Jobs</Button></Link>}
+      />
+    )
   }
-
-  const timeAgo = (d: string | null) => {
-    if (!d) return ''
-    const diff = Date.now() - new Date(d).getTime()
-    const days = Math.floor(diff / 86400000)
-    if (days < 1) return 'Today'
-    if (days === 1) return 'Yesterday'
-    if (days < 30) return `${days}d ago`
-    return `${Math.floor(days / 30)}mo ago`
-  }
-
-  if (loading) return <div>Loading saved jobs...</div>
-  if (error) return <p style={{ color: 'red' }}>{error}</p>
 
   return (
-    <div>
-      <h1>Saved Jobs</h1>
-      <p>{total} saved job{total !== 1 ? 's' : ''}</p>
+    <div className="space-y-6">
+      <PageHeader title="Saved Jobs" description={`${total} saved job${total !== 1 ? 's' : ''}`} />
 
-      {jobs.length > 0 && (
-        <div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Salary</th>
-                <th>Type</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Posted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id}>
-                  <td><Link to={`/jobs/${job.id}`}>{job.title}</Link></td>
-                  <td>{job.company_name}</td>
-                  <td>{job.remote ? 'Remote' : job.location || '-'}</td>
-                  <td>{formatSalary(job) || '-'}</td>
-                  <td>{job.job_type || '-'}</td>
-                  <td>{job.source}</td>
-                  <td>
-                    {job.applied_at ? 'Applied' : job.is_active ? 'Active' : 'Inactive'}
-                  </td>
-                  <td>{timeAgo(job.posted_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-            {page > 1 && <button onClick={() => loadJobs(page - 1)}>Previous</button>}
-            {page < totalPages && <button onClick={() => loadJobs(page + 1)}>Next</button>}
-          </div>
+      <div className="space-y-3">
+        {items.map((job: any) => (
+          <Link key={job.id} to={`/jobs/${job.id}`}>
+            <Card className="hover:bg-white/[0.03] transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold">{job.title}</h3>
+                    <p className="text-sm text-muted-foreground">{job.company_name}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.remote ? 'Remote' : job.location || '-'}</span>
+                      <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatSalary(job.salary_min, job.salary_max)}</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(job.posted_at)}</span>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">{job.source}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+          <span className="text-sm text-muted-foreground self-center">Page {page} of {totalPages}</span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
         </div>
       )}
-
-      {jobs.length === 0 && <p>No saved jobs yet. Search for jobs to save them.</p>}
     </div>
   )
 }

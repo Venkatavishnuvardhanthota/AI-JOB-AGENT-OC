@@ -1,196 +1,129 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { jobsApi, matchingApi } from '../api/client'
-import { ScoreBadge } from '../components/ScoreBadge'
-import { ScoreExplanationPanel } from '../components/ScoreExplanation'
-
-interface JobPosting {
-  id: string
-  title: string
-  company_name: string
-  company_url: string | null
-  company_logo_url: string | null
-  location: string | null
-  description: string | null
-  url: string | null
-  source: string
-  source_job_id: string | null
-  salary_min: number | null
-  salary_max: number | null
-  salary_currency: string | null
-  salary_period: string | null
-  posted_at: string | null
-  job_type: string | null
-  remote: boolean
-  apply_url: string | null
-  skills: string[]
-  requirements: string[]
-  benefits: string[]
-  categories: string[]
-  is_active: boolean
-  viewed_at: string | null
-  applied_at: string | null
-  created_at: string
-  updated_at: string
-}
+import { useJob, useJobMatch, useJobCompany } from '@/api/hooks'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
+import { ArrowLeft, Building, MapPin, DollarSign, Clock, ExternalLink, Briefcase, Star } from 'lucide-react'
+import { formatSalary, timeAgo } from '@/lib/utils'
 
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const [job, setJob] = useState<JobPosting | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [score, setScore] = useState<any>(null)
-  const [explanations, setExplanations] = useState<any[]>([])
-  const [scoring, setScoring] = useState(false)
-  const [showExplanations, setShowExplanations] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
+  const { data: job, isLoading: jobLoading } = useJob(id!) as any
+  const { data: match } = useJobMatch(id!) as any
+  const { data: company } = useJobCompany(id!) as any
 
-  const loadJob = useCallback(async () => {
-    if (!id) return
-    abortRef.current?.abort()
-    const abort = new AbortController()
-    abortRef.current = abort
-    setLoading(true)
-    try {
-      const data = await jobsApi.get(id)
-      if (abort.signal.aborted) return
-      setJob(data)
-      setScoring(true)
-      try {
-        const [s, exp] = await Promise.all([
-          matchingApi.scoreJob(id),
-          matchingApi.explainScore(id),
-        ])
-        if (abort.signal.aborted) return
-        setScore(s)
-        setExplanations(exp)
-      } catch {
-        // scoring unavailable
-      }
-    } catch (e: any) {
-      if (abort.signal.aborted) return
-      setError(e.message || 'Failed to load job')
-    } finally {
-      if (!abort.signal.aborted) {
-        setLoading(false)
-        setScoring(false)
-      }
-    }
-  }, [id])
+  if (jobLoading) return <div className="space-y-4">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
 
-  useEffect(() => {
-    loadJob()
-    return () => { abortRef.current?.abort() }
-  }, [loadJob])
-
-  const handleMarkApplied = async () => {
-    if (!id) return
-    try {
-      await jobsApi.markApplied(id)
-      loadJob()
-    } catch (e: any) {
-      setError(e.message || 'Failed to mark as applied')
-    }
-  }
-
-  const handleToggleActive = async () => {
-    if (!id || !job) return
-    try {
-      await jobsApi.update(id, { is_active: !job.is_active })
-      loadJob()
-    } catch (e: any) {
-      setError(e.message || 'Failed to update job')
-    }
-  }
-
-  const stripHtml = (html: string) => {
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    return doc.body.textContent || ''
-  }
-
-  if (loading) return <div>Loading job details...</div>
-  if (error) return <p style={{ color: 'red' }}>{error}</p>
-  if (!job) return <p>Job not found.</p>
-
-  const formatSalary = () => {
-    if (job.salary_min == null && job.salary_max == null) return null
-    const cur = job.salary_currency || 'USD'
-    const per = job.salary_period ? `/${job.salary_period}` : ''
-    if (job.salary_min != null && job.salary_max != null) return `${cur} ${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()}${per}`
-    if (job.salary_min != null) return `${cur} ${job.salary_min.toLocaleString()}+${per}`
-    return `${cur} ${job.salary_max!.toLocaleString()} max${per}`
-  }
+  if (!job) return <div className="text-center py-16 text-muted-foreground">Job not found.</div>
 
   return (
-    <div>
-      <Link to="/jobs">← Back to search</Link>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-        <h1 style={{ margin: 0 }}>{job.title}</h1>
-        {score && <ScoreBadge score={score.overall} size="lg" label="Match Score" />}
-        {scoring && <span style={{ fontSize: 12, color: '#9ca3af' }}>Scoring...</span>}
-      </div>
-      <p><strong>Company:</strong> {job.company_name}</p>
-      <p><strong>Location:</strong> {job.remote ? 'Remote' : job.location || 'Not specified'}</p>
-      <p><strong>Job Type:</strong> {job.job_type || 'Not specified'}</p>
-      <p><strong>Source:</strong> {job.source}</p>
-      {job.posted_at && <p><strong>Posted:</strong> {new Date(job.posted_at).toLocaleDateString()}</p>}
-      {formatSalary() && <p><strong>Salary:</strong> {formatSalary()}</p>}
-      {job.url && <p><strong>URL:</strong> <a href={job.url} target="_blank" rel="noopener noreferrer">{job.url}</a></p>}
-      {job.apply_url && <p><strong>Apply:</strong> <a href={job.apply_url} target="_blank" rel="noopener noreferrer">{job.apply_url}</a></p>}
+    <div className="space-y-6 max-w-4xl">
+      <Link to="/jobs/search" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back to search
+      </Link>
 
-      <div style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
-        <button onClick={handleMarkApplied} disabled={!!job.applied_at}>
-          {job.applied_at ? 'Applied' : 'Mark as Applied'}
-        </button>
-        <button onClick={handleToggleActive}>
-          {job.is_active ? 'Deactivate' : 'Activate'}
-        </button>
-        {explanations.length > 0 && (
-          <button onClick={() => setShowExplanations(!showExplanations)}>
-            {showExplanations ? 'Hide Scoring Details' : 'Show Scoring Details'}
-          </button>
-        )}
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1">{job.title}</h1>
+              <p className="text-lg text-muted-foreground">{job.company_name}</p>
+            </div>
+            {match?.overall != null && (
+              <div className="flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-2" style={{ borderColor: match.overall >= 60 ? 'var(--color-success)' : match.overall >= 40 ? 'var(--color-warning)' : 'var(--color-error)' }}>
+                  <span className="text-xl font-bold">{Math.round(match.overall)}%</span>
+                </div>
+                <span className="text-xs text-muted-foreground mt-1">Match</span>
+              </div>
+            )}
+          </div>
 
-      {showExplanations && explanations.length > 0 && (
-        <div style={{ margin: '12px 0' }}>
-          <ScoreExplanationPanel explanations={explanations} overall={score?.overall} />
-        </div>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+            {job.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{job.remote ? 'Remote - ' : ''}{job.location}</span>}
+            {(job.salary_min != null || job.salary_max != null) && <span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />{formatSalary(job.salary_min, job.salary_max, job.salary_currency, job.salary_period)}</span>}
+            {job.job_type && <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{job.job_type}</span>}
+            {job.posted_at && <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{timeAgo(job.posted_at)}</span>}
+            <Badge variant="secondary">{job.source}</Badge>
+          </div>
+
+          {job.skills && job.skills.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-4">
+              {job.skills.map((skill: string) => <Badge key={skill} variant="outline">{skill}</Badge>)}
+            </div>
+          )}
+
+          <Separator className="my-4" />
+
+          <div className="prose prose-invert max-w-none text-sm text-muted-foreground whitespace-pre-wrap">
+            {job.description || 'No description available.'}
+          </div>
+
+          {job.apply_url && (
+            <div className="mt-6">
+              <Button asChild>
+                <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" /> Apply on {job.source}
+                </a>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {match && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-primary" />
+              Match Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {[
+                { label: 'Skills', score: match.skill?.score },
+                { label: 'Keywords', score: match.keyword?.score },
+                { label: 'Experience', score: match.experience?.score },
+                { label: 'Education', score: match.education?.score },
+              ].map(item => (
+                <div key={item.label} className="text-center p-3 rounded-lg bg-dark-800/50">
+                  <div className="text-2xl font-bold mb-1">{item.score != null ? `${Math.round(item.score)}%` : '-'}</div>
+                  <div className="text-xs text-muted-foreground">{item.label}</div>
+                </div>
+              ))}
+            </div>
+            {match.explanations && match.explanations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Breakdown</h4>
+                {match.explanations.map((exp: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded bg-dark-800/30 text-sm">
+                    <span className="text-muted-foreground">{exp.details || exp.category}</span>
+                    <span className="font-medium">{Math.round(exp.score)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {job.description && (
-        <section>
-          <h2>Description</h2>
-          <div style={{ whiteSpace: 'pre-wrap' }}>{stripHtml(job.description)}</div>
-        </section>
-      )}
-
-      {job.skills.length > 0 && (
-        <section>
-          <h2>Skills</h2>
-          <ul>{job.skills.map((s, i) => <li key={i}>{s}</li>)}</ul>
-        </section>
-      )}
-
-      {job.requirements.length > 0 && (
-        <section>
-          <h2>Requirements</h2>
-          <ul>{job.requirements.map((r, i) => <li key={i}>{r}</li>)}</ul>
-        </section>
-      )}
-
-      {job.benefits.length > 0 && (
-        <section>
-          <h2>Benefits</h2>
-          <ul>{job.benefits.map((b, i) => <li key={i}>{b}</li>)}</ul>
-        </section>
-      )}
-
-      {job.categories.length > 0 && (
-        <section>
-          <h2>Categories</h2>
-          <p>{job.categories.join(', ')}</p>
-        </section>
+      {company && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5 text-primary" />
+              Company Research
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-invert max-w-none text-sm text-muted-foreground whitespace-pre-wrap">
+              {typeof company === 'string' ? company : JSON.stringify(company, null, 2)}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
