@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import structlog
@@ -53,8 +54,6 @@ class RecruiteeATSProvider(BaseATSProvider):
             raise ATSLoginError("Recruitee login requires email and password.")
         company = request.credentials.get("company", "")
         if not company:
-            import re
-
             match = re.search(r"([^.]+)\.recruitee\.com", page.url if hasattr(page, "url") else "")
             company = match.group(1) if match else ""
         self._company = company
@@ -75,8 +74,6 @@ class RecruiteeATSProvider(BaseATSProvider):
             if self._company:
                 base = f"https://{self._company}.recruitee.com"
             else:
-                import re
-
                 match = re.search(r"(https?://)?([^.]+)\.recruitee\.com", page.url if hasattr(page, "url") else "")
                 base = f"https://{match.group(2)}.recruitee.com" if match else "https://recruitee.com"
             self.browser.navigate(page, base)
@@ -139,7 +136,5 @@ class RecruiteeATSProvider(BaseATSProvider):
 
     @staticmethod
     def _extract_job_id(url: str) -> str:
-        import re
-
         match = re.search(r"/o/([^/?]+)", url)
         return match.group(1) if match else url.split("/")[-1].split("?")[0] if url else ""

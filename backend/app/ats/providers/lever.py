@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import structlog
@@ -131,7 +132,5 @@ class LeverATSProvider(BaseATSProvider):
 
     @staticmethod
     def _extract_job_id(url: str) -> str:
-        import re
-
         match = re.search(r"lever\.co/[^/]+/([^?/]+)", url)
         return match.group(1) if match else url.split("/")[-1] if url else ""

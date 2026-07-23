@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import structlog
@@ -67,13 +68,13 @@ class GreenhouseATSProvider(BaseATSProvider):
 
     def find_job(self, page: Any, request: ATSJobSearchRequest) -> list[ATSJobInfo]:
         jobs: list[ATSJobInfo] = []
-        board_token = self._extract_board_token(page.url)
+        board_token = self._extract_board_token(page.url if page else "")
         api_url = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs"
         try:
             self.browser.navigate(page, api_url)
             import json
 
-            body = self.browser.get_text(page, "body")
+            body = self.browser.get_text(page, "body") if page else "{}"
             data = json.loads(body) if body else {}
             for raw in data.get("jobs", []):
                 jobs.append(
@@ -131,7 +132,5 @@ class GreenhouseATSProvider(BaseATSProvider):
         return result
 
     def _extract_board_token(self, url: str) -> str:
-        import re
-
         match = re.search(r"boards\.greenhouse\.io/([^/]+)", url)
         return match.group(1) if match else "example"

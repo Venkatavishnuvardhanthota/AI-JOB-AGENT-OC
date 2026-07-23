@@ -1091,7 +1091,7 @@ class TestATSService:
         mock_browser.create_context.return_value = {"id": "c1"}
         mock_browser.create_session.return_value = {"id": "s1"}
         ats_service._browser = mock_browser
-        result = ats_service.validate("greenhouse")
+        ats_service.validate("greenhouse")
         mock_browser.create_browser.assert_called_once()
         mock_browser.close_browser.assert_called_once()
 

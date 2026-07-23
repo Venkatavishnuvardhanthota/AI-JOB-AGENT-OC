@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import structlog
@@ -121,7 +122,5 @@ class SmartRecruitersATSProvider(BaseATSProvider):
 
     @staticmethod
     def _extract_job_id(url: str) -> str:
-        import re
-
         match = re.search(r"smartrecruiters\.com/(?:[^/]+/)+(\d+)", url)
         return match.group(1) if match else url.split("/")[-1].split("?")[0] if url else ""

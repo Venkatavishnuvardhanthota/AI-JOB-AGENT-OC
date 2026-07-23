@@ -76,7 +76,7 @@ class ATSProviderRegistry:
                     "description": p.description,
                     "version": p.version,
                     "capabilities": [c.value for c in p.capabilities()],
-                    "url_patterns": p.url_patterns if hasattr(p, "url_patterns") else [],
+                    "url_patterns": getattr(p, "url_patterns", []),
                     "requires_login": p.requires_login,
                 }
                 for p in self._providers.values()

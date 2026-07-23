@@ -155,11 +155,3 @@ class ATSProviderConfig(BaseModel):
     retry_delay_seconds: float = 2.0
     credentials: dict[str, str] = Field(default_factory=dict)
     options: dict[str, Any] = Field(default_factory=dict)
-
-
-class ATSConfig(BaseModel):
-    providers: dict[str, ATSProviderConfig] = Field(default_factory=dict)
-    default_timeout_ms: float = 60000.0
-    default_headless: bool = True
-    screenshot_on_error: bool = True
-    screenshots_path: str = "screenshots"
