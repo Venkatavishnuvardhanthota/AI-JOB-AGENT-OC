@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from threading import Lock
 
 import structlog
 
@@ -14,7 +15,9 @@ from app.browser.service import BrowserService
 logger = structlog.get_logger(__name__)
 
 _registry_instance: ATSProviderRegistry | None = None
+_registry_lock = Lock()
 _service_instance: ATSService | None = None
+_service_lock = Lock()
 
 
 def get_ats_config() -> ATSConfig:
@@ -24,7 +27,9 @@ def get_ats_config() -> ATSConfig:
 def get_ats_registry() -> ATSProviderRegistry:
     global _registry_instance
     if _registry_instance is None:
-        _registry_instance = ATSProviderRegistry()
+        with _registry_lock:
+            if _registry_instance is None:
+                _registry_instance = ATSProviderRegistry()
     return _registry_instance
 
 
@@ -48,17 +53,19 @@ def get_ats_service(
 ) -> ATSService:
     global _service_instance
     if _service_instance is None:
-        _config = config or get_ats_config()
-        _browser = browser or get_browser_service()
-        _registry = registry or get_ats_registry()
-        _factory = factory or get_ats_factory(_registry, _config, _browser)
-        _factory.register_all()
-        _service_instance = ATSService(
-            registry=_registry,
-            factory=_factory,
-            config=_config,
-            browser=_browser,
-        )
+        with _service_lock:
+            if _service_instance is None:
+                _config = config or get_ats_config()
+                _browser = browser or get_browser_service()
+                _registry = registry or get_ats_registry()
+                _factory = factory or get_ats_factory(_registry, _config, _browser)
+                _factory.register_all()
+                _service_instance = ATSService(
+                    registry=_registry,
+                    factory=_factory,
+                    config=_config,
+                    browser=_browser,
+                )
     return _service_instance
 
 

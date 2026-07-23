@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from app.ai.exceptions import (
     MissingVariableError,
     PromptTemplateError,
-    RenderError,
     ResponseParsingError,
     ResponseValidationError,
 )

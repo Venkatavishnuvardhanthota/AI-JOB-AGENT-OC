@@ -5,6 +5,8 @@ from typing import Any
 
 import structlog
 
+from app.browser.exceptions import ElementNotFoundError, UploadError
+from app.browser.service import BrowserService
 from app.uploads.exceptions import UploadExecutionError, UploadRejectedError, UploadTimeoutError
 from app.uploads.interfaces import UploadExecutor
 from app.uploads.schemas import (
@@ -21,8 +23,13 @@ logger = structlog.get_logger(__name__)
 
 
 class UploadExecutorEngine(UploadExecutor):
-    def __init__(self, verifier: UploadVerifierEngine | None = None) -> None:
+    def __init__(
+        self,
+        verifier: UploadVerifierEngine | None = None,
+        browser_service: BrowserService | None = None,
+    ) -> None:
         self._verifier = verifier or UploadVerifierEngine()
+        self._browser_service = browser_service
         self._logger = logger.bind(service="upload_executor")
 
     def execute(self, page: Any, plan: UploadPlan) -> list[UploadResult]:
@@ -134,18 +141,26 @@ class UploadExecutorEngine(UploadExecutor):
             raise UploadExecutionError("Page is not available")
 
         try:
-            element = page.locator(selector)
-            if element is None:
-                raise UploadExecutionError(f"Upload element '{selector}' not found")
-
-            if not element.is_visible():
-                raise UploadExecutionError(f"Upload element '{selector}' is not visible")
-
-            if task.field_info.multiple and task.source and task.source.path:
-                element.set_input_files([file_path], timeout=timeout_ms)
+            if self._browser_service is not None:
+                if task.field_info.multiple:
+                    self._browser_service.uploads.upload_multiple(page, selector, [file_path], timeout_ms)
+                else:
+                    self._browser_service.upload_file(page, selector, file_path, timeout_ms)
             else:
-                element.set_input_files(file_path, timeout=timeout_ms)
+                element = page.locator(selector)
+                if element is None:
+                    raise UploadExecutionError(f"Upload element '{selector}' not found")
 
+                if not element.is_visible():
+                    raise UploadExecutionError(f"Upload element '{selector}' is not visible")
+
+                if task.field_info.multiple and task.source and task.source.path:
+                    element.set_input_files([file_path], timeout=timeout_ms)
+                else:
+                    element.set_input_files(file_path, timeout=timeout_ms)
+
+        except (ElementNotFoundError, UploadError) as e:
+            raise UploadExecutionError(str(e)) from e
         except UploadExecutionError:
             raise
         except Exception as e:

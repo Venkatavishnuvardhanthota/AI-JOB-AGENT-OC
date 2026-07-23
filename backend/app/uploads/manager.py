@@ -4,6 +4,7 @@ from typing import Any
 
 import structlog
 
+from app.browser.service import BrowserService
 from app.uploads.capabilities import UploadCapabilityAnalyzer
 from app.uploads.executor import UploadExecutorEngine
 from app.uploads.planner import UploadPlannerEngine
@@ -32,10 +33,12 @@ class UploadManager:
         verifier: UploadVerifierEngine | None = None,
         validator: DocumentValidator | None = None,
         capability_analyzer: UploadCapabilityAnalyzer | None = None,
+        browser_service: BrowserService | None = None,
     ) -> None:
+        self._browser_service = browser_service
         self._planner = planner or UploadPlannerEngine()
-        self._executor = executor or UploadExecutorEngine()
-        self._verifier = verifier or UploadVerifierEngine()
+        self._executor = executor or UploadExecutorEngine(browser_service=browser_service)
+        self._verifier = verifier or UploadVerifierEngine(browser_service=browser_service)
         self._validator = validator or DocumentValidator()
         self._capability_analyzer = capability_analyzer or UploadCapabilityAnalyzer()
         self._logger = logger.bind(service="upload_manager")

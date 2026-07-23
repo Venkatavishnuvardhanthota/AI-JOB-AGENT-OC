@@ -4,6 +4,7 @@ from typing import Any
 
 import structlog
 
+from app.browser.service import BrowserService
 from app.uploads.interfaces import UploadVerifier
 from app.uploads.schemas import UploadTask, VerificationResult
 
@@ -11,7 +12,8 @@ logger = structlog.get_logger(__name__)
 
 
 class UploadVerifierEngine(UploadVerifier):
-    def __init__(self) -> None:
+    def __init__(self, browser_service: BrowserService | None = None) -> None:
+        self._browser_service = browser_service
         self._logger = logger.bind(service="upload_verifier")
 
     def verify(self, page: Any, task: UploadTask) -> VerificationResult:
@@ -26,8 +28,11 @@ class UploadVerifierEngine(UploadVerifier):
         details: list[str] = []
 
         try:
-            element = page.locator(selector)
-            is_visible = element.is_visible()
+            if self._browser_service is not None:
+                is_visible = self._browser_service.is_visible(page, selector)
+            else:
+                element = page.locator(selector)
+                is_visible = element.is_visible()
             result.element_state_valid = is_visible
 
             if is_visible:
@@ -37,6 +42,7 @@ class UploadVerifierEngine(UploadVerifier):
 
             if task.verification_policy.check_filename_displayed:
                 try:
+                    element = page.locator(selector)
                     nearby = element.locator("xpath=following-sibling::*[1]")
                     if nearby:
                         text = nearby.text_content() or ""
@@ -48,6 +54,7 @@ class UploadVerifierEngine(UploadVerifier):
 
             if task.verification_policy.check_completion_indicator:
                 try:
+                    element = page.locator(selector)
                     parent = element.locator("xpath=..")
                     parent_text = parent.text_content() or ""
                     indicators = ["uploaded", "complete", "done", "success", "✓", "✔", "check"]
@@ -61,6 +68,7 @@ class UploadVerifierEngine(UploadVerifier):
 
             if task.verification_policy.check_error_messages:
                 try:
+                    element = page.locator(selector)
                     parent = element.locator("xpath=..")
                     parent_text = parent.text_content() or ""
                     error_indicators = ["error", "failed", "invalid", "rejected", "try again"]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from threading import Lock
 from typing import Any
 
 from app.browser.config import BrowserConfig
@@ -19,6 +20,7 @@ class SessionManager:
         self._context_manager = context_manager
         self._config = config
         self._validator = validator
+        self._lock = Lock()
         self._sessions: dict[str, dict[str, Any]] = {}
 
     def create_session(
@@ -41,14 +43,16 @@ class SessionManager:
             page = ctx_instance.new_page()
             self._context_manager.add_page(browser_id, context_id, info.id, page)
 
-        self._sessions[info.id] = {
-            "info": info,
-            "page": None,
-        }
+        with self._lock:
+            self._sessions[info.id] = {
+                "info": info,
+                "page": None,
+            }
         return info
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
-        return self._sessions.get(session_id)
+        with self._lock:
+            return self._sessions.get(session_id)
 
     def get_session_info(self, session_id: str) -> SessionInfo | None:
         entry = self.get_session(session_id)
@@ -68,12 +72,14 @@ class SessionManager:
         return self._context_manager.get_page(info.browser_id, info.context_id, session_id)
 
     def update_state(self, session_id: str, state: SessionState) -> None:
-        entry = self.get_session(session_id)
-        if entry is not None:
-            entry["info"].state = state
+        with self._lock:
+            entry = self._sessions.get(session_id)
+            if entry is not None:
+                entry["info"].state = state
 
     def close_session(self, session_id: str) -> None:
-        entry = self._sessions.pop(session_id, None)
+        with self._lock:
+            entry = self._sessions.pop(session_id, None)
         if entry is not None:
             info = entry["info"]
             page = entry.get("page")
@@ -84,7 +90,9 @@ class SessionManager:
             info.state = SessionState.CLOSED
 
     def list_sessions(self) -> list[SessionInfo]:
-        return [entry["info"] for entry in self._sessions.values()]
+        with self._lock:
+            return [entry["info"] for entry in self._sessions.values()]
 
     def count(self) -> int:
-        return len(self._sessions)
+        with self._lock:
+            return len(self._sessions)

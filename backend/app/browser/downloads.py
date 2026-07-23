@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import uuid
 from datetime import datetime
+from threading import Lock
 from typing import Any
 
 from app.browser.schemas import DownloadInfo
@@ -11,6 +12,7 @@ from app.browser.schemas import DownloadInfo
 class DownloadManager:
     def __init__(self, downloads_path: str = "downloads") -> None:
         self._downloads_path = downloads_path
+        self._lock = Lock()
         self._downloads: dict[str, DownloadInfo] = {}
         os.makedirs(self._downloads_path, exist_ok=True)
 
@@ -30,7 +32,8 @@ class DownloadManager:
         except Exception as e:
             info.success = False
             info.error = str(e)
-        self._downloads[download_id] = info
+        with self._lock:
+            self._downloads[download_id] = info
         return info
 
     def capture_download_by_click(
@@ -55,17 +58,21 @@ class DownloadManager:
         except Exception as e:
             info.success = False
             info.error = str(e)
-        self._downloads[download_id] = info
+        with self._lock:
+            self._downloads[download_id] = info
         return info
 
     def get_download(self, download_id: str) -> DownloadInfo | None:
-        return self._downloads.get(download_id)
+        with self._lock:
+            return self._downloads.get(download_id)
 
     def list_downloads(self) -> list[DownloadInfo]:
-        return list(self._downloads.values())
+        with self._lock:
+            return list(self._downloads.values())
 
     def clear(self) -> None:
-        self._downloads.clear()
+        with self._lock:
+            self._downloads.clear()
 
     def verify_download(self, file_path: str) -> bool:
         return os.path.isfile(file_path) and os.path.getsize(file_path) > 0

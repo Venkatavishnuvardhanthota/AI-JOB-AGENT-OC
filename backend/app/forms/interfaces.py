@@ -24,7 +24,7 @@ class FormClassifier(ABC):
 
 class FieldMapper(ABC):
     @abstractmethod
-    def map_field(self, classification: Any, application_package: Any) -> Any: ...
+    def map_field(self, classification: Any, field: Any, application_package: Any) -> Any: ...
 
 
 class PlanGenerator(ABC):

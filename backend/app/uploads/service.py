@@ -4,6 +4,7 @@ from typing import Any
 
 import structlog
 
+from app.browser.service import BrowserService
 from app.uploads.capabilities import UploadCapabilityAnalyzer
 from app.uploads.config import UploadsConfig
 from app.uploads.factory import UploadProviderFactory
@@ -27,6 +28,7 @@ class DocumentUploadService:
         registry: UploadProviderRegistry,
         factory: UploadProviderFactory,
         config: UploadsConfig | None = None,
+        browser_service: BrowserService | None = None,
     ) -> None:
         self._registry = registry
         self._factory = factory
@@ -38,6 +40,7 @@ class DocumentUploadService:
         self._manager = UploadManager(
             validator=self._validator,
             capability_analyzer=self._capability_analyzer,
+            browser_service=browser_service,
         )
 
     def create_upload_plan(self, execution_plan: Any, application_package: Any | None = None) -> UploadPlan:

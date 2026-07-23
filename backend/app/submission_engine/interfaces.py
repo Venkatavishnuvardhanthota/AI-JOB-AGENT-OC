@@ -33,7 +33,15 @@ class FieldExecutor(ABC):
 
 class SubmissionOrchestrator(ABC):
     @abstractmethod
-    def run(self, page: Any, execution_plan: Any, upload_plan: Any | None = None) -> SubmissionReport: ...
+    def run(
+        self,
+        page: Any,
+        execution_plan: Any,
+        upload_plan: Any | None = None,
+        upload_service: Any | None = None,
+        mode: Any = None,
+        provider: Any | None = None,
+    ) -> SubmissionReport: ...
 
 
 class SubmissionValidator(ABC):

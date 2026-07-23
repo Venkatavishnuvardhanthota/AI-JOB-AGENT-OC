@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from threading import Lock
 
 from app.browser.config import BrowserConfig
 from app.browser.service import BrowserService
 
 _service_instance: BrowserService | None = None
+_service_lock = Lock()
 
 
 def get_browser_config() -> BrowserConfig:
@@ -19,11 +21,13 @@ def get_browser_service(
 ) -> BrowserService:
     global _service_instance
     if _service_instance is None:
-        _service_instance = BrowserService(
-            config=config or get_browser_config(),
-            downloads_path=downloads_path,
-            screenshots_path=screenshots_path,
-        )
+        with _service_lock:
+            if _service_instance is None:
+                _service_instance = BrowserService(
+                    config=config or get_browser_config(),
+                    downloads_path=downloads_path,
+                    screenshots_path=screenshots_path,
+                )
     return _service_instance
 
 

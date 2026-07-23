@@ -13,7 +13,6 @@ from app.forms.schemas import (
 )
 
 _RESUME_FIELDS = {SemanticFieldType.RESUME, SemanticFieldType.COVER_LETTER}
-_FILE_UPLOAD_FIELDS = {SemanticFieldType.RESUME, SemanticFieldType.COVER_LETTER}
 _PERSONAL_INFO_FIELDS = {
     SemanticFieldType.FIRST_NAME: "profile.personal_info.first_name",
     SemanticFieldType.LAST_NAME: "profile.personal_info.last_name",
