@@ -58,14 +58,7 @@ class ATSService:
 
     def login(self, provider_name: str, request: ATSLoginRequest) -> ATSLoginResult:
         provider = self._registry.resolve(provider_name)
-        browser_id = self._browser.create_browser(headless=self._config.default_headless)
-        try:
-            context = self._browser.create_context(browser_id["id"])
-            self._browser.create_session(browser_id["id"], context["id"])
-            page = None
-            return provider.login(page, request)
-        finally:
-            self._browser.close_browser(browser_id["id"])
+        return provider.login(None, request)
 
     def navigate(
         self,
@@ -73,14 +66,7 @@ class ATSService:
         request: ATSNavigationRequest,
     ) -> ATSNavigationResult:
         provider = self._registry.resolve(provider_name)
-        browser_id = self._browser.create_browser(headless=self._config.default_headless)
-        try:
-            context = self._browser.create_context(browser_id["id"])
-            self._browser.create_session(browser_id["id"], context["id"])
-            page = None
-            return provider.navigate(page, request)
-        finally:
-            self._browser.close_browser(browser_id["id"])
+        return provider.navigate(None, request)
 
     def find_jobs(
         self,
@@ -88,14 +74,7 @@ class ATSService:
         request: ATSJobSearchRequest,
     ) -> list[ATSJobInfo]:
         provider = self._registry.resolve(provider_name)
-        browser_id = self._browser.create_browser(headless=self._config.default_headless)
-        try:
-            context = self._browser.create_context(browser_id["id"])
-            self._browser.create_session(browser_id["id"], context["id"])
-            page = None
-            return provider.find_job(page, request)
-        finally:
-            self._browser.close_browser(browser_id["id"])
+        return provider.find_job(None, request)
 
     def find_jobs_by_url(
         self,
@@ -113,31 +92,11 @@ class ATSService:
         request: ATSApplicationRequest,
     ) -> ATSApplicationResult:
         provider = self._registry.resolve(provider_name)
-        browser_id = self._browser.create_browser(headless=self._config.default_headless)
-        try:
-            context = self._browser.create_context(browser_id["id"])
-            self._browser.create_session(browser_id["id"], context["id"])
-            page = None
-            result = provider.open_application(page, request)
-            if self._config.screenshot_on_error and not result.success:
-                result.screenshot_path = self._browser.take_failure_screenshot(
-                    page,
-                    f"ats_{provider_name}_application_error",
-                )
-            return result
-        finally:
-            self._browser.close_browser(browser_id["id"])
+        return provider.open_application(None, request)
 
     def validate(self, provider_name: str) -> ATSValidationResult:
         provider = self._registry.resolve(provider_name)
-        browser_id = self._browser.create_browser(headless=self._config.default_headless)
-        try:
-            context = self._browser.create_context(browser_id["id"])
-            self._browser.create_session(browser_id["id"], context["id"])
-            page = None
-            return provider.validate(page)
-        finally:
-            self._browser.close_browser(browser_id["id"])
+        return provider.validate(None)
 
     def get_provider_metadata(self, provider_name: str) -> ATSProviderMetadata:
         provider = self._registry.resolve(provider_name)

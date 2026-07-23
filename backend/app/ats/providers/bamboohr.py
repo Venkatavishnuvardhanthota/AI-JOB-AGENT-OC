@@ -56,7 +56,7 @@ class BambooHRATSProvider(BaseATSProvider):
             raise ATSLoginError("BambooHR login requires email and password.")
         subdomain = request.credentials.get("subdomain", "")
         if not subdomain:
-            match = re.search(r"(https?://)?([^.]+)\.bamboohr\.com", page.url if hasattr(page, "url") else "")
+            match = re.search(r"(https?://)?([^.]+)\.bamboohr\.com", self.browser.get_url(page) if page else "")
             subdomain = match.group(2) if match else ""
         if not subdomain:
             raise ATSLoginError("BambooHR subdomain is required.")
@@ -78,14 +78,16 @@ class BambooHRATSProvider(BaseATSProvider):
             careers_url = f"https://{self._subdomain}.bamboohr.com/careers"
             self.browser.navigate(page, careers_url)
             self.browser.wait_for_selector(page, ".job-listing, [data-job-id], .job-title, a[href*='careers']")
-            links = page.query_selector_all(".job-listing a, [data-job-id] a, .job-title a, a[href*='/careers/']")
+            links = self.browser.query_selector_all(
+                page, ".job-listing a, [data-job-id] a, .job-title a, a[href*='/careers/']"
+            )
             seen = set()
             for link in links:
-                href = link.get_attribute("href") or ""
+                href = self.browser.get_attribute(link, "href") or ""
                 if href in seen:
                     continue
                 seen.add(href)
-                title = link.text_content() or "Untitled"
+                title = self.browser.get_text_content(link) or "Untitled"
                 full_url = href if href.startswith("http") else f"https://{self._subdomain}.bamboohr.com{href}"
                 jobs.append(
                     ATSJobInfo(
@@ -127,7 +129,7 @@ class BambooHRATSProvider(BaseATSProvider):
             "bamboohr",
         ]
         for indicator in bamboohr_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False

@@ -208,3 +208,27 @@ class BrowserService:
 
     def cache_clear(self) -> None:
         self.cache.clear()
+
+    def query_selector(self, parent: Any, selector: str) -> Any:
+        return parent.query_selector(selector)
+
+    def query_selector_all(self, parent: Any, selector: str) -> list[Any]:
+        return parent.query_selector_all(selector)
+
+    def get_text_content(self, element: Any) -> str:
+        return element.text_content() or ""
+
+    def get_attribute(self, element: Any, attribute: str) -> str | None:
+        return element.get_attribute(attribute)
+
+    def get_content(self, page: Any) -> str:
+        return page.content()
+
+    def keyboard_press(self, page: Any, key: str) -> None:
+        page.keyboard.press(key)
+
+    def get_url(self, page: Any) -> str:
+        return page.url
+
+    def element_fill(self, element: Any, value: str) -> None:
+        element.fill(value)

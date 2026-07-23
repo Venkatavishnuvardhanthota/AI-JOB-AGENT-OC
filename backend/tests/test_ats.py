@@ -101,6 +101,14 @@ def mock_browser():
     browser.upload_file.return_value = None
     browser.take_screenshot.return_value = "/screenshots/test.png"
     browser.take_failure_screenshot.return_value = "/screenshots/fail.png"
+    browser.query_selector.return_value = None
+    browser.query_selector_all.return_value = []
+    browser.get_text_content.return_value = "Untitled"
+    browser.get_attribute.return_value = ""
+    browser.get_content.return_value = "<html></html>"
+    browser.keyboard_press.return_value = None
+    browser.get_url.side_effect = lambda page: page.url if hasattr(page, "url") else ""
+    browser.element_fill.return_value = None
     return browser
 
 
@@ -1079,21 +1087,21 @@ class TestATSService:
         assert meta.name == "greenhouse"
         assert ATSProviderCapability.APPLY in meta.capabilities
 
-    def test_login_creates_browser(self, ats_service, mock_browser):
+    def test_login_delegates_to_provider(self, ats_service, mock_browser):
         ats_service._browser = mock_browser
         result = ats_service.login("greenhouse", ATSLoginRequest(email="test@test.com", password="pass"))
         assert result.success
-        mock_browser.create_browser.assert_called_once()
-        mock_browser.close_browser.assert_called_once()
+        mock_browser.create_browser.assert_not_called()
 
-    def test_validate_creates_browser(self, ats_service, mock_browser):
-        mock_browser.create_browser.return_value = {"id": "b1"}
-        mock_browser.create_context.return_value = {"id": "c1"}
-        mock_browser.create_session.return_value = {"id": "s1"}
+    def test_validate_delegates_to_provider(self, ats_service, mock_browser):
         ats_service._browser = mock_browser
-        ats_service.validate("greenhouse")
-        mock_browser.create_browser.assert_called_once()
-        mock_browser.close_browser.assert_called_once()
+        provider = ats_service._registry.resolve("greenhouse")
+        mock_result = ATSValidationResult(valid=True, provider_name="greenhouse")
+        with patch.object(provider, "validate", return_value=mock_result) as mock_validate:
+            result = ats_service.validate("greenhouse")
+            assert result.valid
+            mock_validate.assert_called_once_with(None)
+            mock_browser.create_browser.assert_not_called()
 
 
 # ═══════════════════════════════════════════════════════════════════════

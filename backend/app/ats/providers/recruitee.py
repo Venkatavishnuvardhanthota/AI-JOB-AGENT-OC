@@ -54,7 +54,7 @@ class RecruiteeATSProvider(BaseATSProvider):
             raise ATSLoginError("Recruitee login requires email and password.")
         company = request.credentials.get("company", "")
         if not company:
-            match = re.search(r"([^.]+)\.recruitee\.com", page.url if hasattr(page, "url") else "")
+            match = re.search(r"([^.]+)\.recruitee\.com", self.browser.get_url(page) if page else "")
             company = match.group(1) if match else ""
         self._company = company
         try:
@@ -74,18 +74,20 @@ class RecruiteeATSProvider(BaseATSProvider):
             if self._company:
                 base = f"https://{self._company}.recruitee.com"
             else:
-                match = re.search(r"(https?://)?([^.]+)\.recruitee\.com", page.url if hasattr(page, "url") else "")
+                match = re.search(r"(https?://)?([^.]+)\.recruitee\.com", self.browser.get_url(page) if page else "")
                 base = f"https://{match.group(2)}.recruitee.com" if match else "https://recruitee.com"
             self.browser.navigate(page, base)
             self.browser.wait_for_selector(page, ".job-listing, [data-job-id], .job-title, a[href*='/o/']")
-            links = page.query_selector_all(".job-listing a, [data-job-id] a, .job-title a, a[href*='/o/']")
+            links = self.browser.query_selector_all(
+                page, ".job-listing a, [data-job-id] a, .job-title a, a[href*='/o/']"
+            )
             seen = set()
             for link in links:
-                href = link.get_attribute("href") or ""
+                href = self.browser.get_attribute(link, "href") or ""
                 if href in seen:
                     continue
                 seen.add(href)
-                title = link.text_content() or "Untitled"
+                title = self.browser.get_text_content(link) or "Untitled"
                 full_url = href if href.startswith("http") else f"{base}{href}"
                 jobs.append(
                     ATSJobInfo(
@@ -127,7 +129,7 @@ class RecruiteeATSProvider(BaseATSProvider):
             "recruitee",
         ]
         for indicator in recruitee_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False

@@ -70,20 +70,22 @@ class WorkdayATSProvider(BaseATSProvider):
         jobs: list[ATSJobInfo] = []
         try:
             if request.query:
-                search_box = page.query_selector('input[type="search"], input[placeholder*="Search"]')
+                search_box = self.browser.query_selector(page, 'input[type="search"], input[placeholder*="Search"]')
                 if search_box:
-                    search_box.fill(request.query)
-                    page.keyboard.press("Enter")
+                    self.browser.element_fill(search_box, request.query)
+                    self.browser.keyboard_press(page, "Enter")
                     self.browser.wait_for_network_idle(page)
             self.browser.wait_for_selector(page, "[data-automation-id*='job'], .job-listing, a[href*='job/']")
-            links = page.query_selector_all("[data-automation-id*='job'] a, .job-listing a, a[href*='job/']")
+            links = self.browser.query_selector_all(
+                page, "[data-automation-id*='job'] a, .job-listing a, a[href*='job/']"
+            )
             seen = set()
             for link in links:
-                href = link.get_attribute("href") or ""
+                href = self.browser.get_attribute(link, "href") or ""
                 if href in seen:
                     continue
                 seen.add(href)
-                title = link.text_content() or "Untitled"
+                title = self.browser.get_text_content(link) or "Untitled"
                 full_url = (
                     href
                     if href.startswith("http")
@@ -134,7 +136,9 @@ class WorkdayATSProvider(BaseATSProvider):
             "data-automation-id",
         ]
         for indicator in workday_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "") or self._check_page_source(page, indicator)
+            found = indicator in (self.browser.get_url(page) if page else "") or self._check_page_source(
+                page, indicator
+            )
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False
@@ -143,7 +147,7 @@ class WorkdayATSProvider(BaseATSProvider):
 
     def _check_page_source(self, page: Any, text: str) -> bool:
         try:
-            content = page.content()
+            content = self.browser.get_content(page)
             return text in content
         except Exception:
             return False

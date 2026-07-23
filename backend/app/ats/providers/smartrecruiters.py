@@ -61,16 +61,17 @@ class SmartRecruitersATSProvider(BaseATSProvider):
         try:
             self.browser.navigate(page, self._base_url)
             self.browser.wait_for_selector(page, ".job-listing, [data-job-id], .job-title")
-            links = page.query_selector_all(
-                ".job-listing a, [data-job-id] a, .job-title a, a[href*='jobs.smartrecruiters.com/']"
+            links = self.browser.query_selector_all(
+                page,
+                ".job-listing a, [data-job-id] a, .job-title a, a[href*='jobs.smartrecruiters.com/']",
             )
             seen = set()
             for link in links:
-                href = link.get_attribute("href") or ""
+                href = self.browser.get_attribute(link, "href") or ""
                 if href in seen:
                     continue
                 seen.add(href)
-                title = link.text_content() or "Untitled"
+                title = self.browser.get_text_content(link) or "Untitled"
                 full_url = href if href.startswith("http") else f"{self._base_url}{href}"
                 jobs.append(
                     ATSJobInfo(
@@ -113,7 +114,7 @@ class SmartRecruitersATSProvider(BaseATSProvider):
             "smartrecruiters",
         ]
         for indicator in sr_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False

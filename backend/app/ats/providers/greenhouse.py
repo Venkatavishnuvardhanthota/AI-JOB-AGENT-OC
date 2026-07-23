@@ -68,7 +68,7 @@ class GreenhouseATSProvider(BaseATSProvider):
 
     def find_job(self, page: Any, request: ATSJobSearchRequest) -> list[ATSJobInfo]:
         jobs: list[ATSJobInfo] = []
-        board_token = self._extract_board_token(page.url if page else "")
+        board_token = self._extract_board_token(self.browser.get_url(page) if page else "")
         api_url = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs"
         try:
             self.browser.navigate(page, api_url)
@@ -124,7 +124,7 @@ class GreenhouseATSProvider(BaseATSProvider):
             "grnhse",
         ]
         for indicator in greenhouse_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False

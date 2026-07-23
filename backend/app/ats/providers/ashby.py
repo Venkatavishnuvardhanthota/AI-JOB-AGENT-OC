@@ -59,14 +59,14 @@ class AshbyATSProvider(BaseATSProvider):
         try:
             self.browser.navigate(page, self._base_url)
             self.browser.wait_for_selector(page, "a[href*='/jobs/'], [data-job-id]")
-            links = page.query_selector_all("a[href*='/jobs/']")
+            links = self.browser.query_selector_all(page, "a[href*='/jobs/']")
             seen = set()
             for link in links:
-                href = link.get_attribute("href") or ""
+                href = self.browser.get_attribute(link, "href") or ""
                 if href in seen:
                     continue
                 seen.add(href)
-                title = link.text_content() or "Untitled"
+                title = self.browser.get_text_content(link) or "Untitled"
                 full_url = href if href.startswith("http") else f"{self._base_url}{href}"
                 jobs.append(
                     ATSJobInfo(
@@ -109,7 +109,7 @@ class AshbyATSProvider(BaseATSProvider):
             "ashby-",
         ]
         for indicator in ashby_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False

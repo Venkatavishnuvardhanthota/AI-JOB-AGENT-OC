@@ -70,10 +70,10 @@ class LeverATSProvider(BaseATSProvider):
             self.browser.wait_for_selector(page, ".posting, .job-posting, [data-job-id]")
             job_cards = self._get_job_card_elements(page)
             for card in job_cards:
-                title_el = card.query_selector("a, h2, h3")
+                title_el = self.browser.query_selector(card, "a, h2, h3")
                 if title_el:
-                    title = title_el.text_content() or "Untitled"
-                    url = title_el.get_attribute("href") or ""
+                    title = self.browser.get_text_content(title_el) or "Untitled"
+                    url = self.browser.get_attribute(title_el, "href") or ""
                     if url and not url.startswith("http"):
                         url = self._base_url + url
                     jobs.append(
@@ -117,7 +117,7 @@ class LeverATSProvider(BaseATSProvider):
             "lever-",
         ]
         for indicator in lever_indicators:
-            found = indicator in (page.url if hasattr(page, "url") else "")
+            found = indicator in (self.browser.get_url(page) if page else "")
             result.detected_elements[indicator] = found
         if not any(result.detected_elements.values()):
             result.valid = False
@@ -126,7 +126,7 @@ class LeverATSProvider(BaseATSProvider):
 
     def _get_job_card_elements(self, page: Any) -> list[Any]:
         try:
-            return page.query_selector_all(".posting, .job-posting, [data-job-id]")
+            return self.browser.query_selector_all(page, ".posting, .job-posting, [data-job-id]")
         except Exception:
             return []
 
