@@ -105,12 +105,4 @@ class FormValidator:
                     message="No form fields detected on the page",
                 )
             )
-        elif len(analysis.fields) == 0:
-            issues.append(
-                ValidationIssue(
-                    severity="error",
-                    code="EMPTY_FORM",
-                    message="No form fields detected",
-                )
-            )
         return issues

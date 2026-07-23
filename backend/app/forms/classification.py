@@ -94,8 +94,6 @@ _NAME_PATTERNS: list[tuple[re.Pattern, SemanticFieldType, float]] = [
     (re.compile(r"^degree$", re.I), SemanticFieldType.DEGREE, 0.7),
     (re.compile(r"^major$", re.I), SemanticFieldType.FIELD_OF_STUDY, 0.7),
     (re.compile(r"^field[-_]?of[-_]?study", re.I), SemanticFieldType.FIELD_OF_STUDY, 0.8),
-    (re.compile(r"^first[-_]?name$", re.I), SemanticFieldType.FIRST_NAME, 0.95),
-    (re.compile(r"^last[-_]?name$", re.I), SemanticFieldType.LAST_NAME, 0.95),
 ]
 
 _ID_PATTERNS: list[tuple[re.Pattern, SemanticFieldType, float]] = [

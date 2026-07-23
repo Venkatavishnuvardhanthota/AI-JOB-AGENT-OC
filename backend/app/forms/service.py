@@ -44,10 +44,6 @@ class FormIntelligenceService:
             provider = self._get_provider_for_url(url)
             analysis = provider.analyze(page, url)
 
-            for field in analysis.fields:
-                classification = self._classifier.classify(field)
-                analysis.classifications.append(classification)
-
             for classification in analysis.classifications:
                 field = self._find_field(analysis, classification.field_id)
                 if field:
