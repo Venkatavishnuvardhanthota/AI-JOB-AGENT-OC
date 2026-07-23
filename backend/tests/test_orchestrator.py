@@ -602,7 +602,7 @@ class TestOrchestratorService:
         service.clear_checkpoints("test-id")
 
     def test_resume_nonexistent_checkpoint(self, service):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(CheckpointError, match="not found"):
             service.resume("nonexistent")
 
 
@@ -654,7 +654,8 @@ class TestOrchestratorIntegration:
         engine = PipelineEngine(fast_config, checkpoint_manager, fast_recovery, metrics, state_manager, [mock_exec])
         ctx = OrchestrationContext(execution_mode=ExecutionMode.SINGLE)
         result = engine.run(ctx)
-        assert "job_matching" in str(result.warnings) or any("manual intervention" in w.lower() for w in result.warnings)
+        assert result.state == OrchestratorState.PAUSED
+        assert any("manual intervention" in w.lower() for w in result.warnings)
 
     def test_metrics_tracking(self, metrics):
         ctx = OrchestrationContext()

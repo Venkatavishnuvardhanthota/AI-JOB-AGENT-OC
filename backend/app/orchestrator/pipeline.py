@@ -41,9 +41,7 @@ class PipelineEngine:
         self._recovery = recovery_handler
         self._metrics = metrics_collector
         self._state = state_manager
-        self._executors: dict[PipelineStage, PipelineStageExecutor] = {
-            e.stage(): e for e in stage_executors
-        }
+        self._executors: dict[PipelineStage, PipelineStageExecutor] = {e.stage(): e for e in stage_executors}
         self._logger = logger.bind(service="orchestrator_pipeline")
 
     def run(self, context: OrchestrationContext) -> OrchestrationContext:
@@ -83,6 +81,8 @@ class PipelineEngine:
 
             context = self._execute_with_recovery(context, stage, executor)
 
+        if context.state == OrchestratorState.PAUSED:
+            return context
         return self._state.set_completed(context)
 
     def _execute_with_recovery(

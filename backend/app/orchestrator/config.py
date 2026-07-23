@@ -18,5 +18,9 @@ class OrchestratorConfig:
     auto_create_workflow: bool = True
     auto_create_tracking: bool = True
     allowed_execution_modes: tuple[str, ...] = (
-        "single", "batch", "scheduled", "manual", "dry_run",
+        "single",
+        "batch",
+        "scheduled",
+        "manual",
+        "dry_run",
     )

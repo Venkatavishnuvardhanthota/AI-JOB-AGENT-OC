@@ -23,6 +23,7 @@ from app.orchestrator.coordinator import (
     WorkflowExecutor,
 )
 from app.orchestrator.dispatcher import ExecutionDispatcher
+from app.orchestrator.exceptions import CheckpointError
 from app.orchestrator.metrics import OrchestratorMetricsCollector
 from app.orchestrator.pipeline import PipelineEngine
 from app.orchestrator.recovery import RecoveryHandler
@@ -111,18 +112,17 @@ class OrchestratorService:
 
         context = self._pipeline.run(context)
         report = self._report_builder.build(context)
-        self._logger.info("Orchestration completed", id=context.orchestration_id,
-                          state=context.state.value)
+        self._logger.info("Orchestration completed", id=context.orchestration_id, state=context.state.value)
         return report
 
     def resume(self, checkpoint_id: str) -> OrchestrationReport:
         checkpoint = self._checkpoint_manager.load_checkpoint(checkpoint_id)
         if checkpoint is None:
-            raise ValueError(f"Checkpoint '{checkpoint_id}' not found")
+            raise CheckpointError(f"Checkpoint '{checkpoint_id}' not found")
 
         context = self._checkpoint_manager.restore_context(checkpoint)
         if not self._state_manager.can_resume(context):
-            raise ValueError(f"Cannot resume orchestration in state '{context.state.value}'")
+            raise CheckpointError(f"Cannot resume orchestration in state '{context.state.value}'")
 
         self._logger.info("Resuming orchestration", id=context.orchestration_id, checkpoint=checkpoint_id)
         context = self._pipeline.run(context)

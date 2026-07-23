@@ -23,6 +23,7 @@ class ProfileIntelligenceExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.profile_intelligence.dependencies import get_profile_intelligence_service
+
         session = context.metadata.get("db_session")
         if session is None:
             context.warnings.append("ProfileIntelligence skipped: no db_session in metadata")
@@ -52,6 +53,7 @@ class JobDiscoveryExecutor(PipelineStageExecutor):
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.jobs.dependencies import get_job_discovery_service
         from app.jobs.schemas import JobSearchRequest
+
         try:
             jds = get_job_discovery_service()
             request = JobSearchRequest(
@@ -81,6 +83,7 @@ class JobMatchingExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.job_matching.dependencies import get_job_matching_service
+
         try:
             jms = get_job_matching_service()
             match_result = jms.match(profile=context.profile, job=context.job)
@@ -103,6 +106,7 @@ class ApplicationIntelligenceExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.application_intelligence.dependencies import get_application_intelligence_service
+
         try:
             ais = get_application_intelligence_service()
             ai_result = ais.analyze(
@@ -129,6 +133,7 @@ class ResumeOptimizationExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.resume_optimization.dependencies import get_resume_optimization_service
+
         try:
             ros = get_resume_optimization_service()
             optimized = ros.optimize(
@@ -156,6 +161,7 @@ class CoverLetterExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.cover_letter.dependencies import get_cover_letter_service
+
         try:
             cls_svc = get_cover_letter_service()
             cover = cls_svc.generate(
@@ -183,6 +189,7 @@ class ApplicationPackageExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.application_package.dependencies import get_application_package_service
+
         try:
             aps = get_application_package_service()
             package = aps.generate(
@@ -212,6 +219,7 @@ class ReviewExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.review.dependencies import get_review_service
+
         try:
             rs = get_review_service()
             package_id = getattr(context.application_package, "id", None) or context.orchestration_id
@@ -246,15 +254,16 @@ class WorkflowExecutor(PipelineStageExecutor):
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.workflow.dependencies import get_workflow_service
         from app.workflow.schemas import WorkflowState
+
         try:
             ws = get_workflow_service()
             wf_id = context.workflow_id or context.orchestration_id
             ws.create_workflow(wf_id, metadata={"orchestration_id": context.orchestration_id})
-            ws.transition(wf_id, WorkflowState.PACKAGE_GENERATED, actor="orchestrator",
-                           reason="Application package generated")
+            ws.transition(
+                wf_id, WorkflowState.PACKAGE_GENERATED, actor="orchestrator", reason="Application package generated"
+            )
             if context.review_record:
-                ws.transition(wf_id, WorkflowState.APPROVED, actor="orchestrator",
-                              reason="Review completed")
+                ws.transition(wf_id, WorkflowState.APPROVED, actor="orchestrator", reason="Review completed")
             context.workflow_id = wf_id
             context.set_stage_output(self.stage(), wf_id)
         except Exception as e:
@@ -274,6 +283,7 @@ class ATSDetectionExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.ats.dependencies import get_ats_service
+
         try:
             ats = get_ats_service()
             job_url = getattr(context.job, "apply_url", None) or getattr(context.job, "url", None)
@@ -298,13 +308,13 @@ class FormIntelligenceExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.forms.dependencies import get_forms_service
+
         try:
             fs = get_forms_service()
             job_url = getattr(context.job, "apply_url", None) or getattr(context.job, "url", None)
             page = context.metadata.get("page")
             if job_url and page:
-                response = fs.analyze_and_plan(page=page, url=job_url,
-                                               application_package=context.application_package)
+                response = fs.analyze_and_plan(page=page, url=job_url, application_package=context.application_package)
                 context.form_analysis = response.analysis
                 context.execution_plan = response.plan
             context.set_stage_output(self.stage(), context.form_analysis)
@@ -325,12 +335,14 @@ class UploadExecutor(PipelineStageExecutor):
 
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.uploads.dependencies import get_uploads_service
+
         try:
             us = get_uploads_service()
             page = context.metadata.get("page")
             if context.execution_plan and page:
-                plan = us.create_upload_plan(execution_plan=context.execution_plan,
-                                             application_package=context.application_package)
+                plan = us.create_upload_plan(
+                    execution_plan=context.execution_plan, application_package=context.application_package
+                )
                 context.upload_plan = plan
                 results = us.execute_upload_plan(page=page, plan=plan)
                 context.upload_results = results
@@ -353,6 +365,7 @@ class SubmissionExecutor(PipelineStageExecutor):
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.submission_engine.dependencies import get_submission_engine_service
         from app.submission_engine.schemas import ExecutionMode as SEMode
+
         try:
             ses = get_submission_engine_service()
             mode = SEMode.DRY_RUN if context.execution_mode.value == "dry_run" else SEMode.AUTOMATIC
@@ -382,21 +395,28 @@ class TrackingExecutor(PipelineStageExecutor):
     def execute(self, context: OrchestrationContext) -> OrchestrationContext:
         from app.application_tracking.dependencies import get_application_tracking_service
         from app.application_tracking.schemas import ApplicationStatus, TimelineEventType
+
         try:
             ats_svc = get_application_tracking_service()
             track_id = context.tracking_id or context.orchestration_id
-            record = ats_svc.create(track_id, metadata={
-                "orchestration_id": context.orchestration_id,
-                "job_id": str(getattr(context.job, "id", "")),
-            })
+            record = ats_svc.create(
+                track_id,
+                metadata={
+                    "orchestration_id": context.orchestration_id,
+                    "job_id": str(getattr(context.job, "id", "")),
+                },
+            )
             if context.submission_report:
                 sub_status = getattr(context.submission_report, "status", "")
                 status = ApplicationStatus.SUBMITTED if sub_status == "completed" else ApplicationStatus.QUEUED
-                ats_svc.update_status(track_id, status, actor="orchestrator",
-                                      reason="Submission completed")
+                ats_svc.update_status(track_id, status, actor="orchestrator", reason="Submission completed")
                 if getattr(context.submission_report, "confirmation_number", None):
-                    ats_svc.add_event(track_id, TimelineEventType.SUBMITTED, actor="orchestrator",
-                                      reason=f"Confirmed: {context.submission_report.confirmation_number}")
+                    ats_svc.add_event(
+                        track_id,
+                        TimelineEventType.SUBMITTED,
+                        actor="orchestrator",
+                        reason=f"Confirmed: {context.submission_report.confirmation_number}",
+                    )
             context.tracking_id = track_id
             context.tracking_record = record
             context.set_stage_output(self.stage(), record)

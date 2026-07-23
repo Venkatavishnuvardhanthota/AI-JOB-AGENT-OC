@@ -29,9 +29,7 @@ class OrchestrationReportBuilder(ReportBuilder):
         )
 
         if context.started_at and context.completed_at:
-            report.total_duration_ms = (
-                context.completed_at - context.started_at
-            ).total_seconds() * 1000
+            report.total_duration_ms = (context.completed_at - context.started_at).total_seconds() * 1000
 
         report.retry_history = retry_history
 

@@ -13,13 +13,16 @@ from app.orchestrator.schemas import (
 
 class OrchestratorMetricsCollector(MetricsCollector):
     def __init__(self) -> None:
-        self._stage_start: dict[str, datetime] = {}
+        self._stage_start: dict[tuple[str, str], datetime] = {}
+
+    def _key(self, stage: PipelineStage, context: OrchestrationContext) -> tuple[str, str]:
+        return (context.orchestration_id, stage.value)
 
     def record_stage_start(self, stage: PipelineStage, context: OrchestrationContext) -> None:
-        self._stage_start[stage.value] = datetime.utcnow()
+        self._stage_start[self._key(stage, context)] = datetime.utcnow()
 
     def record_stage_end(self, stage: PipelineStage, context: OrchestrationContext) -> None:
-        start = self._stage_start.pop(stage.value, None)
+        start = self._stage_start.pop(self._key(stage, context), None)
         if start is not None:
             duration_ms = (datetime.utcnow() - start).total_seconds() * 1000
             result = context.get_stage(stage)
@@ -39,9 +42,7 @@ class OrchestratorMetricsCollector(MetricsCollector):
             metrics.retry_count += result.retry_count
 
         if context.started_at and context.completed_at:
-            metrics.pipeline_duration_ms = (
-                context.completed_at - context.started_at
-            ).total_seconds() * 1000
+            metrics.pipeline_duration_ms = (context.completed_at - context.started_at).total_seconds() * 1000
 
         checkpoints = getattr(context, "checkpoint", None)
         if checkpoints is not None:

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
-from datetime import datetime
 from threading import Lock
-from typing import Any
 
 from app.orchestrator.exceptions import CheckpointError
 from app.orchestrator.schemas import CheckpointData, OrchestrationContext, PipelineStage
@@ -52,7 +49,7 @@ class CheckpointManager:
         return OrchestrationContext(**snapshot)
 
     def list_checkpoints(self, orchestration_id: str) -> list[CheckpointData]:
-        results: list[CheckpointData] = []
+        results: list[tuple[CheckpointData, str]] = []
         prefix = f"{orchestration_id}__"
         try:
             for name in os.listdir(self._checkpoint_dir):
@@ -60,10 +57,11 @@ class CheckpointManager:
                     ck_id = name[len(prefix):-5]
                     data = self.load_checkpoint(ck_id)
                     if data is not None:
-                        results.append(data)
+                        path = os.path.join(self._checkpoint_dir, name)
+                        results.append((data, path))
         except OSError:
             pass
-        return sorted(results, key=lambda c: c.timestamp)
+        return [r[0] for r in sorted(results, key=lambda r: (os.path.getmtime(r[1]), r[0].checkpoint_id))]
 
     def delete_checkpoint(self, checkpoint_id: str) -> None:
         path = self._find_path(checkpoint_id)

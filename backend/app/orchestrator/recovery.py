@@ -78,9 +78,11 @@ class RecoveryHandler:
             return context
 
         if strategy == RecoveryStrategy.RESTART_STAGE:
-            checkpoint = self._checkpoint_manager.load_checkpoint(
-                context.get_stage(stage).checkpoint_id
-            ) if context.get_stage(stage).checkpoint_id else None
+            checkpoint = (
+                self._checkpoint_manager.load_checkpoint(context.get_stage(stage).checkpoint_id)
+                if context.get_stage(stage).checkpoint_id
+                else None
+            )
             if checkpoint:
                 restored = self._checkpoint_manager.restore_context(checkpoint)
                 restored.state = context.state
@@ -92,6 +94,7 @@ class RecoveryHandler:
 
         if strategy == RecoveryStrategy.ROLLBACK_WORKFLOW:
             from app.workflow.dependencies import get_workflow_service
+
             if context.workflow_id:
                 try:
                     wf = get_workflow_service()
@@ -111,8 +114,12 @@ class RecoveryHandler:
 
     def _is_retryable(self, error: str) -> bool:
         non_retryable = [
-            "invalid", "unauthorized", "forbidden", "not found",
-            "validation error", "bad request",
+            "invalid",
+            "unauthorized",
+            "forbidden",
+            "not found",
+            "validation error",
+            "bad request",
         ]
         error_lower = error.lower()
         return not any(nr in error_lower for nr in non_retryable)
