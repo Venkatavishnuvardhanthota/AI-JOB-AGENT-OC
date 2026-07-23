@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from app.review.config import ReviewConfig
@@ -54,7 +55,7 @@ class Reviewer:
                 record.state = ReviewState.UNDER_REVIEW
         if metadata:
             record.metadata.update(metadata)
-        record.updated_at = __import__("datetime").datetime.utcnow()
+        record.updated_at = datetime.utcnow()
         return record
 
     @property

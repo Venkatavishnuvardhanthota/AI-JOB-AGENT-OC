@@ -44,7 +44,7 @@ class DecisionEngine:
             self._validator.validate_reviewer(reviewer)
             record.state = ReviewState.UNDER_REVIEW
 
-        self._apply_decision(
+        self.apply_decision(
             record,
             ReviewDecision.APPROVE,
             ReviewState.APPROVED,
@@ -72,7 +72,7 @@ class DecisionEngine:
         self._validator.validate_expired(record)
         self._validator.validate_reviewer(reviewer)
 
-        self._apply_decision(
+        self.apply_decision(
             record,
             ReviewDecision.REJECT,
             ReviewState.REJECTED,
@@ -96,7 +96,7 @@ class DecisionEngine:
         self._validator.validate_expired(record)
         self._validator.validate_reviewer(reviewer)
 
-        self._apply_decision(
+        self.apply_decision(
             record,
             ReviewDecision.REQUEST_CHANGES,
             ReviewState.CHANGES_REQUESTED,
@@ -116,7 +116,7 @@ class DecisionEngine:
             [ReviewState.PENDING_REVIEW, ReviewState.UNDER_REVIEW],
         )
 
-        self._apply_decision(
+        self.apply_decision(
             record,
             ReviewDecision.EXPIRE,
             ReviewState.EXPIRED,
@@ -151,7 +151,7 @@ class DecisionEngine:
                 message=f"Auto-approval criteria not met: {'; '.join(failures)}"
             )
 
-        result = self._apply_decision(
+        result = self.apply_decision(
             record,
             ReviewDecision.AUTO_APPROVE,
             ReviewState.AUTO_APPROVED,
@@ -194,7 +194,7 @@ class DecisionEngine:
         if new_state not in (ReviewState.APPROVED, ReviewState.PENDING_REVIEW):
             state = ReviewState.PENDING_REVIEW if new_state == ReviewState.UNDER_REVIEW else new_state
 
-        self._apply_decision(
+        self.apply_decision(
             record,
             decision,
             state,
@@ -205,7 +205,7 @@ class DecisionEngine:
         record.override_reason = reason
         return record
 
-    def _apply_decision(
+    def apply_decision(
         self,
         record: ReviewRecord,
         decision: ReviewDecision,

@@ -129,7 +129,7 @@ class ReviewService:
                 has_cover_letter=has_cover_letter,
             )
         except AutoApprovalFailedError:
-            result = self._reviewer.decisions._apply_decision(
+            result = self._reviewer.decisions.apply_decision(
                 record,
                 ReviewDecision.APPROVE,
                 ReviewState.APPROVED,

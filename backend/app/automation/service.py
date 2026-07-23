@@ -5,7 +5,7 @@ from typing import Any
 
 from app.automation.cache import AutomationCache
 from app.automation.config import AutomationConfig
-from app.automation.exceptions import JobNotFoundError
+from app.automation.exceptions import JobAlreadyRunningError, JobNotFoundError
 from app.automation.history import ExecutionHistory
 from app.automation.jobs import JobManager
 from app.automation.policies import PolicyEnforcer
@@ -157,7 +157,7 @@ class AutomationService:
         job = self._get_job(job_id)
         self._validator.validate_execution(job)
         if not self._policy_enforcer.check_concurrent_jobs(job.policy):
-            raise JobNotFoundError(
+            raise JobAlreadyRunningError(
                 message=f"Cannot trigger job '{job_id}': max concurrent jobs reached."
             )
         exec_record = ExecutionRecord(

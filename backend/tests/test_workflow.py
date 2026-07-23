@@ -45,15 +45,15 @@ class TestWorkflowState:
 
 class TestWorkflowValidator:
     def test_get_allowed_from_discovered(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.DISCOVERED)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.DISCOVERED)
         assert allowed == [WorkflowState.MATCHED]
 
     def test_get_allowed_from_matched(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.MATCHED)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.MATCHED)
         assert allowed == [WorkflowState.PACKAGE_GENERATED]
 
     def test_get_allowed_from_ready_for_review(self):
-        allowed = WorkflowValidator._get_allowed_transitions(
+        allowed = WorkflowValidator.get_allowed_transitions(
             WorkflowState.READY_FOR_REVIEW
         )
         assert WorkflowState.APPROVED in allowed
@@ -61,21 +61,21 @@ class TestWorkflowValidator:
         assert len(allowed) == 2
 
     def test_get_allowed_from_tracking(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.TRACKING)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.TRACKING)
         assert WorkflowState.INTERVIEW in allowed
         assert WorkflowState.REJECTED in allowed
 
     def test_get_allowed_from_interview(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.INTERVIEW)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.INTERVIEW)
         assert WorkflowState.OFFER in allowed
         assert WorkflowState.REJECTED in allowed
 
     def test_get_allowed_from_offer(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.OFFER)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.OFFER)
         assert allowed == [WorkflowState.REJECTED]
 
     def test_get_allowed_from_rejected(self):
-        allowed = WorkflowValidator._get_allowed_transitions(WorkflowState.REJECTED)
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.REJECTED)
         assert allowed == []
 
     def test_valid_transition(self):
@@ -222,7 +222,7 @@ class TestStateMachine:
         assert sm.is_terminal(WorkflowState.DISCOVERED) is False
         assert sm.is_terminal(WorkflowState.OFFER) is False
 
-    def test_get_allowed_transitions(self):
+    def testget_allowed_transitions(self):
         sm = StateMachine()
         allowed = sm.get_allowed_transitions(WorkflowState.DISCOVERED)
         assert allowed == [WorkflowState.MATCHED]

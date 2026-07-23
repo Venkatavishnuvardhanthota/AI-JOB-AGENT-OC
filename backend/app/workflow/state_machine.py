@@ -51,7 +51,7 @@ class StateMachine:
         status: WorkflowStatus,
         target_state: WorkflowState,
     ) -> bool:
-        allowed = self._validator._get_allowed_transitions(status.current_state)  # noqa: SLF001
+        allowed = self._validator.get_allowed_transitions(status.current_state)
         return target_state in allowed
 
     def is_terminal(self, state: WorkflowState) -> bool:
@@ -61,4 +61,4 @@ class StateMachine:
         self,
         state: WorkflowState,
     ) -> list[WorkflowState]:
-        return self._validator._get_allowed_transitions(state)  # noqa: SLF001
+        return self._validator.get_allowed_transitions(state)

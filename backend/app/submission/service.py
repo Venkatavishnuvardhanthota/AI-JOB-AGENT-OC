@@ -85,11 +85,6 @@ class SubmissionService:
             has_job_posting, has_resume, has_cover_letter,
         )
 
-        self._validator.validate_submission_readiness(
-            review, wf_state_obj, is_package_complete,
-            has_job_posting, has_resume, has_cover_letter,
-        )
-
         record.state = SubmissionState.VALIDATED
         record.updated_at = datetime.utcnow()
         self._cache.set(package_id, record)

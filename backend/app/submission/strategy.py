@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from app.submission.schemas import StrategyType, SubmissionRecord, SubmissionState
 
@@ -34,7 +35,7 @@ class ManualSubmissionStrategy(SubmissionStrategy):
             f"Open the job posting and manually submit the application."
         )
         record.state = SubmissionState.COMPLETED
-        record.completed_at = __import__("datetime").datetime.utcnow()
+        record.completed_at = datetime.utcnow()
         return record
 
     def validate_environment(self) -> list[str]:

@@ -15,7 +15,7 @@ class WorkflowValidator:
         target_state: WorkflowState,
     ) -> None:
         current = status.current_state
-        allowed = self._get_allowed_transitions(current)
+        allowed = self.get_allowed_transitions(current)
 
         if current == target_state:
             return
@@ -47,7 +47,7 @@ class WorkflowValidator:
             )
 
     @staticmethod
-    def _get_allowed_transitions(state: WorkflowState) -> list[WorkflowState]:
+    def get_allowed_transitions(state: WorkflowState) -> list[WorkflowState]:
         transitions = {
             WorkflowState.DISCOVERED: [WorkflowState.MATCHED],
             WorkflowState.MATCHED: [WorkflowState.PACKAGE_GENERATED],
