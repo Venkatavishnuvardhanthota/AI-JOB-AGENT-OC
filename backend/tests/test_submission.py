@@ -41,8 +41,15 @@ from app.workflow.schemas import WorkflowState
 class TestSubmissionState:
     def test_all_states_defined(self):
         expected = [
-            "pending", "validated", "queued", "scheduled",
-            "dispatched", "running", "completed", "failed", "cancelled",
+            "pending",
+            "validated",
+            "queued",
+            "scheduled",
+            "dispatched",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
         ]
         values = [s.value for s in SubmissionState]
         for exp in expected:
@@ -101,37 +108,33 @@ class TestValidator:
     def test_validate_submission_readiness_ready(self):
         v = SubmissionValidator()
         from app.review.schemas import ReviewState
+
         review = type("R", (), {"state": ReviewState.APPROVED})()
-        v.validate_submission_readiness(
-            review, WorkflowState.QUEUED, True, True, True, True
-        )
+        v.validate_submission_readiness(review, WorkflowState.QUEUED, True, True, True, True)
 
     def test_validate_submission_readiness_not_approved(self):
         v = SubmissionValidator()
         from app.review.schemas import ReviewState
+
         review = type("R", (), {"state": ReviewState.PENDING_REVIEW})()
         with pytest.raises(SubmissionNotReadyError):
-            v.validate_submission_readiness(
-                review, WorkflowState.QUEUED, True, True, True, True
-            )
+            v.validate_submission_readiness(review, WorkflowState.QUEUED, True, True, True, True)
 
     def test_validate_submission_readiness_wrong_workflow_state(self):
         v = SubmissionValidator()
         from app.review.schemas import ReviewState
+
         review = type("R", (), {"state": ReviewState.APPROVED})()
         with pytest.raises(SubmissionNotReadyError):
-            v.validate_submission_readiness(
-                review, WorkflowState.PACKAGE_GENERATED, True, True, True, True
-            )
+            v.validate_submission_readiness(review, WorkflowState.PACKAGE_GENERATED, True, True, True, True)
 
     def test_validate_submission_readiness_missing_docs(self):
         v = SubmissionValidator()
         from app.review.schemas import ReviewState
+
         review = type("R", (), {"state": ReviewState.APPROVED})()
         with pytest.raises(SubmissionNotReadyError):
-            v.validate_submission_readiness(
-                review, WorkflowState.QUEUED, True, False, False, False
-            )
+            v.validate_submission_readiness(review, WorkflowState.QUEUED, True, False, False, False)
 
     def test_validate_state_transition_valid(self):
         v = SubmissionValidator()
@@ -157,9 +160,7 @@ class TestValidator:
 
     def test_validate_retry_allowed(self):
         v = SubmissionValidator()
-        record = SubmissionRecord(
-            package_id="test", state=SubmissionState.FAILED
-        )
+        record = SubmissionRecord(package_id="test", state=SubmissionState.FAILED)
         v.validate_retry(record)
 
     def test_validate_retry_not_failed(self):
@@ -307,6 +308,7 @@ class TestSubmissionQueue:
 
     def test_thread_safety(self):
         import threading
+
         queue = SubmissionQueue()
         errors = []
 
@@ -488,10 +490,17 @@ class TestStrategy:
 
     def test_strategy_factory_register(self):
         class TestStrategy(SubmissionStrategy):
-            def get_strategy_type(self): return StrategyType.MANUAL
-            def execute(self, r): return r
-            def validate_environment(self): return []
-            def get_required_fields(self): return []
+            def get_strategy_type(self):
+                return StrategyType.MANUAL
+
+            def execute(self, r):
+                return r
+
+            def validate_environment(self):
+                return []
+
+            def get_required_fields(self):
+                return []
 
         StrategyFactory.register(StrategyType.PLAYWRIGHT, TestStrategy)
         strategy = StrategyFactory.create(StrategyType.PLAYWRIGHT)
@@ -521,7 +530,8 @@ class TestDispatcher:
         record.retry.max_retries = 0
 
         with patch.object(
-            StrategyFactory, "create",
+            StrategyFactory,
+            "create",
             side_effect=Exception("Strategy error"),
         ):
             result = dispatcher.dispatch(record, StrategyType.MANUAL)
@@ -568,6 +578,7 @@ class TestSubmissionCache:
 
     def test_thread_safety(self):
         import threading
+
         config = SubmissionConfig()
         cache = SubmissionCache(config)
         errors = []
@@ -869,7 +880,8 @@ class TestEdgeCases:
         record.state = SubmissionState.DISPATCHED
 
         with patch.object(
-            ManualSubmissionStrategy, "execute",
+            ManualSubmissionStrategy,
+            "execute",
             side_effect=Exception("Execution error"),
         ):
             result = dispatcher.dispatch(record, StrategyType.MANUAL)

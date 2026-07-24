@@ -16,10 +16,14 @@ def create_access_token(
     subject: str,
     expires_delta: timedelta | None = None,
 ) -> str:
-    expire = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(minutes=settings.APP_ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    to_encode: dict[str, Any] = {"exp": expire, "sub": subject}
+    now = datetime.now(timezone.utc)
+    expire = now + (expires_delta if expires_delta else timedelta(minutes=settings.APP_ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode: dict[str, Any] = {
+        "exp": expire,
+        "sub": subject,
+        "iat": now,
+        "jti": secrets.token_urlsafe(16),
+    }
     return jwt.encode(to_encode, settings.APP_SECRET_KEY, algorithm=ALGORITHM)
 
 

@@ -73,12 +73,16 @@ async def change_password(
 
 @router.post("/forgot-password")
 async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    service = AuthService(db)
+    await service.initiate_password_reset(body.email)
     return {"success": True, "message": "If the email exists, a reset link has been sent."}
 
 
 @router.post("/reset-password")
 async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    return {"success": True, "message": "Password reset functionality coming soon."}
+    service = AuthService(db)
+    await service.complete_password_reset(body.token, body.new_password)
+    return {"success": True, "message": "Password has been reset successfully."}
 
 
 @router.delete("/me", status_code=204)

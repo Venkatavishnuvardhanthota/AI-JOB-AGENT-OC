@@ -24,9 +24,7 @@ class PromptTemplateRegistry:
         template = self._templates.get(name)
         if template is None:
             registered = list(self._templates.keys())
-            raise PromptTemplateError(
-                f"Prompt template '{name}' not found. Registered templates: {registered}"
-            )
+            raise PromptTemplateError(f"Prompt template '{name}' not found. Registered templates: {registered}")
         return template
 
     def list(self) -> list[PromptTemplate]:

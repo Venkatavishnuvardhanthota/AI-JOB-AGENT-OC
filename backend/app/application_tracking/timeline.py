@@ -59,9 +59,7 @@ class TimelineManager:
             reason=reason,
             metadata={
                 "workflow_state": workflow_state.value,
-                "previous_workflow_state": record.workflow_state.value
-                if record.workflow_state
-                else None,
+                "previous_workflow_state": record.workflow_state.value if record.workflow_state else None,
             },
         )
 

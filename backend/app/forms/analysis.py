@@ -142,33 +142,25 @@ class FormAnalyzer:
 
     def _is_required(self, element: Any) -> bool:
         try:
-            return bool(element.get_attribute("required")) or bool(
-                element.evaluate("el => el.required")
-            )
+            return bool(element.get_attribute("required")) or bool(element.evaluate("el => el.required"))
         except Exception:
             return False
 
     def _is_readonly(self, element: Any) -> bool:
         try:
-            return bool(element.get_attribute("readonly")) or bool(
-                element.evaluate("el => el.readOnly")
-            )
+            return bool(element.get_attribute("readonly")) or bool(element.evaluate("el => el.readOnly"))
         except Exception:
             return False
 
     def _is_disabled(self, element: Any) -> bool:
         try:
-            return bool(element.get_attribute("disabled")) or bool(
-                element.evaluate("el => el.disabled")
-            )
+            return bool(element.get_attribute("disabled")) or bool(element.evaluate("el => el.disabled"))
         except Exception:
             return False
 
     def _is_visible(self, element: Any) -> bool:
         try:
-            return bool(element.evaluate(
-                "el => el.offsetParent !== null && !el.hidden && el.type !== 'hidden'"
-            ))
+            return bool(element.evaluate("el => el.offsetParent !== null && !el.hidden && el.type !== 'hidden'"))
         except Exception:
             return True
 
@@ -198,7 +190,7 @@ class FormAnalyzer:
         if field_id and field_id != str(uuid.uuid4()):
             try:
                 label_text = element.evaluate(
-                    "el => { const id = arguments[0]; const f = `label[for=\"${id}\"]`;"
+                    'el => { const id = arguments[0]; const f = `label[for="${id}"]`;'
                     " const label = document.querySelector(f); return label ? label.textContent.trim() : null; }",
                     field_id,
                 )

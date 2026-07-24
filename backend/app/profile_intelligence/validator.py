@@ -31,29 +31,37 @@ class ProfileValidator:
             return
 
         if not getattr(profile, "headline", None):
-            issues.append(ValidationIssue(
-                field="headline",
-                severity="info",
-                message="No professional headline set",
-            ))
+            issues.append(
+                ValidationIssue(
+                    field="headline",
+                    severity="info",
+                    message="No professional headline set",
+                )
+            )
         if not getattr(profile, "professional_summary", None):
-            issues.append(ValidationIssue(
-                field="professional_summary",
-                severity="info",
-                message="No professional summary written",
-            ))
+            issues.append(
+                ValidationIssue(
+                    field="professional_summary",
+                    severity="info",
+                    message="No professional summary written",
+                )
+            )
         if getattr(profile, "total_years_experience", None) is None and not raw.get("experience"):
-            issues.append(ValidationIssue(
-                field="total_years_experience",
-                severity="warning",
-                message="Years of experience not specified and no work history found",
-            ))
+            issues.append(
+                ValidationIssue(
+                    field="total_years_experience",
+                    severity="warning",
+                    message="Years of experience not specified and no work history found",
+                )
+            )
         if not raw.get("skills"):
-            issues.append(ValidationIssue(
-                field="skills",
-                severity="warning",
-                message="No skills listed",
-            ))
+            issues.append(
+                ValidationIssue(
+                    field="skills",
+                    severity="warning",
+                    message="No skills listed",
+                )
+            )
         if not raw.get("education"):
             warnings.append("No education history recorded")
 
@@ -69,11 +77,13 @@ class ProfileValidator:
             name = (getattr(s, "name", None) or "").lower().strip()
             if name:
                 if name in names:
-                    issues.append(ValidationIssue(
-                        field="skills",
-                        severity="warning",
-                        message=f"Duplicate skill: {getattr(s, 'name', '')}",
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            field="skills",
+                            severity="warning",
+                            message=f"Duplicate skill: {getattr(s, 'name', '')}",
+                        )
+                    )
                 names.append(name)
 
     def _validate_incomplete_work_history(
@@ -88,24 +98,28 @@ class ProfileValidator:
             end = getattr(exp, "end_date", None)
             currently = getattr(exp, "currently_working", False)
             if start is None:
-                issues.append(ValidationIssue(
-                    field="experience",
-                    severity="warning",
-                    message=(
-                        f"Missing start date for {getattr(exp, 'title', 'unknown')}"
-                        f" at {getattr(exp, 'company', 'unknown')}"
-                    ),
-                ))
+                issues.append(
+                    ValidationIssue(
+                        field="experience",
+                        severity="warning",
+                        message=(
+                            f"Missing start date for {getattr(exp, 'title', 'unknown')}"
+                            f" at {getattr(exp, 'company', 'unknown')}"
+                        ),
+                    )
+                )
             if end is None and not currently:
-                issues.append(ValidationIssue(
-                    field="experience",
-                    severity="warning",
-                    message=(
-                        f"Missing end date for {getattr(exp, 'title', 'unknown')}"
-                        f" at {getattr(exp, 'company', 'unknown')}"
-                        " (not marked as current)"
-                    ),
-                ))
+                issues.append(
+                    ValidationIssue(
+                        field="experience",
+                        severity="warning",
+                        message=(
+                            f"Missing end date for {getattr(exp, 'title', 'unknown')}"
+                            f" at {getattr(exp, 'company', 'unknown')}"
+                            " (not marked as current)"
+                        ),
+                    )
+                )
 
     def _validate_date_conflicts(
         self,
@@ -123,15 +137,17 @@ class ProfileValidator:
                 if end > now:
                     currently = getattr(exp, "currently_working", False)
                     if not currently:
-                        issues.append(ValidationIssue(
-                            field="experience",
-                            severity="warning",
-                            message=(
-                                f"End date in the future for"
-                                f" {getattr(exp, 'title', 'unknown')}"
-                                " without current flag"
-                            ),
-                        ))
+                        issues.append(
+                            ValidationIssue(
+                                field="experience",
+                                severity="warning",
+                                message=(
+                                    f"End date in the future for"
+                                    f" {getattr(exp, 'title', 'unknown')}"
+                                    " without current flag"
+                                ),
+                            )
+                        )
 
         education = raw.get("education", [])
         for edu in education:
@@ -141,15 +157,17 @@ class ProfileValidator:
                 if end.tzinfo is None:
                     end = end.replace(tzinfo=timezone.utc)
                 if end > now and not currently:
-                    issues.append(ValidationIssue(
-                        field="education",
-                        severity="info",
-                        message=(
-                            f"Future end date for"
-                            f" {getattr(edu, 'institution', 'unknown')}"
-                            " without current study flag"
-                        ),
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            field="education",
+                            severity="info",
+                            message=(
+                                f"Future end date for"
+                                f" {getattr(edu, 'institution', 'unknown')}"
+                                " without current study flag"
+                            ),
+                        )
+                    )
 
     def _validate_conflicting_info(
         self,
@@ -166,9 +184,7 @@ class ProfileValidator:
             and "unemployed" in str(employment_status).lower()
             and getattr(profile, "current_role", None)
         ):
-            warnings.append(
-                "Employment status is 'unemployed' but current role is specified"
-            )
+            warnings.append("Employment status is 'unemployed' but current role is specified")
 
     def _validate_missing_resume(
         self,

@@ -24,10 +24,7 @@ class SectionOptimizer:
 
         base = original_summary or profile_summary or ""
         all_keywords = (
-            keywords.required_keywords
-            + keywords.preferred_keywords
-            + keywords.technical_skills
-            + keywords.tools
+            keywords.required_keywords + keywords.preferred_keywords + keywords.technical_skills + keywords.tools
         )
 
         missing = [k for k in all_keywords if k.lower() not in base.lower()]
@@ -81,7 +78,8 @@ class SectionOptimizer:
         optimized = [s[0] for s in scored[:20]]
 
         missing_keywords = [
-            k for k in keywords.required_keywords + keywords.preferred_keywords
+            k
+            for k in keywords.required_keywords + keywords.preferred_keywords
             if k.lower() not in [s.lower().strip() for s in optimized]
         ]
         optimized.extend(missing_keywords[:5])
@@ -105,9 +103,9 @@ class SectionOptimizer:
             return section, None
 
         all_keywords = set(
-            k.lower() for k in (
-                keywords.required_keywords + keywords.preferred_keywords
-                + keywords.technical_skills + keywords.tools
+            k.lower()
+            for k in (
+                keywords.required_keywords + keywords.preferred_keywords + keywords.technical_skills + keywords.tools
             )
         )
 
@@ -117,8 +115,7 @@ class SectionOptimizer:
 
         for bullet in bullets:
             lower = bullet.lower()
-            missing = [k for k in all_keywords if k not in lower and k not in
-                      [ka.lower() for ka in keywords_added]]
+            missing = [k for k in all_keywords if k not in lower and k not in [ka.lower() for ka in keywords_added]]
             if missing and len(optimized_bullets) < 5:
                 kw_to_add = missing[:2]
                 for kw in kw_to_add:
@@ -155,9 +152,9 @@ class SectionOptimizer:
             return [], []
 
         all_keywords = set(
-            k.lower() for k in (
-                keywords.required_keywords + keywords.preferred_keywords
-                + keywords.technical_skills + keywords.tools
+            k.lower()
+            for k in (
+                keywords.required_keywords + keywords.preferred_keywords + keywords.technical_skills + keywords.tools
             )
         )
 
@@ -173,11 +170,13 @@ class SectionOptimizer:
 
         logs: list[ChangeLogEntry] = []
         if ordered != sections:
-            logs.append(ChangeLogEntry(
-                section="projects",
-                change_type=ChangeType.REORDERED,
-                description="Projects reordered by job relevance",
-            ))
+            logs.append(
+                ChangeLogEntry(
+                    section="projects",
+                    change_type=ChangeType.REORDERED,
+                    description="Projects reordered by job relevance",
+                )
+            )
 
         result = [
             OptimizedSection(
@@ -200,9 +199,12 @@ class SectionOptimizer:
             return [], []
 
         all_keywords = set(
-            k.lower() for k in (
-                keywords.required_keywords + keywords.preferred_keywords
-                + keywords.technical_skills + keywords.industry_terms
+            k.lower()
+            for k in (
+                keywords.required_keywords
+                + keywords.preferred_keywords
+                + keywords.technical_skills
+                + keywords.industry_terms
             )
         )
 
@@ -218,11 +220,13 @@ class SectionOptimizer:
 
         logs: list[ChangeLogEntry] = []
         if ordered != sections:
-            logs.append(ChangeLogEntry(
-                section="education",
-                change_type=ChangeType.REORDERED,
-                description="Education reordered by job relevance",
-            ))
+            logs.append(
+                ChangeLogEntry(
+                    section="education",
+                    change_type=ChangeType.REORDERED,
+                    description="Education reordered by job relevance",
+                )
+            )
 
         result = [
             OptimizedSection(

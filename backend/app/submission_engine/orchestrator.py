@@ -104,11 +104,13 @@ class SubmissionOrchestratorEngine:
         if upload_plan:
             tasks = getattr(upload_plan, "tasks", [])
             for task in tasks:
-                self._metrics.record_step(StepExecution(
-                    step_type=SubmissionStepType.UPLOAD,
-                    field_ref=getattr(task, "field_ref", ""),
-                    result=SubmissionStepResult.SKIPPED,
-                ))
+                self._metrics.record_step(
+                    StepExecution(
+                        step_type=SubmissionStepType.UPLOAD,
+                        field_ref=getattr(task, "field_ref", ""),
+                        result=SubmissionStepResult.SKIPPED,
+                    )
+                )
 
         report.metrics = self._metrics.get_metrics()
         report.metrics.total_duration_ms = round((time.time() - start) * 1000, 2)
@@ -118,8 +120,7 @@ class SubmissionOrchestratorEngine:
         )
 
     def _run_with_confirmation(
-        self, page: Any, execution_plan: Any, upload_plan: Any | None,
-        upload_service: Any | None, provider: Any | None
+        self, page: Any, execution_plan: Any, upload_plan: Any | None, upload_service: Any | None, provider: Any | None
     ) -> SubmissionReport:
         report = self._reporting.create_report(
             provider_name=getattr(provider, "name", "unknown") if provider else "unknown",
@@ -139,15 +140,17 @@ class SubmissionOrchestratorEngine:
             try:
                 upload_results = upload_service.execute_upload_plan(page, upload_plan)
                 for r in upload_results:
-                    self._metrics.record_step(StepExecution(
-                        step_type=SubmissionStepType.UPLOAD,
-                        field_ref=getattr(r, "field_ref", ""),
-                        result=(
-                            SubmissionStepResult.SUCCESS
-                            if getattr(r, "result", None) and str(getattr(r, "result", "")) == "success"
-                            else SubmissionStepResult.SKIPPED
-                        ),
-                    ))
+                    self._metrics.record_step(
+                        StepExecution(
+                            step_type=SubmissionStepType.UPLOAD,
+                            field_ref=getattr(r, "field_ref", ""),
+                            result=(
+                                SubmissionStepResult.SUCCESS
+                                if getattr(r, "result", None) and str(getattr(r, "result", "")) == "success"
+                                else SubmissionStepResult.SKIPPED
+                            ),
+                        )
+                    )
                 report.warnings.append("Uploads executed — manual confirmation required before submit")
             except Exception as e:
                 report.errors.append(f"Upload execution failed: {e}")
@@ -159,8 +162,7 @@ class SubmissionOrchestratorEngine:
         return self._reporting.finalize_report(report, "awaiting_confirmation")
 
     def _run_automatic(
-        self, page: Any, execution_plan: Any, upload_plan: Any | None,
-        upload_service: Any | None, provider: Any | None
+        self, page: Any, execution_plan: Any, upload_plan: Any | None, upload_service: Any | None, provider: Any | None
     ) -> SubmissionReport:
         report = self._reporting.create_report(
             provider_name=getattr(provider, "name", "unknown") if provider else "unknown",
@@ -180,15 +182,17 @@ class SubmissionOrchestratorEngine:
             try:
                 upload_results = upload_service.execute_upload_plan(page, upload_plan)
                 for r in upload_results:
-                    self._metrics.record_step(StepExecution(
-                        step_type=SubmissionStepType.UPLOAD,
-                        field_ref=getattr(r, "field_ref", ""),
-                        result=(
-                            SubmissionStepResult.SUCCESS
-                            if getattr(r, "result", None) and str(getattr(r, "result", "")) == "success"
-                            else SubmissionStepResult.FAILED
-                        ),
-                    ))
+                    self._metrics.record_step(
+                        StepExecution(
+                            step_type=SubmissionStepType.UPLOAD,
+                            field_ref=getattr(r, "field_ref", ""),
+                            result=(
+                                SubmissionStepResult.SUCCESS
+                                if getattr(r, "result", None) and str(getattr(r, "result", "")) == "success"
+                                else SubmissionStepResult.FAILED
+                            ),
+                        )
+                    )
             except Exception as e:
                 report.errors.append(f"Upload execution failed: {e}")
                 return self._reporting.finalize_report(report, "failed", errors=[f"Upload execution failed: {e}"])
@@ -221,8 +225,7 @@ class SubmissionOrchestratorEngine:
         return self._reporting.finalize_report(report, status, errors=errors if errors else None)
 
     def _run_safe_retry(
-        self, page: Any, execution_plan: Any, upload_plan: Any | None,
-        upload_service: Any | None, provider: Any | None
+        self, page: Any, execution_plan: Any, upload_plan: Any | None, upload_service: Any | None, provider: Any | None
     ) -> SubmissionReport:
         max_attempts = 3
         for attempt in range(1, max_attempts + 1):

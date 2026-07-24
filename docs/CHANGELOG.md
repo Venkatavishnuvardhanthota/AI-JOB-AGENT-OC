@@ -41,7 +41,7 @@ This project follows the principles of **Keep a Changelog** and **Semantic Versi
 
 ---
 
-# [2.0.0] - TBD
+# [2.0.0] - 2026-07-24
 
 ## Overview
 
@@ -201,13 +201,22 @@ Complete documentation repository including:
 
 ## Changed
 
-Initial release.
+- Production-ready release
+- Version bumped from 0.1.0 to 2.0.0
+- Production database connection pool configuration
+- Graceful browser cleanup on shutdown
+- Improved nginx security headers and caching
+- Production logging defaults
+- Expanded environment configuration template
 
 ---
 
 ## Fixed
 
-Initial release.
+- Application endpoints now verify user ownership (security fix)
+- JWT tokens now include `iat` and `jti` claims
+- Password reset endpoints now function correctly (no longer stubs)
+- nginx health check endpoint corrected
 
 ---
 

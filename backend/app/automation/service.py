@@ -59,6 +59,7 @@ class AutomationService:
     ) -> AutomationJob:
         existing = self._job_manager.get(job_id)
         from app.automation.schemas import AutomationType
+
         atype = automation_type or AutomationType.MANUAL
         job = AutomationJob(
             id=job_id,
@@ -157,9 +158,7 @@ class AutomationService:
         job = self._get_job(job_id)
         self._validator.validate_execution(job)
         if not self._policy_enforcer.check_concurrent_jobs(job.policy):
-            raise JobAlreadyRunningError(
-                message=f"Cannot trigger job '{job_id}': max concurrent jobs reached."
-            )
+            raise JobAlreadyRunningError(message=f"Cannot trigger job '{job_id}': max concurrent jobs reached.")
         exec_record = ExecutionRecord(
             job_id=job_id,
             status=ExecutionStatus.PENDING,
@@ -189,11 +188,14 @@ class AutomationService:
             job_id=job_id,
             status=status,
             started_at=job.last_run_at or datetime.utcnow(),
-            completed_at=datetime.utcnow() if status in (
+            completed_at=datetime.utcnow()
+            if status
+            in (
                 ExecutionStatus.COMPLETED,
                 ExecutionStatus.FAILED,
                 ExecutionStatus.CANCELLED,
-            ) else None,
+            )
+            else None,
             duration_seconds=duration_seconds,
             error=error,
             metadata=metadata or {},
@@ -261,7 +263,5 @@ class AutomationService:
     def _get_job(self, job_id: str) -> AutomationJob:
         job = self.get_job(job_id)
         if job is None:
-            raise JobNotFoundError(
-                message=f"Automation job '{job_id}' not found."
-            )
+            raise JobNotFoundError(message=f"Automation job '{job_id}' not found.")
         return job

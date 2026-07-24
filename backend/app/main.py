@@ -30,6 +30,12 @@ async def lifespan(app: FastAPI):
     await init_db()
     yield
     await close_db()
+    try:
+        from app.browser.dependencies import reset_browser_service
+
+        reset_browser_service()
+    except Exception:
+        logger.exception("Browser cleanup failed during shutdown")
     logger.info("Application shutdown complete.")
 
 

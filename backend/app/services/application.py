@@ -64,14 +64,16 @@ class ApplicationService:
             },
         }
 
-    async def get_application(self, application_id: uuid.UUID) -> Application:
+    async def get_application(self, application_id: uuid.UUID, user_id: uuid.UUID | None = None) -> Application:
         app = await self.app_repo.get_by_id(application_id)
         if not app:
             raise NotFoundError("Application not found.")
+        if user_id is not None and app.user_id != user_id:
+            raise NotFoundError("Application not found.")
         return app
 
-    async def submit(self, application_id: uuid.UUID) -> Application:
-        app = await self.get_application(application_id)
+    async def submit(self, application_id: uuid.UUID, user_id: uuid.UUID | None = None) -> Application:
+        app = await self.get_application(application_id, user_id=user_id)
         from datetime import datetime, timezone
 
         app.status = "Submitted"
@@ -85,8 +87,8 @@ class ApplicationService:
         )
         return app
 
-    async def cancel(self, application_id: uuid.UUID) -> Application:
-        app = await self.get_application(application_id)
+    async def cancel(self, application_id: uuid.UUID, user_id: uuid.UUID | None = None) -> Application:
+        app = await self.get_application(application_id, user_id=user_id)
         app.status = "Cancelled"
         await self.app_repo.update(app)
         await self.audit_service.log(

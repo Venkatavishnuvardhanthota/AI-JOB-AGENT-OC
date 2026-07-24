@@ -18,9 +18,7 @@ class WorkflowService:
         self._config = config or WorkflowConfig()
         self._state_machine = StateMachine(self._config)
         self._history = WorkflowHistory()
-        self._transitions = TransitionManager(
-            self._state_machine, self._history, self._config
-        )
+        self._transitions = TransitionManager(self._state_machine, self._history, self._config)
         self._cache = WorkflowCache(self._config)
 
     def create_workflow(

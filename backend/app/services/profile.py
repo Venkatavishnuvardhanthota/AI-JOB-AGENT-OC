@@ -322,9 +322,7 @@ class CareerProfileService:
         await self.profile_repo.update(profile)
 
     @staticmethod
-    def _compute_completeness(
-        profile: CareerProfile, counts: dict[str, int]
-    ) -> tuple[dict[str, int], int, list[str]]:
+    def _compute_completeness(profile: CareerProfile, counts: dict[str, int]) -> tuple[dict[str, int], int, list[str]]:
         weights = {
             "headline": 5,
             "professional_summary": 10,

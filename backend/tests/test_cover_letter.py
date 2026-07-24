@@ -202,7 +202,9 @@ class TestCoverLetterGenerator:
     def test_generate_full(self):
         config = CoverLetterConfig(length="long")
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         profile = make_profile()
@@ -223,7 +225,9 @@ class TestCoverLetterGenerator:
     def test_generate_short(self):
         config = CoverLetterConfig(length="short")
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         result = generator.generate(make_profile(), make_job_posting(), make_optimized_resume(), make_match_result())
@@ -234,7 +238,9 @@ class TestCoverLetterGenerator:
     def test_generate_infers_style(self):
         config = CoverLetterConfig(length="medium")
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         job = make_job_posting(title="Software Engineer")
@@ -244,7 +250,9 @@ class TestCoverLetterGenerator:
     def test_generate_minimal_inputs(self):
         config = CoverLetterConfig(length="short")
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         result = generator.generate(None, None, None, None)
@@ -254,7 +262,9 @@ class TestCoverLetterGenerator:
     def test_template_with_company_name(self):
         config = CoverLetterConfig()
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         job = make_job_posting(company_name="Google")
@@ -264,7 +274,9 @@ class TestCoverLetterGenerator:
     def test_template_with_job_title(self):
         config = CoverLetterConfig()
         generator = CoverLetterGenerator(
-            config, TemplateEngine(), Personalizer(),
+            config,
+            TemplateEngine(),
+            Personalizer(),
             CoverLetterValidator(config),
         )
         job = make_job_posting(title="Data Scientist")
@@ -387,7 +399,10 @@ class TestCoverLetterCache:
 class TestCoverLetterGenerationService:
     def test_generate_full(self, service):
         result = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         assert result.full_text is not None
         assert result.word_count > 0
@@ -395,7 +410,10 @@ class TestCoverLetterGenerationService:
 
     def test_generate_with_custom_tone(self, service):
         result = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
             tone="enthusiastic",
         )
         assert result.full_text is not None
@@ -403,7 +421,10 @@ class TestCoverLetterGenerationService:
 
     def test_generate_with_custom_length(self, service):
         result = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
             length="short",
         )
         assert result.full_text is not None
@@ -415,37 +436,58 @@ class TestCoverLetterGenerationService:
 
     def test_caching(self, service):
         result1 = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         result2 = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         assert result1.id == result2.id
 
     def test_skip_cache(self, service):
         result1 = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
             skip_cache=True,
         )
         result2 = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
             skip_cache=False,
         )
         assert result1.id == result2.id
 
     def test_clear_cache(self, service):
         service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         service.clear_cache()
         result2 = service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         assert result2 is not None
 
     def test_invalidate_cache(self, service):
         service.generate(
-            make_profile(), make_job_posting(), make_optimized_resume(), make_match_result(),
+            make_profile(),
+            make_job_posting(),
+            make_optimized_resume(),
+            make_match_result(),
         )
         service.clear_cache()
         assert service._cache.get("anything") is None

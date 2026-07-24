@@ -17,17 +17,13 @@ class AutomationQueue:
     def enqueue(self, job: AutomationJob) -> QueueItem:
         with self._lock:
             if len(self._items) >= self._max_size:
-                raise QueueFullError(
-                    message=f"Queue is full (max {self._max_size})."
-                )
+                raise QueueFullError(message=f"Queue is full (max {self._max_size}).")
             item = QueueItem(
                 job_id=job.id,
                 priority=job.priority,
             )
             self._items.append(item)
-            self._items.sort(
-                key=lambda i: (-i.priority.value, i.enqueued_at)
-            )
+            self._items.sort(key=lambda i: (-i.priority.value, i.enqueued_at))
             return item
 
     def dequeue(self) -> QueueItem | None:
@@ -63,9 +59,7 @@ class AutomationQueue:
             for item in self._items:
                 if item.job_id == job_id:
                     item.priority = priority
-                    self._items.sort(
-                        key=lambda i: (-i.priority.value, i.enqueued_at)
-                    )
+                    self._items.sort(key=lambda i: (-i.priority.value, i.enqueued_at))
                     return True
             return False
 
@@ -99,9 +93,7 @@ class AutomationQueue:
                 key = item.priority.name.lower()
                 stats.by_priority[key] = stats.by_priority.get(key, 0) + 1
             if self._items:
-                stats.oldest_enqueued = min(
-                    item.enqueued_at for item in self._items
-                )
+                stats.oldest_enqueued = min(item.enqueued_at for item in self._items)
             return stats
 
     def clear(self) -> None:

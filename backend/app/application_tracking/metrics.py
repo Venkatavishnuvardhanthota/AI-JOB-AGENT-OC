@@ -23,9 +23,7 @@ class MetricsCalculator:
             metrics.total_lifecycle_duration_hours = round(delta.total_seconds() / 3600, 2)
             metrics.timeline_event_count = len(record.timeline)
 
-        metrics.time_in_current_status_hours = self._calculate_time_in_status(
-            record, now
-        )
+        metrics.time_in_current_status_hours = self._calculate_time_in_status(record, now)
 
         return metrics
 

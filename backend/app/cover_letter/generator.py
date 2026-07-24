@@ -45,52 +45,62 @@ class CoverLetterGenerator:
         for section_type in sections_order:
             if section_type == "greeting":
                 rendered = self._template_engine.render(
-                    template.get("greeting", ""), variables,
+                    template.get("greeting", ""),
+                    variables,
                 )
                 source = ["company_name"]
             elif section_type == "opening":
                 rendered = self._template_engine.render(
-                    template.get("opening", ""), variables,
+                    template.get("opening", ""),
+                    variables,
                 )
                 source = ["company_name", "job_title", "career_level", "years_experience"]
             elif section_type == "company":
                 rendered = self._template_engine.render(
-                    template.get("company", ""), variables,
+                    template.get("company", ""),
+                    variables,
                 )
                 source = ["company_name", "industry"]
             elif section_type == "experience":
                 rendered = self._template_engine.render(
-                    template.get("experience", ""), variables,
+                    template.get("experience", ""),
+                    variables,
                 )
                 source = ["current_role", "strengths"]
             elif section_type == "skills":
                 rendered = self._template_engine.render(
-                    template.get("skills", ""), variables,
+                    template.get("skills", ""),
+                    variables,
                 )
                 source = ["primary_skills", "matching_skills"]
             elif section_type == "projects":
                 rendered = self._template_engine.render(
-                    template.get("projects", ""), variables,
+                    template.get("projects", ""),
+                    variables,
                 )
                 source = ["projects"]
             elif section_type == "closing":
                 rendered = self._template_engine.render(
-                    template.get("closing", ""), variables,
+                    template.get("closing", ""),
+                    variables,
                 )
                 source = ["company_name"]
             elif section_type == "signature":
                 rendered = self._template_engine.render(
-                    template.get("signature", ""), variables,
+                    template.get("signature", ""),
+                    variables,
                 )
                 source = ["user_name"]
             else:
                 continue
 
-            sections.append(CoverLetterSection(
-                section_type=section_type,
-                content=rendered,
-                source_fields=source,
-            ))
+            sections.append(
+                CoverLetterSection(
+                    section_type=section_type,
+                    content=rendered,
+                    source_fields=source,
+                )
+            )
             full_text_parts.append(rendered)
 
         full_text = "\n\n".join(full_text_parts)

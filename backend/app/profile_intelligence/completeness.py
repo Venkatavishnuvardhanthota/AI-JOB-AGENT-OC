@@ -34,9 +34,7 @@ class ProfileCompletenessScorer:
             if score < 50:
                 missing.append(cat)
 
-        overall = sum(
-            scores[cat] * weight for cat, weight in self.CATEGORIES.items()
-        )
+        overall = sum(scores[cat] * weight for cat, weight in self.CATEGORIES.items())
 
         return ProfileCompleteness(
             overall_score=round(overall),

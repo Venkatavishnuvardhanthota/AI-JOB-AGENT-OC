@@ -423,9 +423,18 @@ class TestAIService:
     @pytest.mark.asyncio
     async def test_available_models_failing(self, service_with_failing: AIService):
         results = await service_with_failing.available_models()
-        assert results["mock"] == [{"id": "mock-model", "name": "Mock Model", "provider": "mock",
-                                     "description": None, "max_tokens": 4096, "supports_streaming": False,
-                                     "supports_function_calling": False, "supports_vision": False}]
+        assert results["mock"] == [
+            {
+                "id": "mock-model",
+                "name": "Mock Model",
+                "provider": "mock",
+                "description": None,
+                "max_tokens": 4096,
+                "supports_streaming": False,
+                "supports_function_calling": False,
+                "supports_vision": False,
+            }
+        ]
         assert results["failing"] == []
 
     @pytest.mark.asyncio

@@ -296,10 +296,12 @@ class ProfileExtractor:
             if name and name not in seen:
                 seen.add(name)
                 proficiency = getattr(lang, "proficiency", None)
-                result.append(LanguageInfo(
-                    language=getattr(lang, "language", ""),
-                    proficiency=str(proficiency) if proficiency else None,
-                ))
+                result.append(
+                    LanguageInfo(
+                        language=getattr(lang, "language", ""),
+                        proficiency=str(proficiency) if proficiency else None,
+                    )
+                )
         return result
 
     def extract_skill_names(self, skills: list) -> list[str]:
@@ -422,10 +424,28 @@ class ProfileExtractor:
 
     def _highest_degree(self, education_list: list):
         degree_order = [
-            "phd", "doctorate", "ph.d.", "doctor",
-            "master", "masters", "ms", "ma", "mba", "m.sc", "m.a.",
-            "bachelor", "bachelors", "bs", "ba", "b.sc", "b.a.", "b.e.", "b.tech",
-            "associate", "a.a.", "a.s.",
+            "phd",
+            "doctorate",
+            "ph.d.",
+            "doctor",
+            "master",
+            "masters",
+            "ms",
+            "ma",
+            "mba",
+            "m.sc",
+            "m.a.",
+            "bachelor",
+            "bachelors",
+            "bs",
+            "ba",
+            "b.sc",
+            "b.a.",
+            "b.e.",
+            "b.tech",
+            "associate",
+            "a.a.",
+            "a.s.",
             "diploma",
             "certificate",
             "high school",

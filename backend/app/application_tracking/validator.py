@@ -20,17 +20,13 @@ class ApplicationTrackingValidator:
         existing: ApplicationRecord | None,
     ) -> None:
         if existing is not None:
-            raise DuplicateApplicationError(
-                message=f"Application '{application_id}' already exists."
-            )
+            raise DuplicateApplicationError(message=f"Application '{application_id}' already exists.")
 
     def validate_get(self, record: ApplicationRecord | None) -> ApplicationRecord:
         if record is None:
             raise ApplicationNotFoundError(message="Application record not found.")
         if record.deleted:
-            raise ApplicationNotFoundError(
-                message="Application record has been deleted."
-            )
+            raise ApplicationNotFoundError(message="Application record has been deleted.")
         return record
 
     def validate_status_update(
@@ -39,9 +35,7 @@ class ApplicationTrackingValidator:
         new_status: ApplicationStatus,
     ) -> None:
         if record.archived:
-            raise InvalidStatusTransitionError(
-                message="Cannot update status of an archived application."
-            )
+            raise InvalidStatusTransitionError(message="Cannot update status of an archived application.")
         allowed = self._get_allowed_statuses(record.current_status)
         if new_status not in allowed:
             raise InvalidStatusTransitionError(
@@ -55,18 +49,14 @@ class ApplicationTrackingValidator:
         record: ApplicationRecord,
     ) -> None:
         if record.archived:
-            raise InvalidArchiveStateError(
-                message=f"Application '{record.application_id}' is already archived."
-            )
+            raise InvalidArchiveStateError(message=f"Application '{record.application_id}' is already archived.")
 
     def validate_restore(
         self,
         record: ApplicationRecord,
     ) -> None:
         if not record.archived:
-            raise InvalidArchiveStateError(
-                message=f"Application '{record.application_id}' is not archived."
-            )
+            raise InvalidArchiveStateError(message=f"Application '{record.application_id}' is not archived.")
 
     def validate_delete(self, record: ApplicationRecord | None) -> ApplicationRecord:
         if record is None:
@@ -83,9 +73,7 @@ class ApplicationTrackingValidator:
             timestamps = [e.timestamp for e in record.timeline]
             for i in range(1, len(timestamps)):
                 if timestamps[i] < timestamps[i - 1]:
-                    raise CorruptedHistoryError(
-                        message="Timeline events are not in chronological order."
-                    )
+                    raise CorruptedHistoryError(message="Timeline events are not in chronological order.")
 
     @staticmethod
     def _get_allowed_statuses(

@@ -53,9 +53,7 @@ class ApplicationTrackingService:
         reason: str | None = None,
     ) -> ApplicationRecord:
         record = self._get_or_create(application_id)
-        result = self._tracker.record_workflow_event(
-            record, workflow_state, actor, reason
-        )
+        result = self._tracker.record_workflow_event(record, workflow_state, actor, reason)
         self._cache.set(application_id, result)
         return result
 
@@ -68,9 +66,7 @@ class ApplicationTrackingService:
         metadata: dict[str, Any] | None = None,
     ) -> TimelineEvent:
         record = self._get_or_create(application_id)
-        event = self._tracker.add_event(
-            record, event_type, actor, reason, metadata
-        )
+        event = self._tracker.add_event(record, event_type, actor, reason, metadata)
         self._cache.set(application_id, record)
         return event
 

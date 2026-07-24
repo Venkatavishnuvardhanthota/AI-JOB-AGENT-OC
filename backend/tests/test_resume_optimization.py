@@ -141,13 +141,13 @@ def make_profile(hash_val=None):
 def make_match_result(matching=None, preferred=None):
     result = MagicMock()
     result.matching_skills = []
-    for s in (matching or []):
+    for s in matching or []:
         ms = MagicMock()
         ms.name = s
         ms.matched = True
         result.matching_skills.append(ms)
     result.preferred_skills = []
-    for s in (preferred or []):
+    for s in preferred or []:
         ps = MagicMock()
         ps.name = s
         ps.matched = False
@@ -204,9 +204,7 @@ class TestKeywordExtractor:
         assert KeywordExtractor._classify_tech("git") == "tools"
 
     def test_keyword_density(self):
-        density = KeywordExtractor._compute_keyword_density(
-            "Python SQL Docker Python", ["Python", "SQL"]
-        )
+        density = KeywordExtractor._compute_keyword_density("Python SQL Docker Python", ["Python", "SQL"])
         assert density > 0.0
 
     def test_missing_required(self):
@@ -223,7 +221,9 @@ class TestSectionOptimizer:
             required_keywords=["Python", "Docker", "Kubernetes"],
         )
         optimized, log = optimizer.optimize_summary(
-            "Experienced engineer.", None, keywords,
+            "Experienced engineer.",
+            None,
+            keywords,
         )
         assert optimized is not None
         assert "Python" in optimized or "Docker" in optimized
@@ -234,7 +234,9 @@ class TestSectionOptimizer:
         optimizer = SectionOptimizer(KeywordExtractor())
         keywords = KeywordAnalysis()
         optimized, log = optimizer.optimize_summary(
-            "Experienced engineer.", None, keywords,
+            "Experienced engineer.",
+            None,
+            keywords,
         )
         assert "Experienced engineer." in (optimized or "")
         assert log.change_type == ChangeType.UNCHANGED
@@ -253,7 +255,8 @@ class TestSectionOptimizer:
             preferred_keywords=["SQL"],
         )
         optimized, log = optimizer.optimize_skills(
-            ["CSS", "HTML", "Python", "SQL"], keywords,
+            ["CSS", "HTML", "Python", "SQL"],
+            keywords,
         )
         assert optimized.index("Python") < optimized.index("CSS")
         assert log.change_type == ChangeType.REORDERED
@@ -269,7 +272,8 @@ class TestSectionOptimizer:
             required_keywords=["Python", "Kubernetes"],
         )
         optimized, log = optimizer.optimize_skills(
-            ["CSS"], keywords,
+            ["CSS"],
+            keywords,
         )
         assert "Python" in optimized
 
@@ -301,10 +305,8 @@ class TestSectionOptimizer:
         optimizer = SectionOptimizer(KeywordExtractor())
         keywords = KeywordAnalysis(required_keywords=["Python"])
         sections = [
-            OptimizedSection(section_type="projects", title="CSS Project",
-                             original_content="Built with CSS"),
-            OptimizedSection(section_type="projects", title="Python Project",
-                             original_content="Built with Python"),
+            OptimizedSection(section_type="projects", title="CSS Project", original_content="Built with CSS"),
+            OptimizedSection(section_type="projects", title="Python Project", original_content="Built with Python"),
         ]
         result, logs = optimizer.optimize_projects(sections, keywords)
         assert result[0].title == "Python Project"
@@ -319,10 +321,10 @@ class TestSectionOptimizer:
         optimizer = SectionOptimizer(KeywordExtractor())
         keywords = KeywordAnalysis(required_keywords=["Computer Science"])
         sections = [
-            OptimizedSection(section_type="education", title="BA in English",
-                             original_content="English literature"),
-            OptimizedSection(section_type="education", title="BS in Computer Science",
-                             original_content="Computer science degree"),
+            OptimizedSection(section_type="education", title="BA in English", original_content="English literature"),
+            OptimizedSection(
+                section_type="education", title="BS in Computer Science", original_content="Computer science degree"
+            ),
         ]
         result, logs = optimizer.optimize_education(sections, keywords)
         assert result[0].title == "BS in Computer Science"
@@ -399,9 +401,7 @@ class TestATSScorer:
         assert len(result.suggestions) > 0
 
     def test_score_keyword_match_all_missing(self):
-        score = ATSScorer._score_keyword_match(
-            KeywordAnalysis(required_keywords=["A"], missing_required=["A"])
-        )
+        score = ATSScorer._score_keyword_match(KeywordAnalysis(required_keywords=["A"], missing_required=["A"]))
         assert score == 0
 
     def test_score_keyword_match_no_keywords(self):

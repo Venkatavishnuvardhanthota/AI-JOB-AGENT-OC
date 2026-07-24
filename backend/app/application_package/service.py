@@ -32,9 +32,7 @@ class ApplicationPackageService:
         match_hash = getattr(match_result, "id", None) if match_result else None
 
         if not skip_cache:
-            cache_key = PackageCache.compute_key(
-                profile_hash, job_hash, resume_hash, cover_letter_hash, match_hash
-            )
+            cache_key = PackageCache.compute_key(profile_hash, job_hash, resume_hash, cover_letter_hash, match_hash)
             cached = self._cache.get(cache_key)
             if cached is not None:
                 return cached
@@ -61,9 +59,7 @@ class ApplicationPackageService:
         cover_letter_hash: str | None = None,
         match_hash: str | None = None,
     ) -> None:
-        cache_key = PackageCache.compute_key(
-            profile_hash, job_hash, resume_hash, cover_letter_hash, match_hash
-        )
+        cache_key = PackageCache.compute_key(profile_hash, job_hash, resume_hash, cover_letter_hash, match_hash)
         self._cache.invalidate(cache_key)
 
     def clear_cache(self) -> None:

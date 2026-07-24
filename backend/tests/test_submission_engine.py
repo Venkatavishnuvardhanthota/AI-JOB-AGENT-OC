@@ -948,6 +948,7 @@ class TestEdgeCases:
         status = SubmissionStatus(package_id="pkg-1")
         before = status.updated_at
         import time
+
         time.sleep(0.01)
         state_machine.transition(status, SubmissionState.VALIDATING)
         assert status.updated_at > before

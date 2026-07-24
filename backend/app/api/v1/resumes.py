@@ -36,9 +36,15 @@ async def list_resumes(
         section_count = len(r.sections) if hasattr(r, "sections") and r.sections else 0
         items.append(
             ResumeListResponse(
-                id=r.id, version=r.version, title=r.title, template=r.template,
-                status=r.status, source=r.source, is_default=r.is_default,
-                archived=r.archived, section_count=section_count,
+                id=r.id,
+                version=r.version,
+                title=r.title,
+                template=r.template,
+                status=r.status,
+                source=r.source,
+                is_default=r.is_default,
+                archived=r.archived,
+                section_count=section_count,
                 created_at=r.created_at,
             ).model_dump()
         )
@@ -84,7 +90,9 @@ async def update_resume(
 ):
     service = ResumeService(db)
     resume = await service.update_resume(
-        uuid.UUID(resume_id), current_user.id, body.model_dump(exclude_none=True),
+        uuid.UUID(resume_id),
+        current_user.id,
+        body.model_dump(exclude_none=True),
     )
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
@@ -130,7 +138,9 @@ async def create_resume_version(
 ):
     service = ResumeService(db)
     resume = await service.create_version(
-        uuid.UUID(resume_id), current_user.id, change_summary=body.change_summary,
+        uuid.UUID(resume_id),
+        current_user.id,
+        change_summary=body.change_summary,
     )
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
@@ -155,7 +165,11 @@ async def import_resume(
     service = ResumeService(db)
     resume = await service.import_resume(current_user.id, body)
     await service.audit_service.log(
-        "RESUME_IMPORTED", user_id=current_user.id, entity="resume", entity_id=resume.id, outcome="success",
+        "RESUME_IMPORTED",
+        user_id=current_user.id,
+        entity="resume",
+        entity_id=resume.id,
+        outcome="success",
     )
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
@@ -182,7 +196,11 @@ async def export_resume(
         updated_at=resume.updated_at,
     )
     await service.audit_service.log(
-        "RESUME_EXPORTED", user_id=current_user.id, entity="resume", entity_id=resume.id, outcome="success",
+        "RESUME_EXPORTED",
+        user_id=current_user.id,
+        entity="resume",
+        entity_id=resume.id,
+        outcome="success",
     )
     return {"success": True, "data": export_data.model_dump()}
 
@@ -227,7 +245,9 @@ async def update_section(
 ):
     service = ResumeService(db)
     section = await service.update_section(
-        uuid.UUID(section_id), current_user.id, body.model_dump(exclude_none=True),
+        uuid.UUID(section_id),
+        current_user.id,
+        body.model_dump(exclude_none=True),
     )
     return {"success": True, "data": ResumeSectionResponse.model_validate(section).model_dump()}
 

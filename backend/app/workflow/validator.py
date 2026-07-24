@@ -31,9 +31,7 @@ class WorkflowValidator:
         status: WorkflowStatus,
     ) -> None:
         if status.retry_count >= self._max_retries:
-            raise MaxRetriesExceededError(
-                message=f"Maximum retry attempts ({self._max_retries}) exceeded."
-            )
+            raise MaxRetriesExceededError(message=f"Maximum retry attempts ({self._max_retries}) exceeded.")
 
     def validate_rollback(
         self,
@@ -42,9 +40,7 @@ class WorkflowValidator:
         if not self._strict:
             return
         if status.previous_state is None:
-            raise InvalidTransitionError(
-                message="Cannot rollback: no previous state available."
-            )
+            raise InvalidTransitionError(message="Cannot rollback: no previous state available.")
 
     @staticmethod
     def get_allowed_transitions(state: WorkflowState) -> list[WorkflowState]:

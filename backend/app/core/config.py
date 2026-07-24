@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "AI Job Agent"
     APP_VERSION: str = "2.0.0"
+    APP_RELEASE_DATE: str = "2026-07-24"
     APP_DEBUG: bool = True
     APP_SECRET_KEY: str = ""
     APP_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -19,6 +20,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent"
     DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@localhost:5432/ai_job_agent"
     TEST_DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_agent_test"
+    DATABASE_POOL_SIZE: int = 10
+    DATABASE_MAX_OVERFLOW: int = 20
+    DATABASE_POOL_TIMEOUT: int = 30
 
     LOG_LEVEL: str = "INFO"
 

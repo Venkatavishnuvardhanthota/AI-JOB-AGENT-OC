@@ -106,9 +106,7 @@ class TestAIHTTPClient:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json={"result": "ok"})
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=1
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=1) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             response = await client.post("/test", json={"key": "value"})
@@ -118,9 +116,7 @@ class TestAIHTTPClient:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(401)
 
-        async with AIHTTPClient(
-            base_url="http://mock", api_key="bad-key", timeout_seconds=30, max_retries=1
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", api_key="bad-key", timeout_seconds=30, max_retries=1) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             with pytest.raises(GenerationError, match="Authentication failed"):
@@ -130,9 +126,7 @@ class TestAIHTTPClient:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(400, json={"error": {"message": "Bad model"}})
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=1
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=1) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             with pytest.raises(GenerationError, match="Bad model"):
@@ -146,9 +140,7 @@ class TestAIHTTPClient:
             call_count += 1
             raise httpx.TimeoutException("timeout")
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=2
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=2) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             with pytest.raises(TimeoutError):
@@ -163,9 +155,7 @@ class TestAIHTTPClient:
             call_count += 1
             raise httpx.ConnectError("connection refused")
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=2
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=2) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             with pytest.raises(ProviderUnavailableError):
@@ -180,9 +170,7 @@ class TestAIHTTPClient:
             call_count += 1
             return httpx.Response(500)
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=2
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=2) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             with pytest.raises(ProviderUnavailableError):
@@ -193,9 +181,7 @@ class TestAIHTTPClient:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json=[1, 2, 3])
 
-        async with AIHTTPClient(
-            base_url="http://mock", timeout_seconds=30, max_retries=1
-        ) as client:
+        async with AIHTTPClient(base_url="http://mock", timeout_seconds=30, max_retries=1) as client:
             await client._client.aclose()
             client._client = _mock_client(handler)
             response = await client.get("/items")
@@ -274,9 +260,7 @@ class TestOpenRouterProvider:
 
         await openrouter_provider._client._client.aclose()
         openrouter_provider._client._client = _mock_client(handler)
-        await openrouter_provider.generate(
-            AIRequest(prompt="Test", model="gpt-4o", temperature=0.5, max_tokens=100)
-        )
+        await openrouter_provider.generate(AIRequest(prompt="Test", model="gpt-4o", temperature=0.5, max_tokens=100))
 
         assert sent_body["temperature"] == 0.5
         assert sent_body["max_tokens"] == 100
@@ -405,9 +389,7 @@ class TestOllamaProvider:
 
         await ollama_provider._client._client.aclose()
         ollama_provider._client._client = _mock_client(handler)
-        response = await ollama_provider.generate(
-            AIRequest(prompt="Help", system_prompt="Be brief", model="llama3")
-        )
+        response = await ollama_provider.generate(AIRequest(prompt="Help", system_prompt="Be brief", model="llama3"))
         assert response.content == "Response"
 
     async def test_generate_no_usage(self, ollama_provider: OllamaProvider):

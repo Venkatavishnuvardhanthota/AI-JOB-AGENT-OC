@@ -12,9 +12,7 @@ from app.ai.exceptions import ResponseParsingError, ResponseValidationError
 
 logger = structlog.get_logger(__name__)
 
-JSON_FENCE_PATTERN = re.compile(
-    r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL
-)
+JSON_FENCE_PATTERN = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
 
 
 class ResponseParser:
@@ -38,8 +36,7 @@ class ResponseParser:
             if fixed is not None:
                 return fixed
             raise ResponseParsingError(
-                f"Failed to parse JSON response: {exc}. "
-                f"Content preview: {candidate[:200]}"
+                f"Failed to parse JSON response: {exc}. " f"Content preview: {candidate[:200]}"
             ) from exc
 
     def parse(self, content: str, response_model: type[BaseModel]) -> BaseModel:
@@ -47,9 +44,7 @@ class ResponseParser:
         try:
             return response_model.model_validate(data)
         except PydanticValidationError as exc:
-            raise ResponseValidationError(
-                f"Response validation failed: {exc}"
-            ) from exc
+            raise ResponseValidationError(f"Response validation failed: {exc}") from exc
 
     def _attempt_fix(self, text: str) -> Any | None:
         try:

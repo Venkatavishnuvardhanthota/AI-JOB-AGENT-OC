@@ -5,7 +5,10 @@ from app.resume_optimization.schemas import ATSAssessment, KeywordAnalysis
 
 class ATSScorer:
     REQUIRED_SECTIONS: set[str] = {
-        "professional_summary", "skills", "experience", "education",
+        "professional_summary",
+        "skills",
+        "experience",
+        "education",
     }
 
     def assess(
@@ -23,16 +26,26 @@ class ATSScorer:
     ) -> ATSAssessment:
         keyword_match = self._score_keyword_match(keywords)
         section_coverage = self._score_section_coverage(
-            has_summary, has_skills_section, has_experience_section,
-            has_education_section, has_projects_section, has_certifications_section,
+            has_summary,
+            has_skills_section,
+            has_experience_section,
+            has_education_section,
+            has_projects_section,
+            has_certifications_section,
         )
         keyword_placement = self._score_keyword_placement(
-            keywords, summary_text, experience_text,
+            keywords,
+            summary_text,
+            experience_text,
         )
         format_compatibility = self._score_format_compatibility(skill_count)
 
-        weights = {"keyword_match": 0.35, "section_coverage": 0.25,
-                   "keyword_placement": 0.25, "format_compatibility": 0.15}
+        weights = {
+            "keyword_match": 0.35,
+            "section_coverage": 0.25,
+            "keyword_placement": 0.25,
+            "format_compatibility": 0.15,
+        }
         overall = round(
             keyword_match * weights["keyword_match"]
             + section_coverage * weights["section_coverage"]
@@ -41,8 +54,12 @@ class ATSScorer:
         )
 
         suggestions = self._generate_suggestions(
-            keyword_match, section_coverage, keyword_placement,
-            format_compatibility, keywords, has_summary,
+            keyword_match,
+            section_coverage,
+            keyword_placement,
+            format_compatibility,
+            keywords,
+            has_summary,
         )
 
         return ATSAssessment(
@@ -94,9 +111,9 @@ class ATSScorer:
         experience: str | None,
     ) -> int:
         all_kw = set(
-            k.lower() for k in (
-                keywords.required_keywords + keywords.preferred_keywords
-                + keywords.technical_skills + keywords.tools
+            k.lower()
+            for k in (
+                keywords.required_keywords + keywords.preferred_keywords + keywords.technical_skills + keywords.tools
             )
         )
         if not all_kw:

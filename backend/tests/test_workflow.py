@@ -53,9 +53,7 @@ class TestWorkflowValidator:
         assert allowed == [WorkflowState.PACKAGE_GENERATED]
 
     def test_get_allowed_from_ready_for_review(self):
-        allowed = WorkflowValidator.get_allowed_transitions(
-            WorkflowState.READY_FOR_REVIEW
-        )
+        allowed = WorkflowValidator.get_allowed_transitions(WorkflowState.READY_FOR_REVIEW)
         assert WorkflowState.APPROVED in allowed
         assert WorkflowState.REJECTED in allowed
         assert len(allowed) == 2
@@ -85,32 +83,24 @@ class TestWorkflowValidator:
 
     def test_valid_transition_same_state(self):
         validator = WorkflowValidator()
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.SUBMITTED
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.SUBMITTED)
         validator.validate_transition(status, WorkflowState.SUBMITTED)
 
     def test_invalid_transition_submitted_to_matched(self):
         validator = WorkflowValidator()
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.SUBMITTED
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.SUBMITTED)
         with pytest.raises(InvalidTransitionError):
             validator.validate_transition(status, WorkflowState.MATCHED)
 
     def test_invalid_transition_offer_to_queued(self):
         validator = WorkflowValidator()
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.OFFER
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.OFFER)
         with pytest.raises(InvalidTransitionError):
             validator.validate_transition(status, WorkflowState.QUEUED)
 
     def test_invalid_transition_rejected_to_submitted(self):
         validator = WorkflowValidator()
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.REJECTED
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.REJECTED)
         with pytest.raises(InvalidTransitionError):
             validator.validate_transition(status, WorkflowState.SUBMITTED)
 
@@ -163,9 +153,7 @@ class TestStateMachine:
 
     def test_transition_same_state_increments_retry(self):
         sm = StateMachine()
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.MATCHED
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.MATCHED)
         result = sm.transition(status, WorkflowState.MATCHED)
         assert result.current_state == WorkflowState.MATCHED
         assert result.retry_count == 1
@@ -241,9 +229,7 @@ class TestTransitionManager:
         sm = StateMachine()
         history = WorkflowHistory()
         tm = TransitionManager(sm, history)
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.MATCHED
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.MATCHED)
         result = tm.apply(status, WorkflowState.MATCHED)
         assert result.retry_count == 1
 
@@ -264,9 +250,7 @@ class TestTransitionManager:
         sm = StateMachine()
         history = WorkflowHistory()
         tm = TransitionManager(sm, history)
-        status = WorkflowStatus(
-            workflow_id="test", current_state=WorkflowState.DISCOVERED, locked=True
-        )
+        status = WorkflowStatus(workflow_id="test", current_state=WorkflowState.DISCOVERED, locked=True)
         with pytest.raises(WorkflowLockedError):
             tm.apply(status, WorkflowState.MATCHED)
 
@@ -441,6 +425,7 @@ class TestWorkflowCache:
         status = WorkflowStatus(workflow_id="test")
         cache.set("key1", status)
         import time
+
         time.sleep(0.01)
         result = cache.get("key1")
         assert result is None
@@ -449,6 +434,7 @@ class TestWorkflowCache:
         config = WorkflowConfig()
         cache = WorkflowCache(config)
         import threading
+
         errors = []
 
         def worker(ident: str):
@@ -663,9 +649,7 @@ class TestWorkflowService:
         service.transition(wf_id, WorkflowState.MATCHED)
         service.rollback(wf_id, reason="Incorrect match")
         history = service.get_history(wf_id)
-        rollback_entries = [
-            e for e in history if e.transition_type == TransitionType.ROLLBACK
-        ]
+        rollback_entries = [e for e in history if e.transition_type == TransitionType.ROLLBACK]
         assert len(rollback_entries) == 1
         assert rollback_entries[0].reason == "Incorrect match"
 

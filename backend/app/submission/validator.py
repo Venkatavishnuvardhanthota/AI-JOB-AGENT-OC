@@ -22,9 +22,7 @@ class SubmissionValidator:
         existing: SubmissionRecord | None,
     ) -> None:
         if existing is not None:
-            raise DuplicateSubmissionError(
-                message=f"Submission already exists for package '{package_id}'."
-            )
+            raise DuplicateSubmissionError(message=f"Submission already exists for package '{package_id}'.")
 
     def validate_get(self, record: SubmissionRecord | None) -> SubmissionRecord:
         if record is None:
@@ -66,10 +64,7 @@ class SubmissionValidator:
             failures.append("Cover letter is missing")
 
         if failures:
-            raise SubmissionNotReadyError(
-                message="Application is not ready for submission: "
-                + "; ".join(failures)
-            )
+            raise SubmissionNotReadyError(message="Application is not ready for submission: " + "; ".join(failures))
 
     def validate_state_transition(
         self,
@@ -110,9 +105,7 @@ class SubmissionValidator:
                 "Only FAILED submissions can be retried."
             )
         if record.retry.non_retryable:
-            raise SubmissionValidationError(
-                message="This failure is non-retryable."
-            )
+            raise SubmissionValidationError(message="This failure is non-retryable.")
 
     @staticmethod
     def _get_allowed_transitions(

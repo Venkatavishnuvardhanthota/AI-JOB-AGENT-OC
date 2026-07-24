@@ -16,7 +16,7 @@ class ExecutionHistory:
         with self._lock:
             self._records.append(entry)
             if len(self._records) > self._max_records:
-                self._records = self._records[-self._max_records:]
+                self._records = self._records[-self._max_records :]
 
     def get(self, execution_id: str) -> ExecutionRecord | None:
         with self._lock:
@@ -33,7 +33,7 @@ class ExecutionHistory:
             if query.status is not None:
                 results = [r for r in results if r.status == query.status]
             results.sort(key=lambda r: r.started_at or datetime.min, reverse=True)
-            return results[query.offset:query.offset + query.limit]
+            return results[query.offset : query.offset + query.limit]
 
     def list_by_job(self, job_id: str) -> list[ExecutionRecord]:
         with self._lock:

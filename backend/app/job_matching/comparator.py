@@ -32,53 +32,58 @@ class SkillComparator:
             is_found = js_lower in profile_skills_lower
             if is_found:
                 matched_job.add(js_lower)
-                matching.append(SkillMatchInfo(
-                    name=js,
-                    matched=True,
-                    normalized_name=js,
-                ))
+                matching.append(
+                    SkillMatchInfo(
+                        name=js,
+                        matched=True,
+                        normalized_name=js,
+                    )
+                )
             else:
                 for ps in profile_skills:
                     ps_lower = ps.lower().strip()
                     if self._skills_related(ps_lower, js_lower):
                         matched_job.add(js_lower)
-                        matching.append(SkillMatchInfo(
-                            name=js,
-                            matched=True,
-                            normalized_name=ps,
-                        ))
+                        matching.append(
+                            SkillMatchInfo(
+                                name=js,
+                                matched=True,
+                                normalized_name=ps,
+                            )
+                        )
                         is_found = True
                         break
                 if not is_found:
-                    missing.append(SkillMatchInfo(
-                        name=js,
-                        matched=False,
-                    ))
+                    missing.append(
+                        SkillMatchInfo(
+                            name=js,
+                            matched=False,
+                        )
+                    )
 
         for ps in profile_skills:
             ps_lower = ps.lower().strip()
             if ps_lower not in matched_job:
                 category = "primary" if ps_lower in primary_lower else "secondary"
-                preferred.append(SkillMatchInfo(
-                    name=ps,
-                    matched=False,
-                    category=category,
-                    normalized_name=ps,
-                ))
+                preferred.append(
+                    SkillMatchInfo(
+                        name=ps,
+                        matched=False,
+                        category=category,
+                        normalized_name=ps,
+                    )
+                )
 
         total = len(job_skills) or 1
         matched_count = len(matching)
         score = min(100.0, (matched_count / total) * 100.0)
 
         if profile_primary and job_skills:
-            primary_in_job = sum(
-                1 for s in profile_primary if s.lower().strip() in job_skills_lower
-            )
+            primary_in_job = sum(1 for s in profile_primary if s.lower().strip() in job_skills_lower)
             if primary_in_job >= len(profile_primary) * self._config.skills_min_match_percentage:
                 score = min(100.0, score + self._config.skills_expert_bonus)
 
         return matching, missing, preferred, score
-
 
     @staticmethod
     def _skills_related(a: str, b: str) -> bool:
@@ -131,10 +136,28 @@ class ExperienceComparator:
 
 class EducationComparator:
     DEGREE_ORDER: list[str] = [
-        "phd", "doctorate", "ph.d.", "doctor",
-        "master", "masters", "ms", "ma", "mba", "m.sc", "m.a.",
-        "bachelor", "bachelors", "bs", "ba", "b.sc", "b.a.", "b.e.", "b.tech",
-        "associate", "a.a.", "a.s.",
+        "phd",
+        "doctorate",
+        "ph.d.",
+        "doctor",
+        "master",
+        "masters",
+        "ms",
+        "ma",
+        "mba",
+        "m.sc",
+        "m.a.",
+        "bachelor",
+        "bachelors",
+        "bs",
+        "ba",
+        "b.sc",
+        "b.a.",
+        "b.e.",
+        "b.tech",
+        "associate",
+        "a.a.",
+        "a.s.",
         "diploma",
         "certificate",
         "high school",
@@ -152,11 +175,7 @@ class EducationComparator:
         if profile_level is None:
             return 30.0
 
-        required_levels = [
-            self._degree_level(req)
-            for req in job_requirements
-            if self._degree_level(req) is not None
-        ]
+        required_levels = [self._degree_level(req) for req in job_requirements if self._degree_level(req) is not None]
         if not required_levels:
             return 70.0
 
@@ -281,7 +300,7 @@ class SalaryComparator:
 
     @staticmethod
     def _extract_salary_amount(text: str) -> float | None:
-        match = re.search(r'([\d,.]+)', text.replace(',', ''))
+        match = re.search(r"([\d,.]+)", text.replace(",", ""))
         if match:
             try:
                 return float(match.group(1))

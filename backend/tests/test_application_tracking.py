@@ -33,9 +33,19 @@ from app.workflow.schemas import WorkflowState
 class TestApplicationStatus:
     def test_all_statuses_defined(self):
         expected = [
-            "draft", "ready", "queued", "submitted", "viewed",
-            "in_review", "assessment", "interview", "offer",
-            "hired", "rejected", "withdrawn", "archived",
+            "draft",
+            "ready",
+            "queued",
+            "submitted",
+            "viewed",
+            "in_review",
+            "assessment",
+            "interview",
+            "offer",
+            "hired",
+            "rejected",
+            "withdrawn",
+            "archived",
         ]
         values = [s.value for s in ApplicationStatus]
         for exp in expected:
@@ -115,16 +125,12 @@ class TestValidator:
 
     def test_validate_status_update_from_hired(self):
         validator = ApplicationTrackingValidator()
-        record = ApplicationRecord(
-            application_id="test", current_status=ApplicationStatus.HIRED
-        )
+        record = ApplicationRecord(application_id="test", current_status=ApplicationStatus.HIRED)
         validator.validate_status_update(record, ApplicationStatus.ARCHIVED)
 
     def test_validate_status_update_from_hired_invalid(self):
         validator = ApplicationTrackingValidator()
-        record = ApplicationRecord(
-            application_id="test", current_status=ApplicationStatus.HIRED
-        )
+        record = ApplicationRecord(application_id="test", current_status=ApplicationStatus.HIRED)
         with pytest.raises(InvalidStatusTransitionError):
             validator.validate_status_update(record, ApplicationStatus.DRAFT)
 
@@ -165,12 +171,8 @@ class TestValidator:
         validator = ApplicationTrackingValidator()
         record = ApplicationRecord(application_id="test")
         record.timeline = [
-            TimelineEvent(
-                event_type="a", timestamp=datetime(2024, 1, 1)
-            ),
-            TimelineEvent(
-                event_type="b", timestamp=datetime(2024, 1, 2)
-            ),
+            TimelineEvent(event_type="a", timestamp=datetime(2024, 1, 1)),
+            TimelineEvent(event_type="b", timestamp=datetime(2024, 1, 2)),
         ]
         validator.validate_history(record)
 
@@ -178,12 +180,8 @@ class TestValidator:
         validator = ApplicationTrackingValidator()
         record = ApplicationRecord(application_id="test")
         record.timeline = [
-            TimelineEvent(
-                event_type="a", timestamp=datetime(2024, 1, 3)
-            ),
-            TimelineEvent(
-                event_type="b", timestamp=datetime(2024, 1, 1)
-            ),
+            TimelineEvent(event_type="a", timestamp=datetime(2024, 1, 3)),
+            TimelineEvent(event_type="b", timestamp=datetime(2024, 1, 1)),
         ]
         with pytest.raises(CorruptedHistoryError):
             validator.validate_history(record)
@@ -192,28 +190,20 @@ class TestValidator:
         validator = ApplicationTrackingValidator(strict=False)
         record = ApplicationRecord(application_id="test")
         record.timeline = [
-            TimelineEvent(
-                event_type="a", timestamp=datetime(2024, 1, 3)
-            ),
-            TimelineEvent(
-                event_type="b", timestamp=datetime(2024, 1, 1)
-            ),
+            TimelineEvent(event_type="a", timestamp=datetime(2024, 1, 3)),
+            TimelineEvent(event_type="b", timestamp=datetime(2024, 1, 1)),
         ]
         validator.validate_history(record)
 
     def test_get_allowed_statuses_draft(self):
-        allowed = ApplicationTrackingValidator._get_allowed_statuses(
-            ApplicationStatus.DRAFT
-        )
+        allowed = ApplicationTrackingValidator._get_allowed_statuses(ApplicationStatus.DRAFT)
         assert ApplicationStatus.READY in allowed
         assert ApplicationStatus.WITHDRAWN in allowed
         assert ApplicationStatus.ARCHIVED in allowed
         assert ApplicationStatus.SUBMITTED not in allowed
 
     def test_get_allowed_statuses_submitted(self):
-        allowed = ApplicationTrackingValidator._get_allowed_statuses(
-            ApplicationStatus.SUBMITTED
-        )
+        allowed = ApplicationTrackingValidator._get_allowed_statuses(ApplicationStatus.SUBMITTED)
         assert ApplicationStatus.VIEWED in allowed
         assert ApplicationStatus.IN_REVIEW in allowed
         assert ApplicationStatus.INTERVIEW in allowed
@@ -222,9 +212,7 @@ class TestValidator:
         assert ApplicationStatus.WITHDRAWN in allowed
 
     def test_get_allowed_statuses_archived(self):
-        allowed = ApplicationTrackingValidator._get_allowed_statuses(
-            ApplicationStatus.ARCHIVED
-        )
+        allowed = ApplicationTrackingValidator._get_allowed_statuses(ApplicationStatus.ARCHIVED)
         assert allowed == []
 
 
@@ -292,15 +280,9 @@ class TestTimelineManager:
         assert len(events) == 2
 
     def test_status_to_event_type_mapping(self):
-        assert TimelineManager._status_to_event_type(
-            ApplicationStatus.DRAFT
-        ) == TimelineEventType.APPLICATION_CREATED
-        assert TimelineManager._status_to_event_type(
-            ApplicationStatus.SUBMITTED
-        ) == TimelineEventType.SUBMITTED
-        assert TimelineManager._status_to_event_type(
-            ApplicationStatus.REJECTED
-        ) == TimelineEventType.REJECTED
+        assert TimelineManager._status_to_event_type(ApplicationStatus.DRAFT) == TimelineEventType.APPLICATION_CREATED
+        assert TimelineManager._status_to_event_type(ApplicationStatus.SUBMITTED) == TimelineEventType.SUBMITTED
+        assert TimelineManager._status_to_event_type(ApplicationStatus.REJECTED) == TimelineEventType.REJECTED
 
 
 class TestStatusManager:
@@ -317,9 +299,7 @@ class TestStatusManager:
         validator = ApplicationTrackingValidator()
         timeline = TimelineManager()
         sm = StatusManager(validator, timeline)
-        record = ApplicationRecord(
-            application_id="test", current_status=ApplicationStatus.READY
-        )
+        record = ApplicationRecord(application_id="test", current_status=ApplicationStatus.READY)
         result = sm.update_status(record, ApplicationStatus.READY)
         assert result.current_status == ApplicationStatus.READY
         assert len(result.timeline) == 0
@@ -495,9 +475,7 @@ class TestApplicationTracker:
     def test_record_workflow_event(self):
         tracker = ApplicationTracker()
         record = tracker.create("app-1")
-        result = tracker.record_workflow_event(
-            record, WorkflowState.MATCHED, actor="system"
-        )
+        result = tracker.record_workflow_event(record, WorkflowState.MATCHED, actor="system")
         assert result.workflow_state == WorkflowState.MATCHED
         assert len(result.timeline) == 2
 
@@ -617,6 +595,7 @@ class TestTrackingCache:
         record = ApplicationRecord(application_id="test")
         cache.set("k1", record)
         import time
+
         time.sleep(0.01)
         result = cache.get("k1")
         assert result is None
@@ -625,6 +604,7 @@ class TestTrackingCache:
         config = ApplicationTrackingConfig()
         cache = TrackingCache(config)
         import threading
+
         errors = []
 
         def worker(ident: str):
@@ -803,18 +783,14 @@ class TestApplicationTrackingService:
         service = ApplicationTrackingService()
         app_id = str(uuid.uuid4())
         service.create(app_id)
-        service.update_status(
-            app_id, ApplicationStatus.READY, reason="All checks passed"
-        )
+        service.update_status(app_id, ApplicationStatus.READY, reason="All checks passed")
         history = service.get_history(app_id)
         assert history[-1].reason == "All checks passed"
 
     def test_record_workflow_event_with_actor(self):
         service = ApplicationTrackingService()
         app_id = str(uuid.uuid4())
-        service.record_workflow_event(
-            app_id, WorkflowState.MATCHED, actor="workflow_engine"
-        )
+        service.record_workflow_event(app_id, WorkflowState.MATCHED, actor="workflow_engine")
         history = service.get_history(app_id)
         assert history[-1].actor == "workflow_engine"
 
@@ -834,9 +810,7 @@ class TestApplicationTrackingService:
         service.create(app_id)
         service.archive(app_id, reason="Position filled")
         history = service.get_history(app_id)
-        archive_events = [
-            e for e in history if e.event_type == TimelineEventType.ARCHIVED
-        ]
+        archive_events = [e for e in history if e.event_type == TimelineEventType.ARCHIVED]
         assert len(archive_events) == 1
         assert archive_events[0].reason == "Position filled"
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import os
 import tempfile
 import uuid
 from datetime import datetime, timedelta
@@ -30,7 +28,6 @@ from app.orchestrator.exceptions import (
     ManualInterventionError,
     NonRecoverableError,
     OrchestratorError,
-    PipelineExecutionError,
     RecoverableError,
     RecoveryFailedError,
     StageExecutionError,
@@ -109,6 +106,7 @@ def report_builder(metrics: OrchestratorMetricsCollector) -> OrchestrationReport
 
 # --- Exception Tests ---
 
+
 class TestExceptions:
     def test_stage_execution_error(self):
         err = StageExecutionError("test_stage", "something broke", recoverable=True)
@@ -132,6 +130,7 @@ class TestExceptions:
 
 
 # --- Schema Tests ---
+
 
 class TestSchemas:
     def test_orchestration_context_defaults(self):
@@ -205,6 +204,7 @@ class TestSchemas:
 
 # --- Validator Tests ---
 
+
 class TestOrchestratorValidator:
     def test_validate_valid_mode(self):
         v = OrchestratorValidator(OrchestratorConfig())
@@ -229,6 +229,7 @@ class TestOrchestratorValidator:
 
 
 # --- State Manager Tests ---
+
 
 class TestOrchestrationStateManager:
     def test_set_running(self, state_manager):
@@ -283,6 +284,7 @@ class TestOrchestrationStateManager:
 
 # --- Checkpoint Tests ---
 
+
 class TestCheckpointManager:
     def test_save_and_load_checkpoint(self, checkpoint_manager):
         ctx = OrchestrationContext()
@@ -330,6 +332,7 @@ class TestCheckpointManager:
 
 # --- Recovery Tests ---
 
+
 class TestRecoveryHandler:
     def test_determine_strategy_retry(self, config, checkpoint_manager):
         handler = RecoveryHandler(config, checkpoint_manager)
@@ -353,9 +356,7 @@ class TestRecoveryHandler:
     def test_execute_retry_strategy(self, config, checkpoint_manager):
         handler = RecoveryHandler(config, checkpoint_manager)
         ctx = OrchestrationContext()
-        result = handler.execute_strategy(
-            ctx, PipelineStage.UPLOAD, RecoveryStrategy.RETRY_STAGE, "timeout", 1
-        )
+        result = handler.execute_strategy(ctx, PipelineStage.UPLOAD, RecoveryStrategy.RETRY_STAGE, "timeout", 1)
         stage = result.get_stage(PipelineStage.UPLOAD)
         assert stage.status == StageStatus.PENDING
         assert stage.retry_count == 1
@@ -380,6 +381,7 @@ class TestRecoveryHandler:
 
 
 # --- Dispatcher Tests ---
+
 
 class TestExecutionDispatcher:
     def test_dispatch_single(self):
@@ -410,11 +412,13 @@ class TestExecutionDispatcher:
 
 # --- Metrics Tests ---
 
+
 class TestOrchestratorMetricsCollector:
     def test_record_stage(self, metrics):
         ctx = OrchestrationContext()
         metrics.record_stage_start(PipelineStage.JOB_MATCHING, ctx)
         import time
+
         time.sleep(0.01)
         metrics.record_stage_end(PipelineStage.JOB_MATCHING, ctx)
         result = ctx.get_stage(PipelineStage.JOB_MATCHING)
@@ -438,6 +442,7 @@ class TestOrchestratorMetricsCollector:
 
 
 # --- Reporting Tests ---
+
 
 class TestOrchestrationReportBuilder:
     def test_build_basic_report(self, metrics, report_builder):
@@ -466,6 +471,7 @@ class TestOrchestrationReportBuilder:
 
 # --- Pipeline Tests ---
 
+
 class TestPipelineEngine:
     def test_dry_run_skips_stages(self, config, checkpoint_manager, recovery_handler, metrics, state_manager):
         engine = PipelineEngine(config, checkpoint_manager, recovery_handler, metrics, state_manager, [])
@@ -482,6 +488,7 @@ class TestPipelineEngine:
         def _execute(ctx):
             ctx.set_stage_output(PipelineStage.JOB_MATCHING, {"match": True})
             return ctx
+
         mock_exec.execute.side_effect = _execute
 
         engine = PipelineEngine(config, checkpoint_manager, recovery_handler, metrics, state_manager, [mock_exec])
@@ -497,6 +504,7 @@ class TestPipelineEngine:
 
 
 # --- Stage Executor Tests ---
+
 
 class TestStageExecutors:
     def test_profile_intelligence_skip_no_user(self):
@@ -567,6 +575,7 @@ class TestStageExecutors:
 
 # --- Service Tests ---
 
+
 class TestOrchestratorService:
     def test_validate_mode_valid(self, service):
         service.validate_mode("single")
@@ -607,6 +616,7 @@ class TestOrchestratorService:
 
 
 # --- Integration-style Tests ---
+
 
 class TestOrchestratorIntegration:
     def test_context_serialization_roundtrip(self):
@@ -649,6 +659,7 @@ class TestOrchestratorIntegration:
 
         def _execute(ctx):
             raise StageExecutionError("job_matching", "temporary error", recoverable=True)
+
         mock_exec.execute.side_effect = _execute
 
         engine = PipelineEngine(fast_config, checkpoint_manager, fast_recovery, metrics, state_manager, [mock_exec])
@@ -707,6 +718,7 @@ class TestOrchestratorIntegration:
         ctx.state = OrchestratorState.FAILED
         ctx._retry_history = []
         from app.orchestrator.schemas import RetryHistoryEntry
+
         ctx._retry_history.append(
             RetryHistoryEntry(
                 stage=PipelineStage.UPLOAD,

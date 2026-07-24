@@ -30,9 +30,7 @@ class PackageGenerator:
         resume: OptimizedResume | None = None,
         cover_letter: GeneratedCoverLetter | None = None,
     ) -> ApplicationPackage:
-        validation = self._validate(
-            job, profile, application_intelligence, match_result, resume, cover_letter
-        )
+        validation = self._validate(job, profile, application_intelligence, match_result, resume, cover_letter)
         completeness = self._calculate_completeness(validation)
         status = self._determine_status(completeness)
 
@@ -107,13 +105,10 @@ class PackageGenerator:
 
         if job and application_intelligence:
             job_company = getattr(company, "name", None)
-            ai_company = getattr(
-                getattr(application_intelligence, "company", None), "summary", None
-            )
+            ai_company = getattr(getattr(application_intelligence, "company", None), "summary", None)
             if job_company and ai_company:
                 validation.job_consistency_ok = (
-                    job_company.lower() in ai_company.lower()
-                    or ai_company.lower() in job_company.lower()
+                    job_company.lower() in ai_company.lower() or ai_company.lower() in job_company.lower()
                 )
                 if not validation.job_consistency_ok:
                     validation.warnings.append("Job company name mismatch")

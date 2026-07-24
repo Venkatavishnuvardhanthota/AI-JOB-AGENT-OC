@@ -530,30 +530,51 @@ class TestScoringEngine:
     def test_perfect_match(self):
         engine = ScoringEngine(MatchingConfig())
         score = engine.compute_overall(
-            skills_score=100, experience_score=100, education_score=100,
-            location_score=100, remote_score=100, salary_score=100,
-            employment_type_score=100, career_level_score=100,
-            industry_score=100, certifications_score=100, projects_score=100,
+            skills_score=100,
+            experience_score=100,
+            education_score=100,
+            location_score=100,
+            remote_score=100,
+            salary_score=100,
+            employment_type_score=100,
+            career_level_score=100,
+            industry_score=100,
+            certifications_score=100,
+            projects_score=100,
         )
         assert score == 100.0
 
     def test_zero_match(self):
         engine = ScoringEngine(MatchingConfig())
         score = engine.compute_overall(
-            skills_score=0, experience_score=0, education_score=0,
-            location_score=0, remote_score=0, salary_score=0,
-            employment_type_score=0, career_level_score=0,
-            industry_score=0, certifications_score=0, projects_score=0,
+            skills_score=0,
+            experience_score=0,
+            education_score=0,
+            location_score=0,
+            remote_score=0,
+            salary_score=0,
+            employment_type_score=0,
+            career_level_score=0,
+            industry_score=0,
+            certifications_score=0,
+            projects_score=0,
         )
         assert score == 0.0
 
     def test_partial_match(self):
         engine = ScoringEngine(MatchingConfig())
         score = engine.compute_overall(
-            skills_score=80, experience_score=70, education_score=60,
-            location_score=100, remote_score=100, salary_score=80,
-            employment_type_score=100, career_level_score=100,
-            industry_score=100, certifications_score=60, projects_score=50,
+            skills_score=80,
+            experience_score=70,
+            education_score=60,
+            location_score=100,
+            remote_score=100,
+            salary_score=80,
+            employment_type_score=100,
+            career_level_score=100,
+            industry_score=100,
+            certifications_score=60,
+            projects_score=50,
         )
         assert 70 <= score <= 90
 
@@ -698,8 +719,10 @@ class TestMatchValidator:
     def test_assert_valid_input_ok(self):
         validator = MatchValidator()
         profile = make_profile(
-            primary_skills=["Python"], years_exp=5,
-            education_summary="BS CS", completeness_score=80,
+            primary_skills=["Python"],
+            years_exp=5,
+            education_summary="BS CS",
+            completeness_score=80,
         )
         job = make_job(skills=["Python"], title="Engineer")
         validator.assert_valid_input(profile, job)

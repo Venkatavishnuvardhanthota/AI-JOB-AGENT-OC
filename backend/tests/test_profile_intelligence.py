@@ -27,8 +27,14 @@ class TestProfileExtractor:
         return s
 
     def make_exp(
-        self, title="Engineer", company="Acme", start=None, end=None,
-        currently=False, achievements=None, industry="Tech",
+        self,
+        title="Engineer",
+        company="Acme",
+        start=None,
+        end=None,
+        currently=False,
+        achievements=None,
+        industry="Tech",
     ):
         e = MagicMock()
         e.title = title
@@ -368,9 +374,15 @@ class TestProfileCompletenessScorer:
         scorer = ProfileCompletenessScorer()
         profile = self.make_profile()
         raw = {
-            "profile": profile, "skills": [], "education": [],
-            "experience": [], "projects": [], "certifications": [],
-            "languages": [], "social_links": [], "preferences": None,
+            "profile": profile,
+            "skills": [],
+            "education": [],
+            "experience": [],
+            "projects": [],
+            "certifications": [],
+            "languages": [],
+            "social_links": [],
+            "preferences": None,
         }
         result = scorer.compute(raw)
         assert len(result.missing_items) > 0

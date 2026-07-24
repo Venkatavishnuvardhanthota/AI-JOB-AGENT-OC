@@ -46,7 +46,7 @@ async def get_application(
     application_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = ApplicationService(db)
-    app = await service.get_application(uuid.UUID(application_id))
+    app = await service.get_application(uuid.UUID(application_id), user_id=current_user.id)
     return {"success": True, "data": ApplicationResponse.model_validate(app).model_dump()}
 
 
@@ -55,7 +55,7 @@ async def submit_application(
     application_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = ApplicationService(db)
-    app = await service.submit(uuid.UUID(application_id))
+    app = await service.submit(uuid.UUID(application_id), user_id=current_user.id)
     return {
         "success": True,
         "data": {
@@ -70,7 +70,7 @@ async def cancel_application(
     application_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = ApplicationService(db)
-    app = await service.cancel(uuid.UUID(application_id))
+    app = await service.cancel(uuid.UUID(application_id), user_id=current_user.id)
     return {"success": True, "data": {"status": app.status}}
 
 

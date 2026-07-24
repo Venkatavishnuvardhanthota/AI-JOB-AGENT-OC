@@ -77,9 +77,16 @@ class TestAutomationType:
 class TestTriggerType:
     def test_all_triggers_defined(self):
         expected = [
-            "immediate", "scheduled", "daily", "weekly", "monthly",
-            "cron", "workflow_event", "review_approval",
-            "submission_completion", "manual",
+            "immediate",
+            "scheduled",
+            "daily",
+            "weekly",
+            "monthly",
+            "cron",
+            "workflow_event",
+            "review_approval",
+            "submission_completion",
+            "manual",
         ]
         values = [t.value for t in TriggerType]
         for exp in expected:
@@ -106,8 +113,13 @@ class TestJobState:
 class TestExecutionStatus:
     def test_all_statuses_defined(self):
         expected = [
-            "pending", "running", "completed", "failed",
-            "cancelled", "retried", "skipped",
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
+            "retried",
+            "skipped",
         ]
         values = [s.value for s in ExecutionStatus]
         for exp in expected:
@@ -891,10 +903,8 @@ class TestExecutionHistory:
 
     def test_query_by_job_id(self):
         history = ExecutionHistory()
-        r1 = ExecutionRecord(job_id="job-1", status=ExecutionStatus.COMPLETED,
-                             started_at=datetime.utcnow())
-        r2 = ExecutionRecord(job_id="job-2", status=ExecutionStatus.FAILED,
-                             started_at=datetime.utcnow())
+        r1 = ExecutionRecord(job_id="job-1", status=ExecutionStatus.COMPLETED, started_at=datetime.utcnow())
+        r2 = ExecutionRecord(job_id="job-2", status=ExecutionStatus.FAILED, started_at=datetime.utcnow())
         history.record(r1)
         history.record(r2)
         results = history.query(HistoryQuery(job_id="job-1"))
@@ -903,10 +913,8 @@ class TestExecutionHistory:
 
     def test_query_by_status(self):
         history = ExecutionHistory()
-        r1 = ExecutionRecord(job_id="job-1", status=ExecutionStatus.COMPLETED,
-                             started_at=datetime.utcnow())
-        r2 = ExecutionRecord(job_id="job-2", status=ExecutionStatus.FAILED,
-                             started_at=datetime.utcnow())
+        r1 = ExecutionRecord(job_id="job-1", status=ExecutionStatus.COMPLETED, started_at=datetime.utcnow())
+        r2 = ExecutionRecord(job_id="job-2", status=ExecutionStatus.FAILED, started_at=datetime.utcnow())
         history.record(r1)
         history.record(r2)
         results = history.query(HistoryQuery(status=ExecutionStatus.FAILED))
@@ -916,20 +924,26 @@ class TestExecutionHistory:
     def test_query_limit(self):
         history = ExecutionHistory()
         for _ in range(10):
-            history.record(ExecutionRecord(
-                job_id="job-1", status=ExecutionStatus.COMPLETED,
-                started_at=datetime.utcnow(),
-            ))
+            history.record(
+                ExecutionRecord(
+                    job_id="job-1",
+                    status=ExecutionStatus.COMPLETED,
+                    started_at=datetime.utcnow(),
+                )
+            )
         results = history.query(HistoryQuery(job_id="job-1", limit=5))
         assert len(results) == 5
 
     def test_query_offset(self):
         history = ExecutionHistory()
         for _ in range(10):
-            history.record(ExecutionRecord(
-                job_id="job-1", status=ExecutionStatus.COMPLETED,
-                started_at=datetime.utcnow(),
-            ))
+            history.record(
+                ExecutionRecord(
+                    job_id="job-1",
+                    status=ExecutionStatus.COMPLETED,
+                    started_at=datetime.utcnow(),
+                )
+            )
         results = history.query(HistoryQuery(job_id="job-1", limit=10, offset=5))
         assert len(results) == 5
 
@@ -1209,11 +1223,17 @@ class TestAutomationService:
     def test_list_jobs(self):
         service = AutomationService()
         service.create_job(
-            job_id="a", name="A", target_module="jobs", target_action="search",
+            job_id="a",
+            name="A",
+            target_module="jobs",
+            target_action="search",
             priority=JobPriority.HIGH,
         )
         service.create_job(
-            job_id="b", name="B", target_module="jobs", target_action="search",
+            job_id="b",
+            name="B",
+            target_module="jobs",
+            target_action="search",
             priority=JobPriority.LOW,
         )
         jobs = service.list_jobs()
@@ -1222,8 +1242,10 @@ class TestAutomationService:
     def test_pause_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="pause-test", name="Pause Test",
-            target_module="jobs", target_action="search",
+            job_id="pause-test",
+            name="Pause Test",
+            target_module="jobs",
+            target_action="search",
         )
         paused = service.pause_job("pause-test")
         assert paused.state == JobState.PAUSED
@@ -1231,8 +1253,10 @@ class TestAutomationService:
     def test_resume_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="resume-test", name="Resume Test",
-            target_module="jobs", target_action="search",
+            job_id="resume-test",
+            name="Resume Test",
+            target_module="jobs",
+            target_action="search",
         )
         service.pause_job("resume-test")
         resumed = service.resume_job("resume-test")
@@ -1241,8 +1265,10 @@ class TestAutomationService:
     def test_cancel_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="cancel-test", name="Cancel Test",
-            target_module="jobs", target_action="search",
+            job_id="cancel-test",
+            name="Cancel Test",
+            target_module="jobs",
+            target_action="search",
         )
         cancelled = service.cancel_job("cancel-test")
         assert cancelled.state == JobState.CANCELLED
@@ -1250,8 +1276,10 @@ class TestAutomationService:
     def test_cancel_already_cancelled(self):
         service = AutomationService()
         service.create_job(
-            job_id="double-cancel", name="Double Cancel",
-            target_module="jobs", target_action="search",
+            job_id="double-cancel",
+            name="Double Cancel",
+            target_module="jobs",
+            target_action="search",
         )
         service.cancel_job("double-cancel")
         with pytest.raises(JobDisabledError):
@@ -1260,8 +1288,10 @@ class TestAutomationService:
     def test_delete_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="delete-me", name="Delete Me",
-            target_module="jobs", target_action="search",
+            job_id="delete-me",
+            name="Delete Me",
+            target_module="jobs",
+            target_action="search",
         )
         assert service.delete_job("delete-me") is True
         assert service.get_job("delete-me") is None
@@ -1269,8 +1299,10 @@ class TestAutomationService:
     def test_trigger_now(self):
         service = AutomationService()
         service.create_job(
-            job_id="trigger-now", name="Trigger Now",
-            target_module="jobs", target_action="search",
+            job_id="trigger-now",
+            name="Trigger Now",
+            target_module="jobs",
+            target_action="search",
         )
         record = service.trigger_now("trigger-now")
         assert record.job_id == "trigger-now"
@@ -1279,8 +1311,10 @@ class TestAutomationService:
     def test_trigger_now_disabled_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="disabled-job", name="Disabled",
-            target_module="jobs", target_action="search",
+            job_id="disabled-job",
+            name="Disabled",
+            target_module="jobs",
+            target_action="search",
             enabled=False,
         )
         with pytest.raises(JobDisabledError):
@@ -1289,8 +1323,10 @@ class TestAutomationService:
     def test_trigger_now_paused_job(self):
         service = AutomationService()
         service.create_job(
-            job_id="paused-job", name="Paused",
-            target_module="jobs", target_action="search",
+            job_id="paused-job",
+            name="Paused",
+            target_module="jobs",
+            target_action="search",
         )
         service.pause_job("paused-job")
         with pytest.raises(JobPausedError):
@@ -1307,8 +1343,10 @@ class TestAutomationService:
     def test_record_execution_completed(self):
         service = AutomationService()
         service.create_job(
-            job_id="exec-test", name="Exec Test",
-            target_module="jobs", target_action="search",
+            job_id="exec-test",
+            name="Exec Test",
+            target_module="jobs",
+            target_action="search",
         )
         record = service.record_execution(
             job_id="exec-test",
@@ -1321,8 +1359,10 @@ class TestAutomationService:
     def test_record_execution_failed(self):
         service = AutomationService()
         service.create_job(
-            job_id="fail-test", name="Fail Test",
-            target_module="jobs", target_action="search",
+            job_id="fail-test",
+            name="Fail Test",
+            target_module="jobs",
+            target_action="search",
         )
         record = service.record_execution(
             job_id="fail-test",
@@ -1335,8 +1375,10 @@ class TestAutomationService:
     def test_record_execution_retry_exhausted(self):
         service = AutomationService()
         service.create_job(
-            job_id="retry-limit", name="Retry Limit",
-            target_module="jobs", target_action="search",
+            job_id="retry-limit",
+            name="Retry Limit",
+            target_module="jobs",
+            target_action="search",
         )
         for _ in range(2):
             service.record_execution("retry-limit", ExecutionStatus.FAILED)
@@ -1346,8 +1388,10 @@ class TestAutomationService:
     def test_list_history(self):
         service = AutomationService()
         service.create_job(
-            job_id="history-job", name="History",
-            target_module="jobs", target_action="search",
+            job_id="history-job",
+            name="History",
+            target_module="jobs",
+            target_action="search",
         )
         service.record_execution("history-job", ExecutionStatus.COMPLETED)
         service.record_execution("history-job", ExecutionStatus.FAILED)
@@ -1357,8 +1401,10 @@ class TestAutomationService:
     def test_list_history_filter_by_status(self):
         service = AutomationService()
         service.create_job(
-            job_id="filter-job", name="Filter",
-            target_module="jobs", target_action="search",
+            job_id="filter-job",
+            name="Filter",
+            target_module="jobs",
+            target_action="search",
         )
         service.record_execution("filter-job", ExecutionStatus.COMPLETED)
         service.record_execution("filter-job", ExecutionStatus.FAILED)
@@ -1379,8 +1425,10 @@ class TestAutomationService:
     def test_queue_operations(self):
         service = AutomationService()
         service.create_job(
-            job_id="q-job", name="Q",
-            target_module="jobs", target_action="search",
+            job_id="q-job",
+            name="Q",
+            target_module="jobs",
+            target_action="search",
         )
         service.trigger_now("q-job")
         queue = service.get_queue()
@@ -1395,8 +1443,10 @@ class TestAutomationService:
     def test_cache_operations(self):
         service = AutomationService()
         service.create_job(
-            job_id="cache-job", name="Cache",
-            target_module="jobs", target_action="search",
+            job_id="cache-job",
+            name="Cache",
+            target_module="jobs",
+            target_action="search",
         )
         assert service.get_job("cache-job") is not None
         service.invalidate_cache("cache-job")
@@ -1409,12 +1459,16 @@ class TestDeterminism:
         s1 = AutomationService()
         s2 = AutomationService()
         j1 = s1.create_job(
-            job_id="det-a", name="A",
-            target_module="jobs", target_action="search",
+            job_id="det-a",
+            name="A",
+            target_module="jobs",
+            target_action="search",
         )
         j2 = s2.create_job(
-            job_id="det-a", name="A",
-            target_module="jobs", target_action="search",
+            job_id="det-a",
+            name="A",
+            target_module="jobs",
+            target_action="search",
         )
         assert j1.id == j2.id
         assert j1.name == j2.name
@@ -1443,8 +1497,10 @@ class TestEdgeCases:
     def test_empty_job_id(self):
         service = AutomationService()
         job = service.create_job(
-            job_id="", name="Empty ID",
-            target_module="jobs", target_action="search",
+            job_id="",
+            name="Empty ID",
+            target_module="jobs",
+            target_action="search",
         )
         assert job.id == ""
 
@@ -1452,8 +1508,10 @@ class TestEdgeCases:
         service = AutomationService()
         long_name = "x" * 1000
         job = service.create_job(
-            job_id="long-name", name=long_name,
-            target_module="jobs", target_action="search",
+            job_id="long-name",
+            name=long_name,
+            target_module="jobs",
+            target_action="search",
         )
         assert job.name == long_name
 
@@ -1461,8 +1519,10 @@ class TestEdgeCases:
         service = AutomationService()
         job_id = "job@#$%^&*()"
         job = service.create_job(
-            job_id=job_id, name="Special",
-            target_module="jobs", target_action="search",
+            job_id=job_id,
+            name="Special",
+            target_module="jobs",
+            target_action="search",
         )
         assert job.id == job_id
 
@@ -1470,8 +1530,10 @@ class TestEdgeCases:
         service = AutomationService()
         name = "João 自动化 test"
         job = service.create_job(
-            job_id="unicode-job", name=name,
-            target_module="jobs", target_action="search",
+            job_id="unicode-job",
+            name=name,
+            target_module="jobs",
+            target_action="search",
         )
         assert job.name == name
 
@@ -1479,8 +1541,10 @@ class TestEdgeCases:
         service = AutomationService()
         policy = AutomationPolicy(max_retries=0)
         service.create_job(
-            job_id="zero-retry", name="Zero Retry",
-            target_module="jobs", target_action="search",
+            job_id="zero-retry",
+            name="Zero Retry",
+            target_module="jobs",
+            target_action="search",
             policy=policy,
         )
         with pytest.raises(RetryLimitExceededError):
@@ -1506,8 +1570,10 @@ class TestEdgeCases:
     def test_update_job_with_new_trigger(self):
         service = AutomationService()
         service.create_job(
-            job_id="update-trigger", name="Update Trigger",
-            target_module="jobs", target_action="search",
+            job_id="update-trigger",
+            name="Update Trigger",
+            target_module="jobs",
+            target_action="search",
         )
         job = service.get_job("update-trigger")
         job.trigger = AutomationTrigger(
@@ -1521,10 +1587,12 @@ class TestEdgeCases:
     def test_history_max_records(self):
         history = ExecutionHistory(max_records=5)
         for i in range(10):
-            history.record(ExecutionRecord(
-                job_id=f"job-{i}",
-                started_at=datetime.utcnow(),
-            ))
+            history.record(
+                ExecutionRecord(
+                    job_id=f"job-{i}",
+                    started_at=datetime.utcnow(),
+                )
+            )
         assert history.count() == 5
 
 
@@ -1547,8 +1615,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = ([Thread(target=producer, args=(i,)) for i in range(4)]
-                   + [Thread(target=consumer) for _ in range(4)])
+        threads = [Thread(target=producer, args=(i,)) for i in range(4)] + [Thread(target=consumer) for _ in range(4)]
         for t in threads:
             t.start()
         for t in threads:
@@ -1562,10 +1629,12 @@ class TestThreadSafety:
         def worker(n: int) -> None:
             try:
                 for i in range(100):
-                    history.record(ExecutionRecord(
-                        job_id=f"job-{n}-{i}",
-                        started_at=datetime.utcnow(),
-                    ))
+                    history.record(
+                        ExecutionRecord(
+                            job_id=f"job-{n}-{i}",
+                            started_at=datetime.utcnow(),
+                        )
+                    )
             except Exception as e:
                 errors.append(e)
 
@@ -1602,8 +1671,10 @@ class TestFullLifecycle:
     def test_job_lifecycle(self):
         service = AutomationService()
         job = service.create_job(
-            job_id="lifecycle", name="Lifecycle",
-            target_module="jobs", target_action="search",
+            job_id="lifecycle",
+            name="Lifecycle",
+            target_module="jobs",
+            target_action="search",
         )
         assert job.state == JobState.ACTIVE
         service.pause_job("lifecycle")

@@ -16,6 +16,7 @@ def _get_registry() -> AIProviderRegistry:
 @lru_cache
 def _get_config() -> AIConfig:
     from app.core.config import settings
+
     return AIConfig(
         default_provider=settings.AI_DEFAULT_PROVIDER,
         default_model=settings.AI_DEFAULT_MODEL,

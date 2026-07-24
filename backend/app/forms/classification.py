@@ -200,11 +200,14 @@ class FieldClassifier:
                 alternatives.append(st)
 
         if best is None:
-            best = (SemanticFieldType.UNKNOWN, ConfidenceScore(
-                overall=0.1,
-                reason="No classification signals found.",
-                requires_review=True,
-            ))
+            best = (
+                SemanticFieldType.UNKNOWN,
+                ConfidenceScore(
+                    overall=0.1,
+                    reason="No classification signals found.",
+                    requires_review=True,
+                ),
+            )
 
         final_confidence = self._adjust_confidence_for_field_type(field, best[1])
 

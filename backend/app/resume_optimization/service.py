@@ -20,7 +20,10 @@ class ResumeOptimizationService:
         self._section_optimizer = SectionOptimizer(self._keyword_extractor)
         self._ats_scorer = ATSScorer()
         self._optimizer = ResumeOptimizer(
-            self._config, self._keyword_extractor, self._section_optimizer, self._ats_scorer,
+            self._config,
+            self._keyword_extractor,
+            self._section_optimizer,
+            self._ats_scorer,
         )
         self._validator = ResumeValidator(self._config)
         self._cache = OptimizationCache(self._config)

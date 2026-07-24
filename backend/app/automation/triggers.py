@@ -9,11 +9,7 @@ from app.automation.schemas import AutomationTrigger, TriggerType
 
 class TriggerEvaluator:
     CRON_PATTERN = re.compile(
-        r"^(\*|[0-5]?\d)\s+"
-        r"(\*|[01]?\d|2[0-3])\s+"
-        r"(\*|[0-2]?\d|3[01])\s+"
-        r"(\*|1[0-2]|[1-9])\s+"
-        r"(\*|[0-6])$"
+        r"^(\*|[0-5]?\d)\s+" r"(\*|[01]?\d|2[0-3])\s+" r"(\*|[0-2]?\d|3[01])\s+" r"(\*|1[0-2]|[1-9])\s+" r"(\*|[0-6])$"
     )
 
     def evaluate(self, trigger: AutomationTrigger) -> bool:
@@ -30,9 +26,7 @@ class TriggerEvaluator:
             if not trigger.cron_expression:
                 errors.append("Cron expression is required for CRON trigger type")
             elif not self.CRON_PATTERN.match(trigger.cron_expression):
-                errors.append(
-                    f"Invalid cron expression: '{trigger.cron_expression}'"
-                )
+                errors.append(f"Invalid cron expression: '{trigger.cron_expression}'")
         elif trigger.trigger_type == TriggerType.SCHEDULED:
             if trigger.scheduled_at is None:
                 errors.append("scheduled_at is required for SCHEDULED trigger type")
@@ -49,14 +43,16 @@ class TriggerEvaluator:
                 errors.append("monthly_day is required for MONTHLY trigger type")
             if not trigger.monthly_time:
                 errors.append("monthly_time is required for MONTHLY trigger type")
-        elif trigger.trigger_type in (
-            TriggerType.WORKFLOW_EVENT,
-            TriggerType.REVIEW_APPROVAL,
-            TriggerType.SUBMISSION_COMPLETION,
-        ) and not trigger.event_source:
-            errors.append(
-                f"event_source is required for {trigger.trigger_type.value} trigger type"
+        elif (
+            trigger.trigger_type
+            in (
+                TriggerType.WORKFLOW_EVENT,
+                TriggerType.REVIEW_APPROVAL,
+                TriggerType.SUBMISSION_COMPLETION,
             )
+            and not trigger.event_source
+        ):
+            errors.append(f"event_source is required for {trigger.trigger_type.value} trigger type")
         return errors
 
     def _get_evaluator(self, trigger_type: TriggerType) -> Any:
@@ -176,8 +172,10 @@ class TriggerEvaluator:
             days_ahead = 7
         next_date = now + timedelta(days=days_ahead)
         return next_date.replace(
-            hour=target.hour, minute=target.minute,
-            second=target.second, microsecond=target.microsecond,
+            hour=target.hour,
+            minute=target.minute,
+            second=target.second,
+            microsecond=target.microsecond,
         )
 
     @staticmethod
@@ -191,7 +189,10 @@ class TriggerEvaluator:
         try:
             candidate = now.replace(
                 day=min(trigger.monthly_day, 28),
-                hour=hour, minute=minute, second=0, microsecond=0,
+                hour=hour,
+                minute=minute,
+                second=0,
+                microsecond=0,
             )
         except ValueError:
             return None
@@ -204,9 +205,13 @@ class TriggerEvaluator:
             next_year += 1
         try:
             candidate = now.replace(
-                year=next_year, month=next_month,
+                year=next_year,
+                month=next_month,
                 day=min(trigger.monthly_day, 28),
-                hour=hour, minute=minute, second=0, microsecond=0,
+                hour=hour,
+                minute=minute,
+                second=0,
+                microsecond=0,
             )
         except ValueError:
             return None
@@ -233,7 +238,10 @@ class TriggerEvaluator:
             second = int(parts[2]) if len(parts) > 2 else 0
             now = datetime.utcnow()
             return now.replace(
-                hour=hour, minute=minute, second=second, microsecond=0,
+                hour=hour,
+                minute=minute,
+                second=second,
+                microsecond=0,
             )
         except (ValueError, IndexError):
             return None

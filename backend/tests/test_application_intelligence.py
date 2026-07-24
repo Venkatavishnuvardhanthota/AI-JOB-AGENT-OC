@@ -676,6 +676,7 @@ class TestCache:
         cache = AnalysisCache(config)
         cache.set("test-key", ApplicationIntelligence())
         import time
+
         time.sleep(0.01)
         assert cache.get("test-key") is None
 
@@ -935,6 +936,7 @@ class TestAnalyzer:
         job = make_job()
         config = make_config()
         from app.application_intelligence.analyzer import ApplicationIntelligenceAnalyzer
+
         analyzer = ApplicationIntelligenceAnalyzer(config)
         result1 = analyzer.analyze(job)
         result2 = analyzer.analyze(job)
@@ -944,6 +946,7 @@ class TestAnalyzer:
         job = make_job()
         config = make_config()
         from app.application_intelligence.analyzer import ApplicationIntelligenceAnalyzer
+
         analyzer = ApplicationIntelligenceAnalyzer(config)
         result1 = analyzer.analyze(job)
         result2 = analyzer.analyze(job, skip_cache=True)
@@ -960,6 +963,7 @@ class TestAnalyzer:
 
         config = make_config()
         from app.application_intelligence.analyzer import ApplicationIntelligenceAnalyzer
+
         analyzer = ApplicationIntelligenceAnalyzer(config)
         result = analyzer.analyze(job, match_result, profile)
         assert result.application_priority == ApplicationPriority.HIGH

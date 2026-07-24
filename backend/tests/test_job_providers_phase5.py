@@ -94,8 +94,6 @@ class TestWorkdayJobProvider:
         assert "search" not in params
         assert params["location"] == "Austin"
 
-
-
     def test_parse_response(self, provider):
         data = {
             "total": 2,

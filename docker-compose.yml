@@ -9,12 +9,44 @@ services:
       - "8000:8000"
     environment:
       - APP_NAME=${APP_NAME:-AI Job Application Agent}
+      - APP_VERSION=${APP_VERSION:-2.0.0}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_SECRET_KEY=${APP_SECRET_KEY:?APP_SECRET_KEY is required}
+      - APP_ACCESS_TOKEN_EXPIRE_MINUTES=${APP_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ai_job_agent
       - DATABASE_SYNC_URL=postgresql://postgres:postgres@db:5432/ai_job_agent
+      - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-10}
+      - DATABASE_MAX_OVERFLOW=${DATABASE_MAX_OVERFLOW:-20}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+      - BROWSER_AUTOMATION_ENABLED=${BROWSER_AUTOMATION_ENABLED:-false}
+      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+      - APPLICATIONS_DAILY_LIMIT_DEFAULT=${APPLICATIONS_DAILY_LIMIT_DEFAULT:-10}
+      - AI_DEFAULT_PROVIDER=${AI_DEFAULT_PROVIDER:-openrouter}
+      - AI_DEFAULT_MODEL=${AI_DEFAULT_MODEL:-gpt-4o}
+      - AI_FALLBACK_MODEL=${AI_FALLBACK_MODEL:-gpt-3.5-turbo}
+      - AI_MAX_RETRIES=${AI_MAX_RETRIES:-3}
+      - AI_TIMEOUT_SECONDS=${AI_TIMEOUT_SECONDS:-60}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai}
+      - OPENROUTER_DEFAULT_MODEL=${OPENROUTER_DEFAULT_MODEL:-gpt-4o}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
+      - OLLAMA_DEFAULT_MODEL=${OLLAMA_DEFAULT_MODEL:-llama3}
+      - ENABLED_JOB_PROVIDERS=${ENABLED_JOB_PROVIDERS:-linkedin,greenhouse,lever,ashby,wellfound,workday}
+      - JOB_REQUEST_TIMEOUT_SECONDS=${JOB_REQUEST_TIMEOUT_SECONDS:-30}
+      - JOB_RETRY_COUNT=${JOB_RETRY_COUNT:-2}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@example.com}
+      - NOTIFICATIONS_ENABLED=${NOTIFICATIONS_ENABLED:-true}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; exec('try: urllib.request.urlopen(\\\"http://localhost:8000/health\\\")\\nexcept: exit(1)')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     depends_on:
       db:
         condition: service_healthy

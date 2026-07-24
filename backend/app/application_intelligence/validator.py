@@ -18,16 +18,10 @@ class ApplicationIntelligenceValidator:
 
         title = getattr(job, "title", None)
         company = getattr(job, "company", None)
-        result.has_incomplete_posting = (
-            result.has_missing_description
-            or not title
-            or not company
-        )
+        result.has_incomplete_posting = result.has_missing_description or not title or not company
 
         skills = getattr(job, "skills", None) or []
-        result.duplicate_requirements = self._find_duplicate_requirements(
-            description or "", skills
-        )
+        result.duplicate_requirements = self._find_duplicate_requirements(description or "", skills)
 
         result.conflicting_salary = self._check_salary_conflicts(job)
         result.conflicting_location = self._check_location_conflicts(job)
@@ -56,7 +50,7 @@ class ApplicationIntelligenceValidator:
                 duplicates.append(skill)
             seen.add(normalized)
 
-        sentences = re.split(r'[.!?\n]', description)
+        sentences = re.split(r"[.!?\n]", description)
         seen_phrases: set[str] = set()
         for sentence in sentences:
             phrase = sentence.strip().lower()
@@ -101,7 +95,12 @@ class ApplicationIntelligenceValidator:
 
         et_str = str(et).lower()
         valid_types = {
-            "full_time", "part_time", "contract", "temporary",
-            "internship", "freelance", "other",
+            "full_time",
+            "part_time",
+            "contract",
+            "temporary",
+            "internship",
+            "freelance",
+            "other",
         }
         return et_str not in valid_types

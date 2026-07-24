@@ -100,44 +100,22 @@ class ProfileIntelligenceService:
 
         if profile:
             experiences = (
-                profile.experience
-                if hasattr(profile, "experience") and profile.experience is not None
-                else []
+                profile.experience if hasattr(profile, "experience") and profile.experience is not None else []
             )
-            education = (
-                profile.education
-                if hasattr(profile, "education") and profile.education is not None
-                else []
-            )
-            projects = (
-                profile.projects
-                if hasattr(profile, "projects") and profile.projects is not None
-                else []
-            )
-            skills = (
-                profile.skills
-                if hasattr(profile, "skills") and profile.skills is not None
-                else []
-            )
+            education = profile.education if hasattr(profile, "education") and profile.education is not None else []
+            projects = profile.projects if hasattr(profile, "projects") and profile.projects is not None else []
+            skills = profile.skills if hasattr(profile, "skills") and profile.skills is not None else []
             certifications = (
                 profile.certifications
                 if hasattr(profile, "certifications") and profile.certifications is not None
                 else []
             )
-            languages = (
-                profile.languages
-                if hasattr(profile, "languages") and profile.languages is not None
-                else []
-            )
+            languages = profile.languages if hasattr(profile, "languages") and profile.languages is not None else []
             social_links = (
-                profile.social_links
-                if hasattr(profile, "social_links") and profile.social_links is not None
-                else []
+                profile.social_links if hasattr(profile, "social_links") and profile.social_links is not None else []
             )
             preferences = (
-                profile.preferences
-                if hasattr(profile, "preferences") and profile.preferences is not None
-                else None
+                profile.preferences if hasattr(profile, "preferences") and profile.preferences is not None else None
             )
 
         try:

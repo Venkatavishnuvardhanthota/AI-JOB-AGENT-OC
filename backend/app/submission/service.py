@@ -81,8 +81,12 @@ class SubmissionService:
         wf_state_obj = WorkflowStateEnum(workflow_status) if workflow_status else None
 
         self._validator.validate_submission_readiness(
-            review, wf_state_obj, is_package_complete,
-            has_job_posting, has_resume, has_cover_letter,
+            review,
+            wf_state_obj,
+            is_package_complete,
+            has_job_posting,
+            has_resume,
+            has_cover_letter,
         )
 
         record.state = SubmissionState.VALIDATED
@@ -96,9 +100,7 @@ class SubmissionService:
         scheduled_at: datetime | None = None,
     ) -> SubmissionRecord:
         record = self._get_submission(package_id)
-        self._validator.validate_state_transition(
-            record, SubmissionState.QUEUED
-        )
+        self._validator.validate_state_transition(record, SubmissionState.QUEUED)
         self._queue.enqueue(record, scheduled_at)
         self._cache.set(package_id, record)
         return record
@@ -109,9 +111,7 @@ class SubmissionService:
         strategy_type: StrategyType | None = None,
     ) -> SubmissionRecord:
         record = self._get_submission(package_id)
-        self._validator.validate_state_transition(
-            record, SubmissionState.DISPATCHED
-        )
+        self._validator.validate_state_transition(record, SubmissionState.DISPATCHED)
         result = self._dispatcher.dispatch(record, strategy_type)
         self._cache.set(package_id, result)
         return result
@@ -176,7 +176,5 @@ class SubmissionService:
     def _get_submission(self, package_id: str) -> SubmissionRecord:
         record = self._cache.get(package_id)
         if record is None:
-            raise SubmissionNotFoundError(
-                message=f"No submission found for package '{package_id}'."
-            )
+            raise SubmissionNotFoundError(message=f"No submission found for package '{package_id}'.")
         return record

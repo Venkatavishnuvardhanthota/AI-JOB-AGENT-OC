@@ -21,9 +21,7 @@ class Dispatcher:
         if record.dry_run:
             record.state = SubmissionState.DISPATCHED
             record.metadata["dry_run"] = True
-            record.metadata["message"] = (
-                f"Dry-run: would dispatch with '{actual_strategy.value}' strategy"
-            )
+            record.metadata["message"] = f"Dry-run: would dispatch with '{actual_strategy.value}' strategy"
             record.updated_at = datetime.utcnow()
             return record
 

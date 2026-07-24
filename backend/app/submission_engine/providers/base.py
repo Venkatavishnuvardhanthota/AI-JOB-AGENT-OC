@@ -20,8 +20,7 @@ class BaseSubmissionProvider(SubmissionProvider):
             return False
         try:
             submit_btn = page.locator(
-                "button[type='submit'], input[type='submit'], "
-                "button:has-text('Submit'), button:has-text('Apply')"
+                "button[type='submit'], input[type='submit'], " "button:has-text('Submit'), button:has-text('Apply')"
             )
             if submit_btn and submit_btn.is_visible():
                 submit_btn.click(timeout=timeout_ms)

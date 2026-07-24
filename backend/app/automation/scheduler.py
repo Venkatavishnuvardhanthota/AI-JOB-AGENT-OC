@@ -53,7 +53,9 @@ class AutomationScheduler:
         return datetime.utcnow() >= next_run
 
     def get_recurring_intervals(
-        self, job: AutomationJob, count: int = 5,
+        self,
+        job: AutomationJob,
+        count: int = 5,
     ) -> list[datetime]:
         intervals: list[datetime] = []
         if job.automation_type not in (AutomationType.RECURRING, AutomationType.ONE_TIME):

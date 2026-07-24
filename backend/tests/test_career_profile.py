@@ -309,9 +309,7 @@ class TestCareerProfileService:
     async def test_add_education_with_currently_studying(self, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        edu = await service.add_education(
-            user.id, {"institution": "MIT", "degree": "BS", "currently_studying": True}
-        )
+        edu = await service.add_education(user.id, {"institution": "MIT", "degree": "BS", "currently_studying": True})
         assert edu.currently_studying is True
 
     async def test_update_education_ownership(self, db_session):
@@ -364,9 +362,7 @@ class TestCareerProfileService:
     async def test_add_skill_with_level(self, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        skill = await service.add_skill(
-            user.id, {"name": "Python", "skill_level": "advanced", "display_order": 1}
-        )
+        skill = await service.add_skill(user.id, {"name": "Python", "skill_level": "advanced", "display_order": 1})
         assert skill.skill_level == "advanced"
         assert skill.display_order == 1
 
@@ -393,9 +389,7 @@ class TestCareerProfileService:
     async def test_add_social_link(self, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         assert link.platform == "GitHub"
         assert link.profile_id is not None
 
@@ -403,18 +397,14 @@ class TestCareerProfileService:
         user = await _create_user(db_session)
         other = await _create_user(db_session, "other3@test.com")
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         with pytest.raises(NotFoundError):
             await service.update_social_link(other.id, link.id, {"platform": "GitLab"})
 
     async def test_delete_social_link(self, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         await service.delete_social_link(user.id, link.id)
         link_repo = SocialLinkRepository(db_session)
         deleted = await link_repo.get_by_id(link.id)
@@ -424,9 +414,7 @@ class TestCareerProfileService:
         user = await _create_user(db_session)
         other = await _create_user(db_session, "other4@test.com")
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         with pytest.raises(NotFoundError):
             await service.delete_social_link(other.id, link.id)
 
@@ -763,9 +751,7 @@ class TestCareerProfileAPI:
     async def test_update_social_link_api(self, api_client, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         await db_session.commit()
         headers = await self._auth_headers(db_session, user.id)
         resp = await api_client.patch(
@@ -779,9 +765,7 @@ class TestCareerProfileAPI:
     async def test_delete_social_link_api(self, api_client, db_session):
         user = await _create_user(db_session)
         service = CareerProfileService(db_session)
-        link = await service.add_social_link(
-            user.id, {"platform": "GitHub", "url": "https://github.com/test"}
-        )
+        link = await service.add_social_link(user.id, {"platform": "GitHub", "url": "https://github.com/test"})
         await db_session.commit()
         headers = await self._auth_headers(db_session, user.id)
         resp = await api_client.delete(f"/profile/social-links/{link.id}", headers=headers)

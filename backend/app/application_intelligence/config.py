@@ -6,12 +6,25 @@ from dataclasses import dataclass
 @dataclass
 class ApplicationIntelligenceConfig:
     startup_keywords: tuple[str, ...] = (
-        "startup", "seed", "series a", "series b", "venture-backed",
-        "high-growth", "fast-paced", "scale-up", "unicorn",
+        "startup",
+        "seed",
+        "series a",
+        "series b",
+        "venture-backed",
+        "high-growth",
+        "fast-paced",
+        "scale-up",
+        "unicorn",
     )
     enterprise_keywords: tuple[str, ...] = (
-        "enterprise", "fortune", "global", "multinational", "corporate",
-        "established", "large-scale", "inc.",
+        "enterprise",
+        "fortune",
+        "global",
+        "multinational",
+        "corporate",
+        "established",
+        "large-scale",
+        "inc.",
     )
     seniority_keywords: dict[str, tuple[str, ...]] = None
 

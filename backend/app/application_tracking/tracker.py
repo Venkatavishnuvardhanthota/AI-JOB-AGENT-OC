@@ -23,13 +23,9 @@ class ApplicationTracker:
         config: ApplicationTrackingConfig | None = None,
     ) -> None:
         self._config = config or ApplicationTrackingConfig()
-        self._validator = ApplicationTrackingValidator(
-            strict=self._config.strict_validation
-        )
+        self._validator = ApplicationTrackingValidator(strict=self._config.strict_validation)
         self._timeline = TimelineManager()
-        self._status = StatusManager(
-            self._validator, self._timeline, self._config
-        )
+        self._status = StatusManager(self._validator, self._timeline, self._config)
         self._metrics = MetricsCalculator()
 
     def create(
@@ -87,9 +83,7 @@ class ApplicationTracker:
         reason: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> TimelineEvent:
-        return self._timeline.add_event(
-            record, event_type, actor, reason, metadata
-        )
+        return self._timeline.add_event(record, event_type, actor, reason, metadata)
 
     def get_timeline(
         self,

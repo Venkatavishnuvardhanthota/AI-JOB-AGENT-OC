@@ -29,9 +29,7 @@ class SubmissionQueue:
         )
         with self._lock:
             self._items.append(item)
-            self._items.sort(
-                key=lambda i: (-i.priority.value, i.enqueued_at)
-            )
+            self._items.sort(key=lambda i: (-i.priority.value, i.enqueued_at))
         record.state = SubmissionState.QUEUED
         record.updated_at = datetime.utcnow()
         return item
@@ -74,9 +72,7 @@ class SubmissionQueue:
             for item in self._items:
                 if item.submission_id == submission_id:
                     item.priority = priority
-                    self._items.sort(
-                        key=lambda i: (-i.priority.value, i.enqueued_at)
-                    )
+                    self._items.sort(key=lambda i: (-i.priority.value, i.enqueued_at))
                     return True
             return False
 
@@ -109,9 +105,7 @@ class SubmissionQueue:
                         stats.by_state[key] = stats.by_state.get(key, 0) + 1
 
             if self._items:
-                stats.oldest_enqueued = min(
-                    item.enqueued_at for item in self._items
-                )
+                stats.oldest_enqueued = min(item.enqueued_at for item in self._items)
 
             return stats
 

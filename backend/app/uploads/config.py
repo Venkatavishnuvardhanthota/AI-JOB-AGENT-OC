@@ -13,10 +13,23 @@ class UploadsConfig:
     verify_after_upload: bool = True
     verify_timeout_ms: float = 10000.0
     allowed_extensions: tuple[str, ...] = (
-        ".pdf", ".doc", ".docx", ".txt", ".rtf",
-        ".png", ".jpg", ".jpeg", ".gif", ".svg",
-        ".zip", ".ppt", ".pptx", ".xls", ".xlsx",
-        ".odt", ".md",
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".txt",
+        ".rtf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".zip",
+        ".ppt",
+        ".pptx",
+        ".xls",
+        ".xlsx",
+        ".odt",
+        ".md",
     )
     allowed_mime_types: tuple[str, ...] = (
         "application/pdf",

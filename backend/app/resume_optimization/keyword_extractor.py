@@ -6,40 +6,148 @@ from app.resume_optimization.schemas import KeywordAnalysis
 
 TECH_STACK_CATEGORIES: dict[str, list[str]] = {
     "programming_languages": [
-        "python", "javascript", "typescript", "java", "go", "rust", "c#", "c++",
-        "ruby", "php", "swift", "kotlin", "scala", "r", "dart", "sql", "html", "css",
-        "bash", "shell", "powershell", "perl", "lua", "haskell", "elixir", "clojure",
+        "python",
+        "javascript",
+        "typescript",
+        "java",
+        "go",
+        "rust",
+        "c#",
+        "c++",
+        "ruby",
+        "php",
+        "swift",
+        "kotlin",
+        "scala",
+        "r",
+        "dart",
+        "sql",
+        "html",
+        "css",
+        "bash",
+        "shell",
+        "powershell",
+        "perl",
+        "lua",
+        "haskell",
+        "elixir",
+        "clojure",
     ],
     "frameworks": [
-        "react", "angular", "vue", "django", "flask", "fastapi", "express", "node.js",
-        "spring", "asp.net", "rails", "laravel", "tensorflow", "pytorch", "pandas",
-        "numpy", "scikit-learn", "jquery", "bootstrap", "tailwind", "next.js", "nuxt",
-        ".net", "dotnet",
+        "react",
+        "angular",
+        "vue",
+        "django",
+        "flask",
+        "fastapi",
+        "express",
+        "node.js",
+        "spring",
+        "asp.net",
+        "rails",
+        "laravel",
+        "tensorflow",
+        "pytorch",
+        "pandas",
+        "numpy",
+        "scikit-learn",
+        "jquery",
+        "bootstrap",
+        "tailwind",
+        "next.js",
+        "nuxt",
+        ".net",
+        "dotnet",
     ],
     "databases": [
-        "postgresql", "postgres", "mysql", "mongodb", "redis", "sqlite", "oracle",
-        "mariadb", "cassandra", "dynamodb", "elasticsearch", "firebase", "bigquery",
-        "snowflake", "cockroachdb", "neo4j", "influxdb",
+        "postgresql",
+        "postgres",
+        "mysql",
+        "mongodb",
+        "redis",
+        "sqlite",
+        "oracle",
+        "mariadb",
+        "cassandra",
+        "dynamodb",
+        "elasticsearch",
+        "firebase",
+        "bigquery",
+        "snowflake",
+        "cockroachdb",
+        "neo4j",
+        "influxdb",
     ],
     "cloud_platforms": [
-        "aws", "azure", "gcp", "google cloud", "docker", "kubernetes", "terraform",
-        "jenkins", "heroku", "vercel", "netlify", "digitalocean",
+        "aws",
+        "azure",
+        "gcp",
+        "google cloud",
+        "docker",
+        "kubernetes",
+        "terraform",
+        "jenkins",
+        "heroku",
+        "vercel",
+        "netlify",
+        "digitalocean",
     ],
     "tools": [
-        "git", "github", "gitlab", "jira", "confluence", "slack", "figma", "tableau",
-        "power bi", "grafana", "prometheus", "datadog", "kafka", "rabbitmq", "nginx",
-        "ansible", "puppet", "chef", "circleci", "github actions", "gitlab ci",
-        "agile", "scrum", "docker", "kubernetes", "jenkins",
+        "git",
+        "github",
+        "gitlab",
+        "jira",
+        "confluence",
+        "slack",
+        "figma",
+        "tableau",
+        "power bi",
+        "grafana",
+        "prometheus",
+        "datadog",
+        "kafka",
+        "rabbitmq",
+        "nginx",
+        "ansible",
+        "puppet",
+        "chef",
+        "circleci",
+        "github actions",
+        "gitlab ci",
+        "agile",
+        "scrum",
+        "docker",
+        "kubernetes",
+        "jenkins",
     ],
 }
 
 SOFT_SKILLS: set[str] = {
-    "leadership", "communication", "teamwork", "problem solving", "critical thinking",
-    "time management", "project management", "analytical", "collaboration",
-    "adaptability", "creativity", "mentoring", "presentation", "negotiation",
-    "conflict resolution", "decision making", "strategic planning", "organization",
-    "detail oriented", "self-motivated", "interpersonal", "verbal communication",
-    "written communication", "cross-functional", "stakeholder management",
+    "leadership",
+    "communication",
+    "teamwork",
+    "problem solving",
+    "critical thinking",
+    "time management",
+    "project management",
+    "analytical",
+    "collaboration",
+    "adaptability",
+    "creativity",
+    "mentoring",
+    "presentation",
+    "negotiation",
+    "conflict resolution",
+    "decision making",
+    "strategic planning",
+    "organization",
+    "detail oriented",
+    "self-motivated",
+    "interpersonal",
+    "verbal communication",
+    "written communication",
+    "cross-functional",
+    "stakeholder management",
 }
 
 
@@ -77,7 +185,7 @@ class KeywordExtractor:
         desc = self._get_job_description(job_posting)
         if desc:
             desc_lower = desc.lower()
-            for word in re.findall(r'\b[a-z]{3,}\b', desc_lower):
+            for word in re.findall(r"\b[a-z]{3,}\b", desc_lower):
                 if word in SOFT_SKILLS and word not in soft:
                     soft.append(word.title())
 
@@ -86,8 +194,11 @@ class KeywordExtractor:
                 if term not in industry:
                     industry.append(term)
 
-        missing = [s for s in required if s.lower().strip() not in
-                   [x.lower().strip() for x in technical + tools_list + required]]
+        missing = [
+            s
+            for s in required
+            if s.lower().strip() not in [x.lower().strip() for x in technical + tools_list + required]
+        ]
 
         density = self._compute_keyword_density(desc or "", required + technical + tools_list)
 
@@ -114,10 +225,10 @@ class KeywordExtractor:
     def _extract_industry_terms(text: str) -> list[str]:
         terms: list[str] = []
         patterns = [
-            r'\b(fintech|e[- ]?commerce|saas|healthcare|edtech|enterprise)\b',
-            r'\b(blockchain|ai|machine learning|deep learning|data science|devops)\b',
-            r'\b(agile|scrum|kanban|waterfall)\b',
-            r'\b(b2b|b2c|d2c|marketplace|platform)\b',
+            r"\b(fintech|e[- ]?commerce|saas|healthcare|edtech|enterprise)\b",
+            r"\b(blockchain|ai|machine learning|deep learning|data science|devops)\b",
+            r"\b(agile|scrum|kanban|waterfall)\b",
+            r"\b(b2b|b2c|d2c|marketplace|platform)\b",
         ]
         for pattern in patterns:
             matches = re.findall(pattern, text)

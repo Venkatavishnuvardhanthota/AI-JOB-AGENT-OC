@@ -113,8 +113,15 @@ class CompanyAnalyzer:
         urgency_signals = 0
 
         urgency_phrases = (
-            "urgent", "immediate", "asap", "quickly", "fast", "growing rapidly",
-            "high priority", "critical role", "key hire",
+            "urgent",
+            "immediate",
+            "asap",
+            "quickly",
+            "fast",
+            "growing rapidly",
+            "high priority",
+            "critical role",
+            "key hire",
         )
         for phrase in urgency_phrases:
             if phrase in description:

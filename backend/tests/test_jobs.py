@@ -258,24 +258,16 @@ class TestDeduplication:
 
     def test_dedup_by_provider_id(self, engine):
         jobs = [
-            JobPosting(
-                title="A", company=CompanyInfo(name="C"), provider_job_id="id-1", provider="p1"
-            ),
-            JobPosting(
-                title="B", company=CompanyInfo(name="C"), provider_job_id="id-1", provider="p1"
-            ),
+            JobPosting(title="A", company=CompanyInfo(name="C"), provider_job_id="id-1", provider="p1"),
+            JobPosting(title="B", company=CompanyInfo(name="C"), provider_job_id="id-1", provider="p1"),
         ]
         result = engine.deduplicate(jobs)
         assert len(result) == 1
 
     def test_dedup_no_duplicates(self, engine):
         jobs = [
-            JobPosting(
-                title="A", company=CompanyInfo(name="C1"), url="https://x.com/1", provider="p1"
-            ),
-            JobPosting(
-                title="B", company=CompanyInfo(name="C2"), url="https://x.com/2", provider="p2"
-            ),
+            JobPosting(title="A", company=CompanyInfo(name="C1"), url="https://x.com/1", provider="p1"),
+            JobPosting(title="B", company=CompanyInfo(name="C2"), url="https://x.com/2", provider="p2"),
         ]
         result = engine.deduplicate(jobs)
         assert len(result) == 2
@@ -405,10 +397,12 @@ class TestFilters:
 
     def test_experience_level_filter(self):
         jobs = [
-            JobPosting(title="A", company=CompanyInfo(name="C"),
-                       experience_level=ExperienceLevel.SENIOR, provider="p1"),
-            JobPosting(title="B", company=CompanyInfo(name="C"),
-                       experience_level=ExperienceLevel.JUNIOR, provider="p1"),
+            JobPosting(
+                title="A", company=CompanyInfo(name="C"), experience_level=ExperienceLevel.SENIOR, provider="p1"
+            ),
+            JobPosting(
+                title="B", company=CompanyInfo(name="C"), experience_level=ExperienceLevel.JUNIOR, provider="p1"
+            ),
         ]
         f = ExperienceLevelFilter(ExperienceLevel.SENIOR)
         result = f.apply(jobs)
@@ -417,10 +411,12 @@ class TestFilters:
 
     def test_employment_type_filter(self):
         jobs = [
-            JobPosting(title="A", company=CompanyInfo(name="C"),
-                       employment_type=EmploymentType.FULL_TIME, provider="p1"),
-            JobPosting(title="B", company=CompanyInfo(name="C"),
-                       employment_type=EmploymentType.INTERNSHIP, provider="p1"),
+            JobPosting(
+                title="A", company=CompanyInfo(name="C"), employment_type=EmploymentType.FULL_TIME, provider="p1"
+            ),
+            JobPosting(
+                title="B", company=CompanyInfo(name="C"), employment_type=EmploymentType.INTERNSHIP, provider="p1"
+            ),
         ]
         f = EmploymentTypeFilter(EmploymentType.INTERNSHIP)
         result = f.apply(jobs)

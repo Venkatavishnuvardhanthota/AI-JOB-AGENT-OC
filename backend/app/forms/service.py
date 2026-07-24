@@ -52,15 +52,9 @@ class FormIntelligenceService:
 
             analysis.total_fields = len(analysis.fields)
             analysis.classified_count = len(analysis.classifications)
-            analysis.mapped_count = sum(
-                1 for m in analysis.mappings if m.mapping_type.value == "mapped"
-            )
-            analysis.missing_count = sum(
-                1 for m in analysis.mappings if m.mapping_type.value == "missing"
-            )
-            analysis.requires_manual_count = sum(
-                1 for m in analysis.mappings if m.requires_manual_review
-            )
+            analysis.mapped_count = sum(1 for m in analysis.mappings if m.mapping_type.value == "mapped")
+            analysis.missing_count = sum(1 for m in analysis.mappings if m.mapping_type.value == "missing")
+            analysis.requires_manual_count = sum(1 for m in analysis.mappings if m.requires_manual_review)
 
             analysis.validation_issues = self._validator.validate(analysis)
 

@@ -28,8 +28,12 @@ class ResumeService:
         return resume
 
     async def create_resume(
-        self, user_id: uuid.UUID, title: str | None, description: str | None = None,
-        template: str | None = None, resume_type: str | None = None,
+        self,
+        user_id: uuid.UUID,
+        title: str | None,
+        description: str | None = None,
+        template: str | None = None,
+        resume_type: str | None = None,
         change_summary: str | None = None,
         sections: list[dict] | None = None,
     ) -> ResumeVersion:
@@ -59,12 +63,19 @@ class ResumeService:
                 await self.section_repo.create(section)
 
         await self.audit_service.log(
-            "RESUME_CREATED", user_id=user_id, entity="resume", entity_id=created.id, outcome="success",
+            "RESUME_CREATED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=created.id,
+            outcome="success",
         )
         return await self.resume_repo.get_with_sections(created.id)
 
     async def update_resume(
-        self, resume_id: uuid.UUID, user_id: uuid.UUID, data: dict,
+        self,
+        resume_id: uuid.UUID,
+        user_id: uuid.UUID,
+        data: dict,
     ) -> ResumeVersion:
         resume = await self.resume_repo.get_by_id(resume_id)
         if not resume or resume.user_id != user_id:
@@ -74,7 +85,11 @@ class ResumeService:
                 setattr(resume, key, value)
         await self.resume_repo.update(resume)
         await self.audit_service.log(
-            "RESUME_UPDATED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+            "RESUME_UPDATED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=resume_id,
+            outcome="success",
         )
         return await self.resume_repo.get_with_sections(resume_id)
 
@@ -84,7 +99,11 @@ class ResumeService:
             raise NotFoundError("Resume not found.")
         await self.resume_repo.delete(resume)
         await self.audit_service.log(
-            "RESUME_DELETED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+            "RESUME_DELETED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=resume_id,
+            outcome="success",
         )
 
     # ── Status Management ──
@@ -97,7 +116,11 @@ class ResumeService:
         resume.archived = True
         await self.resume_repo.update(resume)
         await self.audit_service.log(
-            "RESUME_ARCHIVED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+            "RESUME_ARCHIVED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=resume_id,
+            outcome="success",
         )
         return resume
 
@@ -109,7 +132,11 @@ class ResumeService:
         resume.archived = False
         await self.resume_repo.update(resume)
         await self.audit_service.log(
-            "RESUME_RESTORED", user_id=user_id, entity="resume", entity_id=resume_id, outcome="success",
+            "RESUME_RESTORED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=resume_id,
+            outcome="success",
         )
         return resume
 
@@ -122,7 +149,10 @@ class ResumeService:
     # ── Versioning ──
 
     async def create_version(
-        self, resume_id: uuid.UUID, user_id: uuid.UUID, change_summary: str | None = None,
+        self,
+        resume_id: uuid.UUID,
+        user_id: uuid.UUID,
+        change_summary: str | None = None,
     ) -> ResumeVersion:
         resume = await self.resume_repo.get_with_sections(resume_id)
         if not resume or resume.user_id != user_id:
@@ -152,14 +182,21 @@ class ResumeService:
             )
             await self.section_repo.create(new_section)
         await self.audit_service.log(
-            "VERSION_CREATED", user_id=user_id, entity="resume", entity_id=created.id, outcome="success",
+            "VERSION_CREATED",
+            user_id=user_id,
+            entity="resume",
+            entity_id=created.id,
+            outcome="success",
         )
         return await self.resume_repo.get_with_sections(created.id)
 
     # ── Sections ──
 
     async def add_section(
-        self, resume_id: uuid.UUID, user_id: uuid.UUID, section_data: dict,
+        self,
+        resume_id: uuid.UUID,
+        user_id: uuid.UUID,
+        section_data: dict,
     ) -> ResumeSection:
         resume = await self.resume_repo.get_by_id(resume_id)
         if not resume or resume.user_id != user_id:
@@ -175,7 +212,10 @@ class ResumeService:
         return await self.section_repo.create(section)
 
     async def update_section(
-        self, section_id: uuid.UUID, user_id: uuid.UUID, data: dict,
+        self,
+        section_id: uuid.UUID,
+        user_id: uuid.UUID,
+        data: dict,
     ) -> ResumeSection:
         section = await self.section_repo.get_by_id(section_id)
         if not section:

@@ -40,10 +40,7 @@ class ApplicationIntelligenceAnalyzer:
     ) -> ApplicationIntelligence:
         if not skip_cache:
             job_hash = self._compute_job_hash(job)
-            profile_hash = (
-                getattr(profile_intelligence, "profile_hash", None)
-                if profile_intelligence else None
-            )
+            profile_hash = getattr(profile_intelligence, "profile_hash", None) if profile_intelligence else None
             cached = self._cache.get(self._cache.compute_key(job_hash, profile_hash))
             if cached is not None:
                 return cached
@@ -74,17 +71,10 @@ class ApplicationIntelligenceAnalyzer:
         salary_analysis = self._analyze_salary(job)
         location_analysis = self._analyze_location(job)
 
-        profile_hash = (
-            getattr(profile_intelligence, "profile_hash", None)
-            if profile_intelligence else None
-        )
+        profile_hash = getattr(profile_intelligence, "profile_hash", None) if profile_intelligence else None
 
-        confidence = self._compute_confidence(
-            job, company_intel, role_intel, validation
-        )
-        priority = self._compute_priority(
-            confidence, match_result, profile_intelligence
-        )
+        confidence = self._compute_confidence(job, company_intel, role_intel, validation)
+        priority = self._compute_priority(confidence, match_result, profile_intelligence)
 
         return ApplicationIntelligence(
             job_hash=job_hash,

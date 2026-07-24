@@ -41,11 +41,7 @@ class ResumeValidator:
         return warnings
 
     def assert_valid_input(self, resume, job, profile) -> None:
-        issues = (
-            self.validate_resume(resume)
-            + self.validate_job(job)
-            + self.validate_profile(profile)
-        )
+        issues = self.validate_resume(resume) + self.validate_job(job) + self.validate_profile(profile)
         if issues:
             raise ResumeOptimizationValidationError(
                 message="Invalid input for resume optimization",

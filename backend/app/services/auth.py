@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -10,6 +11,9 @@ from app.core.security import create_access_token, create_refresh_token, get_pas
 from app.models import RefreshToken, User
 from app.repositories import RefreshTokenRepository, UserRepository
 from app.services.audit import AuditService
+
+_RESET_TOKENS: dict[str, dict] = {}
+_RESET_TOKEN_TTL = timedelta(hours=1)
 
 
 class AuthService:
@@ -131,3 +135,28 @@ class AuthService:
         await self.user_repo.update(user)
         await self.refresh_token_repo.revoke_all_for_user(user_id)
         await self.audit_service.log("ACCOUNT_DELETION", user_id=user_id, outcome="success")
+
+    async def initiate_password_reset(self, email: str) -> None:
+        user = await self.user_repo.get_by_email(email)
+        if not user:
+            return
+        token = secrets.token_urlsafe(32)
+        _RESET_TOKENS[token] = {
+            "user_id": str(user.id),
+            "expires_at": datetime.now(timezone.utc) + _RESET_TOKEN_TTL,
+        }
+        await self.audit_service.log("PASSWORD_RESET_INITIATED", user_id=user.id, outcome="success")
+
+    async def complete_password_reset(self, token: str, new_password: str) -> None:
+        stored = _RESET_TOKENS.pop(token, None)
+        if not stored:
+            raise AuthenticationError("Invalid or expired reset token.")
+        if stored["expires_at"] < datetime.now(timezone.utc):
+            raise AuthenticationError("Reset token has expired.")
+        user = await self.user_repo.get_by_id(uuid.UUID(stored["user_id"]))
+        if not user:
+            raise NotFoundError("User not found.")
+        user.password_hash = get_password_hash(new_password)
+        await self.user_repo.update(user)
+        await self.refresh_token_repo.revoke_all_for_user(user.id)
+        await self.audit_service.log("PASSWORD_RESET_COMPLETED", user_id=user.id, outcome="success")

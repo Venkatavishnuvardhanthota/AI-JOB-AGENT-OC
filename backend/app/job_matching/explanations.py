@@ -43,48 +43,32 @@ class ExplanationGenerator:
         missing_skills = result.missing_skills
         if missing_skills:
             names = [s.name for s in missing_skills[:5]]
-            impact = round(
-                (len(missing_skills) / max(len(result.matching_skills) + len(missing_skills), 1)) * 100
-            )
-            recommendations.append(
-                f"Learn {', '.join(names)} to increase match by approximately {impact}%"
-            )
+            impact = round((len(missing_skills) / max(len(result.matching_skills) + len(missing_skills), 1)) * 100)
+            recommendations.append(f"Learn {', '.join(names)} to increase match by approximately {impact}%")
 
         if result.skills_score.score < 50:
             recommendations.append("Add more relevant skills to your profile to improve matching")
 
         if result.salary_score.score < 40 and result.salary_score.score > 0:
-            recommendations.append(
-                "Consider adjusting salary expectations or targeting roles in a different range"
-            )
+            recommendations.append("Consider adjusting salary expectations or targeting roles in a different range")
 
         if result.location_score.score < 40:
-            recommendations.append(
-                "Consider remote roles or expanding your location preferences"
-            )
+            recommendations.append("Consider remote roles or expanding your location preferences")
 
         if result.remote_score.score < 40 and result.remote_score.score > 0:
-            recommendations.append(
-                "Update your remote work preference to match more opportunities"
-            )
+            recommendations.append("Update your remote work preference to match more opportunities")
 
         if result.education_score.score < 40:
             recommendations.append("Highlight relevant education or certifications")
 
         if result.experience_score.score < 40:
-            recommendations.append(
-                "Gain more experience in targeted areas or adjust your career level expectations"
-            )
+            recommendations.append("Gain more experience in targeted areas or adjust your career level expectations")
 
         if result.employment_type_score.score < 40:
-            recommendations.append(
-                "Consider different employment types for more opportunities"
-            )
+            recommendations.append("Consider different employment types for more opportunities")
 
         if result.industry_score.score < 40:
-            recommendations.append(
-                "Explore adjacent industries where your skills are transferable"
-            )
+            recommendations.append("Explore adjacent industries where your skills are transferable")
 
         return recommendations
 

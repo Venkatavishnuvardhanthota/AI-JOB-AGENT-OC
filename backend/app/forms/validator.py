@@ -22,15 +22,12 @@ class FormValidator:
     def _check_duplicate_fields(self, analysis: FormAnalysisResult) -> list[ValidationIssue]:
         issues: list[ValidationIssue] = []
         classifications = [
-            c.classification.value for c in analysis.classifications
-            if c.classification != SemanticFieldType.UNKNOWN
+            c.classification.value for c in analysis.classifications if c.classification != SemanticFieldType.UNKNOWN
         ]
         dupes = {k: v for k, v in Counter(classifications).items() if v > 1}
 
         for semantic_type, count in dupes.items():
-            field_ids = [
-                c.field_id for c in analysis.classifications if c.classification.value == semantic_type
-            ]
+            field_ids = [c.field_id for c in analysis.classifications if c.classification.value == semantic_type]
             issues.append(
                 ValidationIssue(
                     severity="warning",
@@ -80,10 +77,7 @@ class FormValidator:
 
     def _check_ambiguous_labels(self, analysis: FormAnalysisResult) -> list[ValidationIssue]:
         issues: list[ValidationIssue] = []
-        fields_without_label = [
-            f for f in analysis.fields
-            if not f.label and f.field_type.value != "hidden"
-        ]
+        fields_without_label = [f for f in analysis.fields if not f.label and f.field_type.value != "hidden"]
         if len(fields_without_label) > 1:
             issues.append(
                 ValidationIssue(

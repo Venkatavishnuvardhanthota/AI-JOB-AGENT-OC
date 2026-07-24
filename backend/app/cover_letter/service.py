@@ -19,7 +19,10 @@ class CoverLetterGenerationService:
         self._personalizer = Personalizer()
         self._validator = CoverLetterValidator(self._config)
         self._generator = CoverLetterGenerator(
-            self._config, self._template_engine, self._personalizer, self._validator,
+            self._config,
+            self._template_engine,
+            self._personalizer,
+            self._validator,
         )
         self._cache = CoverLetterCache(self._config)
 
@@ -52,8 +55,11 @@ class CoverLetterGenerationService:
         job_hash = self._compute_job_hash(job_posting)
 
         cache_key = self._cache.compute_key(
-            profile_hash, job_hash, resume_hash,
-            effective_config.template_style, effective_config.tone,
+            profile_hash,
+            job_hash,
+            resume_hash,
+            effective_config.template_style,
+            effective_config.tone,
         )
 
         if not skip_cache:
@@ -62,7 +68,10 @@ class CoverLetterGenerationService:
                 return cached
 
         generator = CoverLetterGenerator(
-            effective_config, self._template_engine, self._personalizer, self._validator,
+            effective_config,
+            self._template_engine,
+            self._personalizer,
+            self._validator,
         )
         result = generator.generate(profile, job_posting, optimized_resume, match_result)
         result.profile_hash = profile_hash
@@ -86,6 +95,7 @@ class CoverLetterGenerationService:
             return None
         import hashlib
         import json
+
         data = {
             "title": getattr(job, "title", None),
             "skills": getattr(job, "skills", None),

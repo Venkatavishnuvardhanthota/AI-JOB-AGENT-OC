@@ -223,7 +223,9 @@ class TestResumeService:
             {"section_type": "education", "title": "Education", "sort_order": 1},
         ]
         resume = await service.create_resume(
-            user.id, title="With Sections", sections=sections,
+            user.id,
+            title="With Sections",
+            sections=sections,
         )
         assert len(resume.sections) == 2
         assert resume.sections[0].section_type == "summary"
@@ -322,7 +324,9 @@ class TestResumeService:
         service = ResumeService(db_session)
         resume = await service.create_resume(user.id, title="Sections Test")
         section = await service.add_section(
-            resume.id, user.id, {"section_type": "summary", "title": "Professional Summary"},
+            resume.id,
+            user.id,
+            {"section_type": "summary", "title": "Professional Summary"},
         )
         assert section.id is not None
         assert section.section_type == "summary"
@@ -443,7 +447,9 @@ class TestResumeAPI:
         user = await _create_user(db_session)
         headers = await self._auth_headers(db_session, user.id)
         resp = await api_client.post(
-            "/resumes/", json={"title": "My Resume", "description": "Test"}, headers=headers,
+            "/resumes/",
+            json={"title": "My Resume", "description": "Test"},
+            headers=headers,
         )
         assert resp.status_code == 201
         data = resp.json()
@@ -502,7 +508,9 @@ class TestResumeAPI:
         create_resp = await api_client.post("/resumes/", json={"title": "Original"}, headers=headers)
         resume_id = create_resp.json()["data"]["id"]
         resp = await api_client.patch(
-            f"/resumes/{resume_id}", json={"title": "Updated"}, headers=headers,
+            f"/resumes/{resume_id}",
+            json={"title": "Updated"},
+            headers=headers,
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["title"] == "Updated"
@@ -625,7 +633,8 @@ class TestResumeAPI:
         )
         section_id = add_resp.json()["data"]["id"]
         resp = await api_client.delete(
-            f"/resumes/{resume_id}/sections/{section_id}", headers=headers,
+            f"/resumes/{resume_id}/sections/{section_id}",
+            headers=headers,
         )
         assert resp.status_code == 204
 
@@ -656,6 +665,8 @@ class TestResumeAPI:
         create_resp = await api_client.post("/resumes/", json={"title": "Mine"}, headers=headers1)
         resume_id = create_resp.json()["data"]["id"]
         resp = await api_client.patch(
-            f"/resumes/{resume_id}", json={"title": "Hacked"}, headers=headers2,
+            f"/resumes/{resume_id}",
+            json={"title": "Hacked"},
+            headers=headers2,
         )
         assert resp.status_code == 404

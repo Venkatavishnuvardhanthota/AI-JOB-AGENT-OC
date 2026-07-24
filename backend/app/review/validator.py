@@ -23,9 +23,7 @@ class ReviewValidator:
         existing: ReviewRecord | None,
     ) -> None:
         if existing is not None:
-            raise DuplicateReviewError(
-                message=f"Review already exists for package '{package_id}'."
-            )
+            raise DuplicateReviewError(message=f"Review already exists for package '{package_id}'.")
 
     def validate_get(self, record: ReviewRecord | None) -> ReviewRecord:
         if record is None:
@@ -34,15 +32,11 @@ class ReviewValidator:
 
     def validate_reviewer(self, reviewer: str | None) -> None:
         if self._strict and not reviewer:
-            raise InvalidReviewerError(
-                message="A reviewer must be specified for manual review."
-            )
+            raise InvalidReviewerError(message="A reviewer must be specified for manual review.")
 
     def validate_expired(self, record: ReviewRecord) -> None:
         if record.expires_at and datetime.utcnow() > record.expires_at:
-            raise ExpiredReviewError(
-                message=f"Review '{record.id}' expired at {record.expires_at}."
-            )
+            raise ExpiredReviewError(message=f"Review '{record.id}' expired at {record.expires_at}.")
 
     def validate_state_for_decision(
         self,
@@ -62,13 +56,9 @@ class ReviewValidator:
         reason: str | None = None,
     ) -> None:
         if not override_allowed:
-            raise OverrideNotAllowedError(
-                message="Override is not enabled for this review."
-            )
+            raise OverrideNotAllowedError(message="Override is not enabled for this review.")
         if self._strict and not (reason or record.override_reason):
-            raise OverrideNotAllowedError(
-                message="Override reason is required for overrides."
-            )
+            raise OverrideNotAllowedError(message="Override reason is required for overrides.")
 
     def validate_auto_approval_prerequisites(
         self,

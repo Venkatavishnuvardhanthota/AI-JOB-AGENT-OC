@@ -16,9 +16,7 @@ class PolicyEnforcer:
         self._lock = Lock()
 
     def check_concurrent_jobs(self, policy: AutomationPolicy) -> bool:
-        max_concurrent = (
-            policy.max_concurrent_jobs or self._config.max_concurrent_jobs
-        )
+        max_concurrent = policy.max_concurrent_jobs or self._config.max_concurrent_jobs
         with self._lock:
             return len(self._active_jobs) < max_concurrent
 
@@ -52,14 +50,10 @@ class PolicyEnforcer:
         return now_mins >= start_mins or now_mins <= end_mins
 
     def check_rate_limit(self, policy: AutomationPolicy) -> bool:
-        max_per_minute = (
-            policy.rate_limit_per_minute or self._config.rate_limit_per_minute
-        )
+        max_per_minute = policy.rate_limit_per_minute or self._config.rate_limit_per_minute
         now = time.monotonic()
         with self._lock:
-            self._execution_timestamps = [
-                t for t in self._execution_timestamps if now - t < 60.0
-            ]
+            self._execution_timestamps = [t for t in self._execution_timestamps if now - t < 60.0]
             if len(self._execution_timestamps) >= max_per_minute:
                 return False
             self._execution_timestamps.append(now)

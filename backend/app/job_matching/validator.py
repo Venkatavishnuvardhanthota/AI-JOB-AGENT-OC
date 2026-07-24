@@ -10,7 +10,7 @@ class MatchValidator:
             warnings.append("No profile data provided")
             return warnings
         if hasattr(profile, "completeness") and profile.completeness and profile.completeness.overall_score < 30:
-                warnings.append("Profile completeness is very low")
+            warnings.append("Profile completeness is very low")
         if not profile.primary_skills and not profile.secondary_skills:
             warnings.append("Profile has no skills defined")
         if profile.years_of_experience is None:
@@ -29,12 +29,13 @@ class MatchValidator:
         if hasattr(job, "skills") and not job.skills:
             warnings.append("Job posting has no skills listed")
         if (
-            hasattr(job, "salary") and job.salary
+            hasattr(job, "salary")
+            and job.salary
             and job.salary.min_amount is not None
             and job.salary.max_amount is not None
             and job.salary.min_amount > job.salary.max_amount
         ):
-                    warnings.append("Job salary range is invalid (min > max)")
+            warnings.append("Job salary range is invalid (min > max)")
         return warnings
 
     def assert_valid_input(self, profile, job) -> None:

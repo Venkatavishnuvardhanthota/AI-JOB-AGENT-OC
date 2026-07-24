@@ -76,13 +76,11 @@ class JobMatchingService:
         warnings = self._validator.validate_profile(profile)
         warnings.extend(self._validator.validate_job(job))
 
-        matching_skills, missing_skills, preferred_skills, skills_raw_score = (
-            self._skill_comparator.compare(
-                profile_skills=self._get_profile_skills(profile),
-                job_skills=self._get_job_skills(job),
-                profile_primary=getattr(profile, "primary_skills", None),
-                profile_secondary=getattr(profile, "secondary_skills", None),
-            )
+        matching_skills, missing_skills, preferred_skills, skills_raw_score = self._skill_comparator.compare(
+            profile_skills=self._get_profile_skills(profile),
+            job_skills=self._get_job_skills(job),
+            profile_primary=getattr(profile, "primary_skills", None),
+            profile_secondary=getattr(profile, "secondary_skills", None),
         )
 
         experience_score = self._experience_comparator.compare(
@@ -171,9 +169,7 @@ class JobMatchingService:
         if profile and hasattr(profile, "completeness") and profile.completeness:
             completeness_score = profile.completeness.overall_score
 
-        confidence_score = self._scoring_engine.compute_confidence(
-            overall_score, completeness_score
-        )
+        confidence_score = self._scoring_engine.compute_confidence(overall_score, completeness_score)
         recommendation = self._scoring_engine.compute_recommendation(overall_score)
 
         result = MatchResult(
@@ -199,9 +195,7 @@ class JobMatchingService:
         )
 
         result.match_summary = self._explanation_generator.generate_summary(result)
-        result.improvement_recommendations = (
-            self._explanation_generator.generate_improvement_recommendations(result)
-        )
+        result.improvement_recommendations = self._explanation_generator.generate_improvement_recommendations(result)
 
         return result
 

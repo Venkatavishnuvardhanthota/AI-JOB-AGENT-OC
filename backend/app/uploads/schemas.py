@@ -52,10 +52,12 @@ class RetryPolicy(BaseModel):
     delay_seconds: float = 2.0
     backoff_multiplier: float = 2.0
     max_delay_seconds: float = 60.0
-    retryable_errors: list[str] = Field(default_factory=lambda: [
-        "UPLOAD_TIMEOUT_ERROR",
-        "UPLOAD_EXECUTION_ERROR",
-    ])
+    retryable_errors: list[str] = Field(
+        default_factory=lambda: [
+            "UPLOAD_TIMEOUT_ERROR",
+            "UPLOAD_EXECUTION_ERROR",
+        ]
+    )
 
 
 class VerificationPolicy(BaseModel):

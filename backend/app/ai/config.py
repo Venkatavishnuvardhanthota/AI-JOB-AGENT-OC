@@ -15,9 +15,7 @@ class AIConfig(BaseModel):
     )
     # OpenRouter
     openrouter_api_key: str | None = Field(default=None, description="OpenRouter API key")
-    openrouter_base_url: str = Field(
-        default="https://openrouter.ai", description="OpenRouter API base URL"
-    )
+    openrouter_base_url: str = Field(default="https://openrouter.ai", description="OpenRouter API base URL")
     openrouter_default_model: str = Field(default="gpt-4o", description="OpenRouter default model")
     # Ollama
     ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama server base URL")

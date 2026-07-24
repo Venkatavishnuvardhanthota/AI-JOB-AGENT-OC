@@ -19,7 +19,7 @@ class RetryHandler:
         attempt = record.retry.attempt
         base = record.retry.retry_delay_seconds
         multiplier = record.retry.backoff_multiplier
-        return base * (multiplier ** attempt)
+        return base * (multiplier**attempt)
 
     def record_attempt(
         self,

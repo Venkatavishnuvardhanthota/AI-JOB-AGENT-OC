@@ -51,7 +51,7 @@ class AIHTTPClient:
             try:
                 response = await self._client.post(path, json=json)
                 if response.status_code in retry_codes and attempt < self._max_retries:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning(
                         "Retryable status, retrying",
                         path=path,
@@ -76,14 +76,14 @@ class AIHTTPClient:
             except httpx.TimeoutException:
                 last_exception = TimeoutError(f"Request timed out after {self._client.timeout.read}s")
                 if attempt < self._max_retries:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning("Timeout, retrying", path=path, attempt=attempt, wait=wait)
                     await asyncio.sleep(wait)
                     continue
             except (httpx.ConnectError, httpx.RemoteProtocolError) as exc:
                 last_exception = ProviderUnavailableError(f"Connection failed: {exc}")
                 if attempt < self._max_retries:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning("Connection error, retrying", path=path, attempt=attempt, wait=wait)
                     await asyncio.sleep(wait)
                     continue
@@ -94,7 +94,7 @@ class AIHTTPClient:
             except Exception as exc:
                 last_exception = GenerationError(f"Unexpected error: {exc}")
                 if attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
 
         raise last_exception or ProviderUnavailableError("Request failed after all retries")
@@ -107,26 +107,26 @@ class AIHTTPClient:
             try:
                 response = await self._client.get(path)
                 if response.status_code in retry_codes and attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
                 response.raise_for_status()
                 return response
             except httpx.TimeoutException:
                 last_exception = TimeoutError("Request timed out")
                 if attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
             except (httpx.ConnectError, httpx.RemoteProtocolError) as exc:
                 last_exception = ProviderUnavailableError(f"Connection failed: {exc}")
                 if attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
             except httpx.HTTPStatusError as exc:
                 raise ProviderUnavailableError(f"HTTP {exc.response.status_code}: {exc.response.text[:200]}") from exc
             except Exception as exc:
                 last_exception = GenerationError(f"Unexpected error: {exc}")
                 if attempt < self._max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
 
         raise last_exception or ProviderUnavailableError("Request failed after all retries")

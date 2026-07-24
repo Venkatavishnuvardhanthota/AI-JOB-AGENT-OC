@@ -35,14 +35,10 @@ class ReviewService:
         if existing is not None:
             self._reviewer.validator.validate_create(package_id, existing)
 
-        record = self._reviewer.create_review(
-            package_id, workflow_id, tracking_id, reviewer, metadata
-        )
+        record = self._reviewer.create_review(package_id, workflow_id, tracking_id, reviewer, metadata)
 
         if self._config.review_expiry_hours > 0:
-            record.expires_at = datetime.utcnow() + timedelta(
-                hours=self._config.review_expiry_hours
-            )
+            record.expires_at = datetime.utcnow() + timedelta(hours=self._config.review_expiry_hours)
 
         self._cache.set(package_id, record)
         return record
@@ -55,9 +51,7 @@ class ReviewService:
         comments: str | None = None,
     ) -> ReviewRecord:
         record = self._get_review(package_id)
-        result = self._reviewer.decisions.approve(
-            record, reviewer, reason, comments
-        )
+        result = self._reviewer.decisions.approve(record, reviewer, reason, comments)
         self._cache.set(package_id, result)
         return result
 
@@ -69,9 +63,7 @@ class ReviewService:
         comments: str | None = None,
     ) -> ReviewRecord:
         record = self._get_review(package_id)
-        result = self._reviewer.decisions.reject(
-            record, reviewer, reason, comments
-        )
+        result = self._reviewer.decisions.reject(record, reviewer, reason, comments)
         self._cache.set(package_id, result)
         return result
 
@@ -83,9 +75,7 @@ class ReviewService:
         comments: str | None = None,
     ) -> ReviewRecord:
         record = self._get_review(package_id)
-        result = self._reviewer.decisions.request_changes(
-            record, reviewer, reason, comments
-        )
+        result = self._reviewer.decisions.request_changes(record, reviewer, reason, comments)
         self._cache.set(package_id, result)
         return result
 
@@ -149,9 +139,7 @@ class ReviewService:
         comments: str | None = None,
     ) -> ReviewRecord:
         record = self._get_review(package_id)
-        result = self._reviewer.decisions.override(
-            record, reviewer, new_state, reason, comments
-        )
+        result = self._reviewer.decisions.override(record, reviewer, new_state, reason, comments)
         self._cache.set(package_id, result)
         return result
 
@@ -176,9 +164,7 @@ class ReviewService:
     def _get_review(self, package_id: str) -> ReviewRecord:
         record = self._cache.get(package_id)
         if record is None:
-            raise ReviewNotFoundError(
-                message=f"No review found for package '{package_id}'."
-            )
+            raise ReviewNotFoundError(message=f"No review found for package '{package_id}'.")
         return record
 
     def _get_or_create_review(self, package_id: str) -> ReviewRecord:

@@ -147,9 +147,7 @@ class DecisionEngine:
         )
 
         if failures:
-            raise AutoApprovalFailedError(
-                message=f"Auto-approval criteria not met: {'; '.join(failures)}"
-            )
+            raise AutoApprovalFailedError(message=f"Auto-approval criteria not met: {'; '.join(failures)}")
 
         result = self.apply_decision(
             record,
@@ -185,9 +183,7 @@ class DecisionEngine:
         )
         self._validator.validate_reviewer(reviewer)
 
-        self._validator.validate_override(
-            record, self._config.allow_override, reason
-        )
+        self._validator.validate_override(record, self._config.allow_override, reason)
 
         decision = ReviewDecision.OVERRIDE
         state = new_state
@@ -245,18 +241,14 @@ class DecisionEngine:
         elif criteria.match_score_threshold is not None and (
             match_score is None or match_score < criteria.match_score_threshold
         ):
-            failures.append(
-                f"match_score {match_score} < threshold {criteria.match_score_threshold}"
-            )
+            failures.append(f"match_score {match_score} < threshold {criteria.match_score_threshold}")
 
         if criteria.require_optimized_resume and not has_resume:
             failures.append("optimized_resume is required")
         elif criteria.ats_score_threshold is not None and (
             ats_score is None or ats_score < criteria.ats_score_threshold
         ):
-            failures.append(
-                f"ats_score {ats_score} < threshold {criteria.ats_score_threshold}"
-            )
+            failures.append(f"ats_score {ats_score} < threshold {criteria.ats_score_threshold}")
 
         if criteria.require_cover_letter and not has_cover_letter:
             failures.append("cover_letter is required")
@@ -264,8 +256,6 @@ class DecisionEngine:
         if criteria.completeness_threshold is not None and (
             completeness is None or completeness < criteria.completeness_threshold
         ):
-            failures.append(
-                f"completeness {completeness} < threshold {criteria.completeness_threshold}"
-            )
+            failures.append(f"completeness {completeness} < threshold {criteria.completeness_threshold}")
 
         return failures

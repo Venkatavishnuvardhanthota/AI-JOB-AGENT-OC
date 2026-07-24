@@ -402,9 +402,7 @@ class TestConfidenceCalculator:
         assert score.reason == "Multiple strong signals"
 
     def test_calculate_with_reason(self, confidence_calculator):
-        score = confidence_calculator.calculate(
-            label_match=0.95, attribute_match=0.8, reason="Strong match"
-        )
+        score = confidence_calculator.calculate(label_match=0.95, attribute_match=0.8, reason="Strong match")
         assert score.label_match == 0.95
         assert score.attribute_match == 0.8
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import time
 from threading import Lock
 
 from app.orchestrator.exceptions import CheckpointError
@@ -59,13 +58,14 @@ class CheckpointManager:
         try:
             for name in os.listdir(self._checkpoint_dir):
                 if name.startswith(prefix) and name.endswith(".json"):
-                    ck_id = name[len(prefix):-5]
+                    ck_id = name[len(prefix) : -5]
                     data = self.load_checkpoint(ck_id)
                     if data is not None:
                         path = os.path.join(self._checkpoint_dir, name)
                         results.append((data, path))
         except OSError:
             pass
+
         def _sort_key(
             item: tuple[CheckpointData, str],
         ) -> tuple[int, str]:
@@ -74,6 +74,7 @@ class CheckpointManager:
             if seq is not None:
                 return (0, seq, data.checkpoint_id)
             return (1, int(os.path.getmtime(item[1]) * 1000), data.checkpoint_id)
+
         return [r[0] for r in sorted(results, key=_sort_key)]
 
     def delete_checkpoint(self, checkpoint_id: str) -> None:

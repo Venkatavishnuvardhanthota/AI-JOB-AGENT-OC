@@ -47,7 +47,9 @@ class ResumeOptimizer:
 
         original_summary = resume_sections.get("summary")
         optimized_summary, summary_log = self._section_optimizer.optimize_summary(
-            original_summary, profile_summary, keywords,
+            original_summary,
+            profile_summary,
+            keywords,
         )
         if summary_log:
             change_log.append(summary_log)
@@ -56,7 +58,8 @@ class ResumeOptimizer:
 
         original_skills = resume_sections.get("skills_list", [])
         optimized_skills, skills_log = self._section_optimizer.optimize_skills(
-            original_skills, keywords,
+            original_skills,
+            keywords,
         )
         if skills_log:
             change_log.append(skills_log)
@@ -64,7 +67,8 @@ class ResumeOptimizer:
                 items_reordered += 1
 
         experience_sections, exp_logs = self._optimize_experience_sections(
-            resume_sections.get("experience", []), keywords,
+            resume_sections.get("experience", []),
+            keywords,
         )
         for log in exp_logs:
             change_log.append(log)
@@ -72,21 +76,24 @@ class ResumeOptimizer:
                 bullets_rewritten += 1
 
         project_sections, proj_logs = self._section_optimizer.optimize_projects(
-            resume_sections.get("projects", []), keywords,
+            resume_sections.get("projects", []),
+            keywords,
         )
         for log in proj_logs:
             change_log.append(log)
             items_reordered += 1
 
         education_sections, edu_logs = self._section_optimizer.optimize_education(
-            resume_sections.get("education", []), keywords,
+            resume_sections.get("education", []),
+            keywords,
         )
         for log in edu_logs:
             change_log.append(log)
             items_reordered += 1
 
         cert_sections, cert_logs = self._section_optimizer.optimize_certifications(
-            resume_sections.get("certifications", []), keywords,
+            resume_sections.get("certifications", []),
+            keywords,
         )
         for log in cert_logs:
             change_log.append(log)
@@ -95,7 +102,9 @@ class ResumeOptimizer:
 
         ats_before = self._compute_ats_before(resume_sections, keywords)
         ats_after = self._compute_ats_after(
-            keywords, optimized_summary, optimized_skills,
+            keywords,
+            optimized_summary,
+            optimized_skills,
             experience_sections,
         )
 
@@ -237,9 +246,7 @@ class ResumeOptimizer:
         skills: list[str],
         experience_sections: list[OptimizedSection],
     ) -> ATSAssessment:
-        experience_text = "\n".join(
-            str(getattr(s, "optimized_content", "")) for s in experience_sections
-        )
+        experience_text = "\n".join(str(getattr(s, "optimized_content", "")) for s in experience_sections)
         return self._ats_scorer.assess(
             keywords=keywords,
             has_summary=bool(summary),
@@ -259,6 +266,7 @@ class ResumeOptimizer:
             return None
         import hashlib
         import json
+
         data = {
             "title": getattr(job, "title", None),
             "skills": getattr(job, "skills", None),

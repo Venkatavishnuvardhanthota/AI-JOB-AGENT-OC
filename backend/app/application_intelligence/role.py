@@ -14,60 +14,162 @@ from app.application_intelligence.schemas import (
 
 ROLE_CATEGORY_KEYWORDS: dict[RoleCategory, list[str]] = {
     RoleCategory.BACKEND: [
-        "backend", "back-end", "back end", "server-side", "api", "microservice",
-        "rest", "graphql", "database", "server", "middleware", "service-oriented",
+        "backend",
+        "back-end",
+        "back end",
+        "server-side",
+        "api",
+        "microservice",
+        "rest",
+        "graphql",
+        "database",
+        "server",
+        "middleware",
+        "service-oriented",
     ],
     RoleCategory.FRONTEND: [
-        "frontend", "front-end", "front end", "ui", "user interface", "ux",
-        "react", "angular", "vue", "css", "html", "javascript", "typescript",
-        "web design", "responsive design", "component",
+        "frontend",
+        "front-end",
+        "front end",
+        "ui",
+        "user interface",
+        "ux",
+        "react",
+        "angular",
+        "vue",
+        "css",
+        "html",
+        "javascript",
+        "typescript",
+        "web design",
+        "responsive design",
+        "component",
     ],
     RoleCategory.FULL_STACK: [
-        "full stack", "full-stack", "fullstack",
-        "both frontend", "both front-end", "both back-end",
+        "full stack",
+        "full-stack",
+        "fullstack",
+        "both frontend",
+        "both front-end",
+        "both back-end",
     ],
     RoleCategory.DATA_ANALYST: [
-        "data analyst", "data analysis", "analytics", "tableau", "power bi",
-        "looker", "excel", "sql", "reporting", "dashboard", "business intelligence",
+        "data analyst",
+        "data analysis",
+        "analytics",
+        "tableau",
+        "power bi",
+        "looker",
+        "excel",
+        "sql",
+        "reporting",
+        "dashboard",
+        "business intelligence",
     ],
     RoleCategory.DATA_SCIENTIST: [
-        "data scientist", "data science", "machine learning", "statistical",
-        "statistics", "modeling", "predictive", "nlp", "deep learning",
-        "neural network", "regression", "classification", "clustering",
+        "data scientist",
+        "data science",
+        "machine learning",
+        "statistical",
+        "statistics",
+        "modeling",
+        "predictive",
+        "nlp",
+        "deep learning",
+        "neural network",
+        "regression",
+        "classification",
+        "clustering",
     ],
     RoleCategory.ML_ENGINEER: [
-        "ml engineer", "machine learning engineer", "mlops", "model deployment",
-        "training pipeline", "model serving", "feature engineering",
-        "tensorflow", "pytorch", "model training",
+        "ml engineer",
+        "machine learning engineer",
+        "mlops",
+        "model deployment",
+        "training pipeline",
+        "model serving",
+        "feature engineering",
+        "tensorflow",
+        "pytorch",
+        "model training",
     ],
     RoleCategory.DEVOPS: [
-        "devops", "dev-ops", "site reliability", "sre", "infrastructure",
-        "ci/cd", "cicd", "continuous integration", "deployment",
-        "kubernetes", "docker", "terraform", "ansible", "jenkins",
-        "cloud infrastructure", "platform engineer",
+        "devops",
+        "dev-ops",
+        "site reliability",
+        "sre",
+        "infrastructure",
+        "ci/cd",
+        "cicd",
+        "continuous integration",
+        "deployment",
+        "kubernetes",
+        "docker",
+        "terraform",
+        "ansible",
+        "jenkins",
+        "cloud infrastructure",
+        "platform engineer",
     ],
     RoleCategory.CLOUD: [
-        "cloud engineer", "cloud architect", "cloud infrastructure",
-        "aws", "azure", "gcp", "google cloud", "cloud migration",
+        "cloud engineer",
+        "cloud architect",
+        "cloud infrastructure",
+        "aws",
+        "azure",
+        "gcp",
+        "google cloud",
+        "cloud migration",
     ],
     RoleCategory.QA: [
-        "qa", "quality assurance", "test engineer", "testing",
-        "automation test", "manual test", "selenium", "cypress",
-        "integration test", "e2e test", "regression test",
+        "qa",
+        "quality assurance",
+        "test engineer",
+        "testing",
+        "automation test",
+        "manual test",
+        "selenium",
+        "cypress",
+        "integration test",
+        "e2e test",
+        "regression test",
     ],
     RoleCategory.MOBILE: [
-        "mobile", "ios", "android", "swift", "kotlin", "react native",
-        "flutter", "mobile app", "ipad", "iphone",
+        "mobile",
+        "ios",
+        "android",
+        "swift",
+        "kotlin",
+        "react native",
+        "flutter",
+        "mobile app",
+        "ipad",
+        "iphone",
     ],
     RoleCategory.UI_UX: [
-        "ui/ux", "ux designer", "ui designer", "user research",
-        "wireframe", "prototype", "figma", "sketch", "adobe xd",
-        "interaction design", "visual design",
+        "ui/ux",
+        "ux designer",
+        "ui designer",
+        "user research",
+        "wireframe",
+        "prototype",
+        "figma",
+        "sketch",
+        "adobe xd",
+        "interaction design",
+        "visual design",
     ],
     RoleCategory.CYBER_SECURITY: [
-        "security", "cyber", "cybersecurity", "cyber security",
-        "information security", "infosec", "penetration testing",
-        "vulnerability", "compliance", "security engineer",
+        "security",
+        "cyber",
+        "cybersecurity",
+        "cyber security",
+        "information security",
+        "infosec",
+        "penetration testing",
+        "vulnerability",
+        "compliance",
+        "security engineer",
     ],
 }
 
@@ -76,7 +178,13 @@ SENIORITY_KEYWORDS: dict[RoleSeniority, list[str]] = {
     RoleSeniority.MID: ["mid", "mid-level", "midlevel", "intermediate", "staff"],
     RoleSeniority.SENIOR: ["senior", "sr", "sr.", "lead", "principal", "staff engineer", "architect"],
     RoleSeniority.EXECUTIVE: [
-        "vp", "vice president", "director", "head of", "chief", "cto", "ceo",
+        "vp",
+        "vice president",
+        "director",
+        "head of",
+        "chief",
+        "cto",
+        "ceo",
         "vice-president",
     ],
 }
@@ -140,8 +248,8 @@ class RoleAnalyzer:
         if not job:
             return result
 
-        title = (getattr(job, "title", None) or "")
-        description = (getattr(job, "description", None) or "")
+        title = getattr(job, "title", None) or ""
+        description = getattr(job, "description", None) or ""
         full_text = f"{title} {description}".lower()
 
         result.summary = title or None
@@ -174,7 +282,7 @@ class RoleAnalyzer:
         matched: list[tuple[RoleSeniority, int]] = []
         for seniority, keywords in SENIORITY_KEYWORDS.items():
             for kw in keywords:
-                if re.search(r'\b' + re.escape(kw) + r'\b', full_text, re.IGNORECASE):
+                if re.search(r"\b" + re.escape(kw) + r"\b", full_text, re.IGNORECASE):
                     matched.append((seniority, SENIORITY_ORDER.get(seniority, -1)))
                     break
 
@@ -189,13 +297,12 @@ class RoleAnalyzer:
 
         for category, keywords in ROLE_CATEGORY_KEYWORDS.items():
             for kw in keywords:
-                if re.search(r'\b' + re.escape(kw) + r'\b', full_text, re.IGNORECASE):
+                if re.search(r"\b" + re.escape(kw) + r"\b", full_text, re.IGNORECASE):
                     scores[category] = scores.get(category, 0) + 2
 
         if skills.programming_languages:
             has_frontend = any(
-                lang in {"javascript", "typescript", "html", "css"}
-                for lang in skills.programming_languages
+                lang in {"javascript", "typescript", "html", "css"} for lang in skills.programming_languages
             )
             has_backend = any(
                 lang in {"python", "java", "c#", "go", "ruby", "php", "rust", "scala"}
@@ -305,12 +412,13 @@ class RoleAnalyzer:
     def _check_visa_sponsorship(self, full_text: str) -> bool | None:
         must_sponsor = re.search(
             r"(?:visa sponsorship|\bsponsor\b|h1b|h-1b|work visa|visa transfer)",
-            full_text, re.IGNORECASE,
+            full_text,
+            re.IGNORECASE,
         )
         no_sponsor = re.search(
-            r"(?:no sponsorship|cannot sponsor|unable to sponsor|no visa"
-            r"|must have work authorization)",
-            full_text, re.IGNORECASE,
+            r"(?:no sponsorship|cannot sponsor|unable to sponsor|no visa" r"|must have work authorization)",
+            full_text,
+            re.IGNORECASE,
         )
         if must_sponsor:
             return True

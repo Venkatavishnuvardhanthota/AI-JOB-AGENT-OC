@@ -211,9 +211,7 @@ async def update_certification(
     db: AsyncSession = Depends(get_db),
 ):
     service = CareerProfileService(db)
-    cert = await service.update_certification(
-        current_user.id, certification_id, body.model_dump(exclude_none=True)
-    )
+    cert = await service.update_certification(current_user.id, certification_id, body.model_dump(exclude_none=True))
     return {"success": True, "data": CertificationResponse.model_validate(cert).model_dump()}
 
 

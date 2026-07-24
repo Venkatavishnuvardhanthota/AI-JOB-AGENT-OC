@@ -15,9 +15,7 @@ class PromptRenderer:
         required = template.variables
         missing = [v for v in required if v not in variables]
         if missing:
-            raise MissingVariableError(
-                f"Missing required template variables: {', '.join(missing)}"
-            )
+            raise MissingVariableError(f"Missing required template variables: {', '.join(missing)}")
 
         try:
             result = template.template.format(**variables)
@@ -28,8 +26,6 @@ class PromptRenderer:
 
         unresolved = re.findall(r"\{(\w+)\}", result)
         if unresolved:
-            raise RenderError(
-                f"Template contains unresolved placeholders: {', '.join(unresolved)}"
-            )
+            raise RenderError(f"Template contains unresolved placeholders: {', '.join(unresolved)}")
 
         return result

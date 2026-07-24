@@ -26,8 +26,7 @@ class SubmissionValidatorEngine(SubmissionValidator):
         return issues
 
     def validate_pre_submit(
-        self, status: SubmissionStatus, execution_plan: Any,
-        upload_results: list[Any] | None = None
+        self, status: SubmissionStatus, execution_plan: Any, upload_results: list[Any] | None = None
     ) -> list[str]:
         issues: list[str] = []
 
@@ -135,6 +134,7 @@ class SubmissionValidatorEngine(SubmissionValidator):
                 return issues
 
             from app.workflow.schemas import WorkflowState
+
             current = getattr(status, "current_state", None)
             allowed = [WorkflowState.APPROVED, WorkflowState.QUEUED]
             if current not in allowed:
@@ -163,11 +163,11 @@ class SubmissionValidatorEngine(SubmissionValidator):
                 return issues
 
             from app.review.schemas import ReviewState
+
             state = getattr(record, "state", None)
             if state != ReviewState.APPROVED:
                 issues.append(
-                    f"Review state is '{state.value if hasattr(state, 'value') else state}', "
-                    "expected 'approved'"
+                    f"Review state is '{state.value if hasattr(state, 'value') else state}', " "expected 'approved'"
                 )
         except Exception as e:
             issues.append(f"Failed to check review: {e}")

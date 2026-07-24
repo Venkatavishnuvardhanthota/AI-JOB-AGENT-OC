@@ -36,9 +36,7 @@ class TransitionManager:
         reason: str | None = None,
     ) -> WorkflowStatus:
         if status.locked:
-            raise WorkflowLockedError(
-                message="Workflow is locked and cannot process transitions."
-            )
+            raise WorkflowLockedError(message="Workflow is locked and cannot process transitions.")
 
         from_state = status.current_state
         is_retry = from_state == target_state
@@ -54,9 +52,7 @@ class TransitionManager:
                 from_state=from_state,
                 to_state=status.current_state,
                 actor=actor,
-                transition_type=TransitionType.RETRY
-                if is_retry
-                else TransitionType.TRANSITION,
+                transition_type=TransitionType.RETRY if is_retry else TransitionType.TRANSITION,
                 reason=reason,
                 success=True,
             )
@@ -71,9 +67,7 @@ class TransitionManager:
         reason: str | None = None,
     ) -> WorkflowStatus:
         if status.locked:
-            raise WorkflowLockedError(
-                message="Workflow is locked and cannot process rollback."
-            )
+            raise WorkflowLockedError(message="Workflow is locked and cannot process rollback.")
 
         from_state = status.current_state
         self._state_machine.rollback(status)

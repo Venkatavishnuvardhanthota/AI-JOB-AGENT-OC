@@ -32,8 +32,13 @@ from app.review.validator import ReviewValidator
 class TestReviewState:
     def test_all_states_defined(self):
         expected = [
-            "pending_review", "under_review", "approved", "rejected",
-            "changes_requested", "auto_approved", "expired",
+            "pending_review",
+            "under_review",
+            "approved",
+            "rejected",
+            "changes_requested",
+            "auto_approved",
+            "expired",
         ]
         values = [s.value for s in ReviewState]
         for exp in expected:
@@ -130,23 +135,17 @@ class TestReviewValidator:
     def test_validate_state_for_decision_allowed(self):
         validator = ReviewValidator()
         record = ReviewRecord(package_id="test", state=ReviewState.PENDING_REVIEW)
-        validator.validate_state_for_decision(
-            record, [ReviewState.PENDING_REVIEW, ReviewState.UNDER_REVIEW]
-        )
+        validator.validate_state_for_decision(record, [ReviewState.PENDING_REVIEW, ReviewState.UNDER_REVIEW])
 
     def test_validate_state_for_decision_not_allowed(self):
         validator = ReviewValidator()
         record = ReviewRecord(package_id="test", state=ReviewState.APPROVED)
         with pytest.raises(InvalidReviewStateError):
-            validator.validate_state_for_decision(
-                record, [ReviewState.PENDING_REVIEW]
-            )
+            validator.validate_state_for_decision(record, [ReviewState.PENDING_REVIEW])
 
     def test_validate_override_allowed(self):
         validator = ReviewValidator()
-        record = ReviewRecord(
-            package_id="test", override_reason="Need to revert"
-        )
+        record = ReviewRecord(package_id="test", override_reason="Need to revert")
         validator.validate_override(record, override_allowed=True)
 
     def test_validate_override_not_allowed(self):
@@ -163,16 +162,12 @@ class TestReviewValidator:
 
     def test_validate_auto_approval_prerequisites_all_met(self):
         validator = ReviewValidator()
-        missing = validator.validate_auto_approval_prerequisites(
-            True, True, True, True, True, True
-        )
+        missing = validator.validate_auto_approval_prerequisites(True, True, True, True, True, True)
         assert missing == []
 
     def test_validate_auto_approval_prerequisites_missing(self):
         validator = ReviewValidator()
-        missing = validator.validate_auto_approval_prerequisites(
-            False, False, False, True, True, True
-        )
+        missing = validator.validate_auto_approval_prerequisites(False, False, False, True, True, True)
         assert len(missing) == 3
 
     def test_get_allowed_decisions_pending(self):
@@ -218,9 +213,7 @@ class TestDecisionEngine:
     def test_approve_from_changes_requested(self):
         validator = ReviewValidator()
         engine = DecisionEngine(validator)
-        record = ReviewRecord(
-            package_id="test", state=ReviewState.CHANGES_REQUESTED
-        )
+        record = ReviewRecord(package_id="test", state=ReviewState.CHANGES_REQUESTED)
         result = engine.approve(record, reviewer="user-1", reason="Changes addressed")
         assert result.state == ReviewState.APPROVED
 
@@ -238,9 +231,7 @@ class TestDecisionEngine:
         validator = ReviewValidator()
         engine = DecisionEngine(validator)
         record = ReviewRecord(package_id="test")
-        result = engine.reject(
-            record, reviewer="user-1", reason="Missing required docs"
-        )
+        result = engine.reject(record, reviewer="user-1", reason="Missing required docs")
         assert result.state == ReviewState.REJECTED
         assert result.decision == ReviewDecision.REJECT
         assert result.reviewer == "user-1"
@@ -263,9 +254,7 @@ class TestDecisionEngine:
         validator = ReviewValidator()
         engine = DecisionEngine(validator)
         record = ReviewRecord(package_id="test")
-        result = engine.request_changes(
-            record, reviewer="user-1", reason="Fix formatting"
-        )
+        result = engine.request_changes(record, reviewer="user-1", reason="Fix formatting")
         assert result.state == ReviewState.CHANGES_REQUESTED
         assert result.decision == ReviewDecision.REQUEST_CHANGES
 
@@ -495,9 +484,7 @@ class TestReviewer:
 
     def test_create_review_with_metadata(self):
         reviewer = Reviewer()
-        record = reviewer.create_review(
-            "pkg-1", metadata={"source": "automated"}
-        )
+        record = reviewer.create_review("pkg-1", metadata={"source": "automated"})
         assert record.metadata["source"] == "automated"
 
     def test_update_review_sets_reviewer(self):
@@ -586,6 +573,7 @@ class TestReviewCache:
         cache = ReviewCache(config)
         cache.set("k1", ReviewRecord(package_id="test"))
         import time
+
         time.sleep(0.01)
         result = cache.get("k1")
         assert result is None
@@ -594,6 +582,7 @@ class TestReviewCache:
         config = ReviewConfig()
         cache = ReviewCache(config)
         import threading
+
         errors = []
 
         def worker(ident: str):
@@ -676,18 +665,14 @@ class TestReviewService:
         service = ReviewService()
         pkg_id = str(uuid.uuid4())
         service.create_review(pkg_id)
-        result = service.reject(
-            pkg_id, reviewer="user-1", reason="Insufficient quality"
-        )
+        result = service.reject(pkg_id, reviewer="user-1", reason="Insufficient quality")
         assert result.state == ReviewState.REJECTED
 
     def test_request_changes(self):
         service = ReviewService()
         pkg_id = str(uuid.uuid4())
         service.create_review(pkg_id)
-        result = service.request_changes(
-            pkg_id, reviewer="user-1", reason="Fix resume formatting"
-        )
+        result = service.request_changes(pkg_id, reviewer="user-1", reason="Fix resume formatting")
         assert result.state == ReviewState.CHANGES_REQUESTED
 
     def test_expire(self):
@@ -753,9 +738,7 @@ class TestReviewService:
         service.approve(pkg_id, reviewer="user-1", reason="Good")
         history = service.get_history(pkg_id)
         assert len(history) == 1
-        assert history[0].state in (
-            ReviewState.PENDING_REVIEW, ReviewState.UNDER_REVIEW
-        )
+        assert history[0].state in (ReviewState.PENDING_REVIEW, ReviewState.UNDER_REVIEW)
 
     def test_get_history_nonexistent(self):
         service = ReviewService()
@@ -885,13 +868,15 @@ class TestEdgeCases:
         service.create_review(pkg_id)
         service.approve(pkg_id, reviewer="user-1", reason="Good")
         service.override(
-            pkg_id, reviewer="admin-1",
+            pkg_id,
+            reviewer="admin-1",
             new_state=ReviewState.PENDING_REVIEW,
             reason="Override 1",
         )
         service.approve(pkg_id, reviewer="user-1", reason="Re-approved")
         service.override(
-            pkg_id, reviewer="admin-2",
+            pkg_id,
+            reviewer="admin-2",
             new_state=ReviewState.PENDING_REVIEW,
             reason="Override 2",
         )
@@ -904,9 +889,7 @@ class TestEdgeCases:
         service = ReviewService()
         pkg_id = str(uuid.uuid4())
         service.create_review(pkg_id)
-        result = service.reject(
-            pkg_id, reviewer="user-1", reason="Incomplete package"
-        )
+        result = service.reject(pkg_id, reviewer="user-1", reason="Incomplete package")
         assert result.reason == "Incomplete package"
 
     def test_approve_with_comments(self):

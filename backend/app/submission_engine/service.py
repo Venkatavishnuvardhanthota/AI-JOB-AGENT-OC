@@ -102,6 +102,7 @@ class SubmissionEngineService:
         provider = self._get_provider(provider_name)
 
         from app.submission_engine.reporting import ReportGeneratorEngine
+
         reporting = ReportGeneratorEngine()
 
         report = reporting.create_report(
