@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react'
 import { api } from '../api/client'
-import type { TokenResponse, User } from '../types'
+import type { User } from '../types'
 
 interface AuthContextType {
   user: User | null
@@ -34,8 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
     try {
-      const userData = await api.get<User>('/auth/me')
-      setUser(userData)
+      const res = await api.get<any>('/auth/me')
+      const userData = res?.data ?? res
+      setUser(userData as User)
     } catch {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
@@ -50,24 +51,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const data = await api.post<TokenResponse>('/auth/login', {
-        email,
-        password,
-      })
-      localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
-      const userData = await api.get<User>('/auth/me')
-      setUser(userData)
+      const res = await api.post<any>('/auth/login', { email, password })
+      const tokens = res?.data ?? res
+      localStorage.setItem('access_token', tokens.access_token)
+      localStorage.setItem('refresh_token', tokens.refresh_token)
+      const userRes = await api.get<any>('/auth/me')
+      const userData = userRes?.data ?? userRes
+      setUser(userData as User)
     },
     [],
   )
 
   const register = useCallback(
     async (email: string, password: string, fullName?: string) => {
-      await api.post<User>('/auth/register', {
+      const parts = (fullName || '').split(' ')
+      const firstName = parts[0] || ''
+      const lastName = parts.slice(1).join(' ') || ''
+      await api.post('/auth/register', {
         email,
         password,
-        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
       })
       await login(email, password)
     },

@@ -14,6 +14,7 @@ router = APIRouter()
 
 
 @router.get("/")
+@router.get("")
 async def list_applications(
     status: str | None = Query(None),
     page: int = Query(1, ge=1),

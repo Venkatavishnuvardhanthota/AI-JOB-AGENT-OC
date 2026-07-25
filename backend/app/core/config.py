@@ -64,14 +64,7 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_DEFAULT_MODEL: str = "llama3"
 
-    ENABLED_JOB_PROVIDERS: list[str] = [
-        "linkedin",
-        "greenhouse",
-        "lever",
-        "ashby",
-        "wellfound",
-        "workday",
-    ]
+    ENABLED_JOB_PROVIDERS_CSV: str = "linkedin,greenhouse,lever,ashby,wellfound,workday"
 
     JOB_REQUEST_TIMEOUT_SECONDS: int = 30
     JOB_RETRY_COUNT: int = 2
@@ -157,6 +150,10 @@ class Settings(BaseSettings):
     @property
     def access_token_expire_seconds(self) -> int:
         return self.APP_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    @property
+    def ENABLED_JOB_PROVIDERS(self) -> list[str]:  # noqa: N802
+        return [x.strip() for x in self.ENABLED_JOB_PROVIDERS_CSV.split(",") if x.strip()]
 
     @field_validator("APP_SECRET_KEY")
     @classmethod

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.core.database import close_db, init_db
+from app.core.database import close_db
 from app.core.exceptions import (
     AppError,
     AuthenticationError,
@@ -27,7 +27,6 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.RESUME_TEMPLATE_DIR, exist_ok=True)
     os.makedirs(settings.BROWSER_SCREENSHOT_DIR, exist_ok=True)
-    await init_db()
     yield
     await close_db()
     try:

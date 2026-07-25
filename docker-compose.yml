@@ -32,7 +32,7 @@ services:
       - OPENROUTER_DEFAULT_MODEL=${OPENROUTER_DEFAULT_MODEL:-gpt-4o}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
       - OLLAMA_DEFAULT_MODEL=${OLLAMA_DEFAULT_MODEL:-llama3}
-      - ENABLED_JOB_PROVIDERS=${ENABLED_JOB_PROVIDERS:-linkedin,greenhouse,lever,ashby,wellfound,workday}
+      - ENABLED_JOB_PROVIDERS_CSV=${ENABLED_JOB_PROVIDERS_CSV:-linkedin,greenhouse,lever,ashby,wellfound,workday}
       - JOB_REQUEST_TIMEOUT_SECONDS=${JOB_REQUEST_TIMEOUT_SECONDS:-30}
       - JOB_RETRY_COUNT=${JOB_RETRY_COUNT:-2}
       - SMTP_HOST=${SMTP_HOST:-}

@@ -21,6 +21,7 @@ router = APIRouter()
 
 
 @router.get("/")
+@router.get("")
 async def get_profile(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     service = CareerProfileService(db)
     profile = await service.get_profile(current_user.id)
@@ -28,6 +29,7 @@ async def get_profile(current_user: User = Depends(get_current_user), db: AsyncS
 
 
 @router.patch("/")
+@router.patch("")
 async def update_profile(
     body: CareerProfileUpdate,
     current_user: User = Depends(get_current_user),
@@ -46,6 +48,13 @@ async def profile_completeness(current_user: User = Depends(get_current_user), d
 
 
 # ── Education ──
+
+
+@router.get("/education")
+async def list_education(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {"success": True, "data": [EducationResponse.model_validate(e).model_dump() for e in profile.education]}
 
 
 @router.post("/education", status_code=201)
@@ -84,6 +93,13 @@ async def delete_education(
 # ── Experience ──
 
 
+@router.get("/experience")
+async def list_experience(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {"success": True, "data": [ExperienceResponse.model_validate(e).model_dump() for e in profile.experience]}
+
+
 @router.post("/experience", status_code=201)
 async def add_experience(
     body: ExperienceCreate,
@@ -118,6 +134,13 @@ async def delete_experience(
 
 
 # ── Skills ──
+
+
+@router.get("/skills")
+async def list_skills(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {"success": True, "data": [SkillResponse.model_validate(s).model_dump() for s in profile.skills]}
 
 
 @router.post("/skills", status_code=201)
@@ -156,6 +179,13 @@ async def delete_skill(
 # ── Projects ──
 
 
+@router.get("/projects")
+async def list_projects(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {"success": True, "data": [ProjectResponse.model_validate(p).model_dump() for p in profile.projects]}
+
+
 @router.post("/projects", status_code=201)
 async def add_project(
     body: ProjectCreate,
@@ -190,6 +220,16 @@ async def delete_project(
 
 
 # ── Certifications ──
+
+
+@router.get("/certifications")
+async def list_certifications(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {
+        "success": True,
+        "data": [CertificationResponse.model_validate(c).model_dump() for c in profile.certifications],
+    }
 
 
 @router.post("/certifications", status_code=201)
@@ -228,6 +268,16 @@ async def delete_certification(
 # ── Languages ──
 
 
+@router.get("/languages")
+async def list_languages(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {
+        "success": True,
+        "data": [LanguageResponse.model_validate(lang).model_dump() for lang in profile.languages],
+    }
+
+
 @router.post("/languages", status_code=201)
 async def add_language(
     body: LanguageCreate,
@@ -262,6 +312,16 @@ async def delete_language(
 
 
 # ── Social Links ──
+
+
+@router.get("/social-links")
+async def list_social_links(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {
+        "success": True,
+        "data": [SocialLinkResponse.model_validate(link).model_dump() for link in profile.social_links],
+    }
 
 
 @router.post("/social-links", status_code=201)

@@ -24,6 +24,7 @@ router = APIRouter()
 
 
 @router.get("/")
+@router.get("")
 async def list_resumes(
     current_user: User = Depends(get_current_user),
     archived: bool | None = Query(None),
@@ -33,7 +34,10 @@ async def list_resumes(
     resumes = await service.list_resumes(current_user.id, archived=archived)
     items = []
     for r in resumes:
-        section_count = len(r.sections) if hasattr(r, "sections") and r.sections else 0
+        try:
+            section_count = len(r.sections) if r.sections else 0
+        except Exception:
+            section_count = 0
         items.append(
             ResumeListResponse(
                 id=r.id,
@@ -52,6 +56,7 @@ async def list_resumes(
 
 
 @router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_resume(
     body: ResumeCreate,
     current_user: User = Depends(get_current_user),

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JobPreferenceUpdate(BaseModel):
@@ -26,3 +26,8 @@ class JobPreferenceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator("preferred_titles", "preferred_locations", "employment_types", "work_modes", mode="before")
+    @classmethod
+    def list_or_empty(cls, v: list[str] | None) -> list[str]:
+        return v or []

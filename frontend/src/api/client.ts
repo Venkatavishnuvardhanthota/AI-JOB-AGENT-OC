@@ -81,7 +81,7 @@ export const api = {
 export const jobsApi = {
   search(params: { query: string; location?: string | null; remote_only?: boolean; sources?: string[] | null; salary_min?: number | null; salary_max?: number | null; job_type?: string | null; skills?: string[] | null; page?: number; page_size?: number }): Promise<{ items: any[]; total: number; page: number; page_size: number; total_pages: number }> {
     const q = new URLSearchParams()
-    q.set('query', params.query)
+    q.set('search', params.query)
     if (params.location) q.set('location', params.location)
     if (params.remote_only) q.set('remote_only', 'true')
     if (params.sources?.length) q.set('sources', params.sources.join(','))
