@@ -7,10 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/layout/empty-state'
+import { useToast } from '@/components/ui/toast'
 import { Search, RefreshCw, Briefcase, MapPin, DollarSign, Clock } from 'lucide-react'
 import { timeAgo, formatSalary, getScoreBg } from '@/lib/utils'
 
 export function JobsSearchPage() {
+  const { addToast } = useToast()
   const [query, setQuery] = useState('')
   const [searchParams, setSearchParams] = useState<Record<string, any> | null>(null)
   const [page, setPage] = useState(1)
@@ -35,8 +38,9 @@ export function JobsSearchPage() {
     if (!query.trim()) return
     try {
       await refreshJobs.mutateAsync({ query: query.trim() })
+      addToast('Job search refreshing...', 'info')
       doSearch(1)
-    } catch {}
+    } catch { addToast('Failed to refresh jobs', 'error') }
   }
 
   const handleScoreBatch = async () => {
@@ -48,7 +52,8 @@ export function JobsSearchPage() {
         if (s.job_id) m[s.job_id] = s.overall
       }
       setScores(m)
-    } catch {}
+      addToast(`${Object.keys(m).length} jobs scored!`, 'success')
+    } catch { addToast('Failed to score jobs', 'error') }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,10 +150,16 @@ export function JobsSearchPage() {
       )}
 
       {!isLoading && results.length === 0 && searchParams?.query && (
-        <div className="text-center py-16 text-muted-foreground">
-          <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-30" />
-          <p>No jobs found. Try a different search.</p>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No jobs found"
+          description="Try adjusting your search terms or filters."
+          action={
+            <Button variant="outline" onClick={() => { setQuery(''); setSearchParams(null) }}>
+              Clear Search
+            </Button>
+          }
+        />
       )}
     </div>
   )

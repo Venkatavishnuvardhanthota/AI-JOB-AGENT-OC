@@ -93,6 +93,40 @@ export function useDeleteProfileSection(section: string) {
   })
 }
 
+// ── Resume Sections ──
+export function useResumeSections(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'sections'],
+    queryFn: () => api.get<any[]>(`/resumes/${resumeId}/sections`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useCreateResumeSection(resumeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post(`/resumes/${resumeId}/sections`, data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes', resumeId, 'sections'] }),
+  })
+}
+
+export function useUpdateResumeSection(resumeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sectionId, data }: { sectionId: string; data: any }) =>
+      api.patch(`/resumes/${resumeId}/sections/${sectionId}`, data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes', resumeId, 'sections'] }),
+  })
+}
+
+export function useDeleteResumeSection(resumeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (sectionId: string) => api.delete(`/resumes/${resumeId}/sections/${sectionId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes', resumeId, 'sections'] }),
+  })
+}
+
 // ── Resumes ──
 export function useResumes(archived?: boolean) {
   return useQuery({
@@ -316,10 +350,202 @@ export function useScoredJobs(params?: { min_score?: number; page?: number; page
   })
 }
 
-// ── Cover Letters (via profile) ──
-export function useCoverLetters() {
+// ── Cover Letters ──
+export function useCoverLetters(status?: string) {
   return useQuery({
-    queryKey: ['cover-letters'],
-    queryFn: () => api.get<any[]>('/profile/cover-letters').catch(() => []),
+    queryKey: ['cover-letters', status],
+    queryFn: () => {
+      const q = status ? `?status=${status}` : ''
+      return api.get<any[]>(`/cover-letters${q}`).then(unwrap)
+    },
+  })
+}
+
+export function useCoverLetter(id: string) {
+  return useQuery({
+    queryKey: ['cover-letters', id],
+    queryFn: () => api.get<any>(`/cover-letters/${id}`).then(unwrap),
+    enabled: !!id,
+  })
+}
+
+export function useCreateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters', data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useUpdateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.patch(`/cover-letters/${id}`, data).then(unwrap),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cover-letters'] }) },
+  })
+}
+
+export function useDeleteCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/cover-letters/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useDuplicateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/cover-letters/${id}/duplicate`).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useGenerateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters/generate', data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useAIAssistCoverLetter() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.post(`/cover-letters/${id}/ai-assist`, data).then(unwrap),
+  })
+}
+
+export function useExportCoverLetter() {
+  return useMutation({
+    mutationFn: async ({ id, format }: { id: string; format: string }) => {
+      const token = localStorage.getItem('access_token')
+      const res = await fetch(`/api/v1/cover-letters/${id}/export/${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `cover-letter.${format}`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); window.URL.revokeObjectURL(url)
+      return res
+    },
+  })
+}
+
+export function useApplicationPackage() {
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters/application-package', data).then(unwrap),
+  })
+}
+
+// ── Resume Upload / Generate / Duplicate / Optimize / Compare / Download ──
+export function useUploadResume() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (formData: FormData) => {
+      const token = localStorage.getItem('access_token')
+      return fetch('/api/v1/resumes/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }).then(r => r.json()).then(unwrap)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes'] }),
+  })
+}
+
+export function useGenerateResume() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post('/resumes/generate', data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes'] }),
+  })
+}
+
+export function useDuplicateResume() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) =>
+      api.post(`/resumes/${id}/duplicate`, data || {}).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes'] }),
+  })
+}
+
+export function useOptimizeResume() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.post(`/resumes/${id}/optimize`, data).then(unwrap),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['resumes'] }); },
+  })
+}
+
+export function useCompareResumes() {
+  return useMutation({
+    mutationFn: (data: any) => api.post('/resumes/compare', data).then(unwrap),
+  })
+}
+
+export function useReorderSections(resumeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (order: { section_id: string; sort_order: number }[]) =>
+      api.put(`/resumes/${resumeId}/sections/reorder`, { order }).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes', resumeId, 'sections'] }),
+  })
+}
+
+export function useAtsAnalysis(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'ats'],
+    queryFn: () => api.get<any>(`/resumes/${resumeId}/ats`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useResumeHealth(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'health'],
+    queryFn: () => api.get<any>(`/resumes/${resumeId}/health`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useAnalyzeResume() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.post(`/resumes/${id}/analyze`, data).then(unwrap),
+  })
+}
+
+export function useResumeVersions(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'versions'],
+    queryFn: () => api.get<any[]>(`/resumes/${resumeId}/versions`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useDownloadResume() {
+  return useMutation({
+    mutationFn: async ({ id, format }: { id: string; format?: string }) => {
+      const token = localStorage.getItem('access_token')
+      const fmt = format || 'pdf'
+      const res = await fetch(`/api/v1/resumes/${id}/download/${fmt}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Download failed')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `resume-${id}.${fmt}`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); window.URL.revokeObjectURL(url)
+      return res
+    },
   })
 }

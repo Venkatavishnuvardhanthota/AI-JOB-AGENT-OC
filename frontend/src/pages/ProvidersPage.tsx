@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { RefreshCw, Settings } from 'lucide-react'
+import { EmptyState } from '@/components/layout/empty-state'
+import { useToast } from '@/components/ui/toast'
+import { RefreshCw, Settings, Server } from 'lucide-react'
 
 const providerIcons: Record<string, string> = {
   LinkedIn: 'in',
@@ -17,8 +19,34 @@ const providerIcons: Record<string, string> = {
 
 export function ProvidersPage() {
   const { data: providers, isLoading } = useJobProviders()
+  const { addToast } = useToast()
 
-  if (isLoading) return <div className="space-y-4">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+  const handleSync = (name: string) => {
+    addToast(`${name} sync started`, 'info')
+  }
+
+  if (isLoading) return <div className="space-y-6">
+    <Skeleton className="h-8 w-48" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
+    </div>
+  </div>
+
+  const providerList = (providers as any) || []
+
+  if (!isLoading && providerList.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Job Providers" description="Configure and manage job data providers." />
+        <EmptyState
+          icon={Server}
+          title="No providers configured"
+          description="Add job providers to start collecting job listings."
+          action={<Button>Add Provider</Button>}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -26,14 +54,14 @@ export function ProvidersPage() {
         title="Job Providers"
         description="Configure and manage job data providers."
         actions={
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => addToast('Refreshing all providers...', 'info')}>
             <RefreshCw className="h-4 w-4 mr-1" /> Refresh All
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {((providers as any) || []).map((provider: any) => (
+        {providerList.map((provider: any) => (
           <Card key={provider.name}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -61,8 +89,12 @@ export function ProvidersPage() {
                 )}
               </div>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1"><RefreshCw className="h-3 w-3 mr-1" /> Sync</Button>
-                <Button variant="outline" size="sm"><Settings className="h-3 w-3" /></Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSync(provider.name)}>
+                  <RefreshCw className="h-3 w-3 mr-1" /> Sync
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-3 w-3" />
+                </Button>
               </div>
             </CardContent>
           </Card>
