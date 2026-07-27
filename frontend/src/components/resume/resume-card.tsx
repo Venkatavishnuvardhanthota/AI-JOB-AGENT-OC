@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/components/ui/toast'
-import { FileText, MoreVertical, ExternalLink, Copy, Trash2, Pencil, Calendar, Layout } from 'lucide-react'
+import { FileText, MoreVertical, ExternalLink, Copy, Trash2, Pencil, Calendar, Layout, Sparkles, Download, TrendingUp, Heart } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 
@@ -29,9 +29,14 @@ interface ResumeCardProps {
   onDelete?: (id: string) => void
   onDuplicate?: (resume: any) => void
   onRename?: (id: string, title: string) => Promise<void>
+  onOptimize?: (id: string) => void
+  onDownload?: (id: string) => void
+  atsScore?: number
+  healthScore?: number
+  versionCount?: number
 }
 
-export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCardProps) {
+export function ResumeCard({ resume, onDelete, onDuplicate, onRename, onOptimize, onDownload, atsScore, healthScore, versionCount }: ResumeCardProps) {
   const [renaming, setRenaming] = useState(false)
   const [newTitle, setNewTitle] = useState(resume.title || '')
   const [saving, setSaving] = useState(false)
@@ -78,6 +83,7 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
               )}
               <p className="text-xs text-muted-foreground">
                 v{resume.version} · {resume.section_count} sections
+                {versionCount != null && ` · ${versionCount} versions`}
               </p>
             </div>
           </div>
@@ -100,6 +106,16 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
                 {onDuplicate && (
                   <DropdownMenuItem onClick={() => onDuplicate(resume)}>
                     <Copy className="h-4 w-4 mr-2" /> Duplicate
+                  </DropdownMenuItem>
+                )}
+                {onOptimize && (
+                  <DropdownMenuItem onClick={() => onOptimize(resume.id)}>
+                    <Sparkles className="h-4 w-4 mr-2" /> Optimize
+                  </DropdownMenuItem>
+                )}
+                {onDownload && (
+                  <DropdownMenuItem onClick={() => onDownload(resume.id)}>
+                    <Download className="h-4 w-4 mr-2" /> Download
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -126,6 +142,25 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
             {resume.status}
           </Badge>
         </div>
+
+        {(atsScore != null || healthScore != null) && (
+          <div className="flex gap-3 mb-2">
+            {atsScore != null && (
+              <div className="flex items-center gap-1 text-xs">
+                <TrendingUp className="h-3 w-3 text-primary" />
+                <span className="text-muted-foreground">ATS:</span>
+                <span className={atsScore >= 70 ? 'text-success' : atsScore >= 40 ? 'text-warning' : 'text-error'}>{atsScore}%</span>
+              </div>
+            )}
+            {healthScore != null && (
+              <div className="flex items-center gap-1 text-xs">
+                <Heart className="h-3 w-3 text-accent" />
+                <span className="text-muted-foreground">Health:</span>
+                <span className={healthScore >= 70 ? 'text-success' : healthScore >= 40 ? 'text-warning' : 'text-error'}>{healthScore}%</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Calendar className="h-3 w-3" /> Updated {formatDate(resume.created_at)}

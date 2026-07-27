@@ -676,3 +676,356 @@ class ResumeService:
             "right_version": right.version,
             "changes": changes,
         }
+
+    # ── ATS Analysis ──
+
+    KNOWN_TECH_KEYWORDS = {
+        "python", "javascript", "typescript", "java", "c++", "go", "rust", "sql",
+        "react", "angular", "vue", "node", "django", "fastapi", "flask", "spring",
+        "docker", "kubernetes", "aws", "azure", "gcp", "terraform", "ansible",
+        "git", "ci/cd", "jenkins", "github actions", "linux", "rest api", "graphql",
+        "redis", "postgresql", "mongodb", "mysql", "elasticsearch", "kafka",
+        "machine learning", "deep learning", "nlp", "computer vision", "llm",
+        "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy",
+        "agile", "scrum", "jira", "confluence",
+        "leadership", "communication", "team management", "mentoring",
+    }
+
+    SECTION_WEIGHTS = {
+        "summary": 0.10,
+        "experience": 0.35,
+        "education": 0.15,
+        "skills": 0.20,
+        "projects": 0.10,
+        "certifications": 0.05,
+        "languages": 0.03,
+        "publications": 0.02,
+    }
+
+    def _extract_text(self, sections: list) -> str:
+        texts = []
+        for s in (sections or []):
+            content = s.content if hasattr(s, "content") else s.get("content", {})
+            if isinstance(content, dict):
+                texts.append(content.get("text", "") or "")
+            elif isinstance(content, str):
+                texts.append(content)
+        return "\n".join(texts)
+
+    def _count_keywords(self, text: str) -> dict:
+        lower = text.lower()
+        found = {}
+        for kw in self.KNOWN_TECH_KEYWORDS:
+            count = lower.count(kw)
+            if count > 0:
+                found[kw] = count
+        return found
+
+    async def analyze_ats(self, resume_id: uuid.UUID, user_id: uuid.UUID, job_id: uuid.UUID | None = None) -> dict:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        sections = resume.sections or []
+        text = self._extract_text(sections)
+        lower_text = text.lower()
+
+        keywords = self._count_keywords(text)
+        keyword_count = len(keywords)
+
+        section_types = {s.section_type for s in sections}
+        has_contact = any("contact" in (s.section_type) or "link" in (s.section_type) for s in sections)
+        has_summary = "summary" in section_types or any("summary" in (s.title or "").lower() for s in sections)
+        has_experience = "experience" in section_types
+        has_education = "education" in section_types
+        has_skills = "skills" in section_types
+
+        keyword_score = min(100, keyword_count * 10 + 20)
+        skills_score = 100 if has_skills else 40
+        experience_score = 100 if has_experience else 30
+        education_score = 100 if has_education else 40
+        formatting_score = 85 if has_summary else 65
+        sections_score = min(100, len(section_types) * 12 + 30)
+        contact_score = 100 if has_contact else 60
+
+        overall = round(
+            keyword_score * 0.25
+            + skills_score * 0.20
+            + experience_score * 0.20
+            + education_score * 0.10
+            + formatting_score * 0.10
+            + sections_score * 0.10
+            + contact_score * 0.05
+        )
+
+        all_keywords = set(self.KNOWN_TECH_KEYWORDS)
+
+        categories = [
+            {
+                "name": "Keywords",
+                "score": keyword_score,
+                "reason": f"Found {keyword_count} relevant keywords in your resume." if keyword_count > 0 else "No relevant keywords detected.",
+                "suggestion": "Include relevant technologies naturally within your experience and skills sections.",
+                "missing": sorted(list(all_keywords - set(keywords.keys())))[:8] if keyword_count < 10 else [],
+            },
+            {
+                "name": "Skills",
+                "score": skills_score,
+                "reason": "Skills section found and populated." if has_skills else "No dedicated skills section detected.",
+                "suggestion": "Create a skills section listing technical proficiencies.",
+                "missing": [],
+            },
+            {
+                "name": "Experience",
+                "score": experience_score,
+                "reason": "Experience section found." if has_experience else "No experience section detected.",
+                "suggestion": "Add work experience with detailed descriptions and achievements.",
+                "missing": [],
+            },
+            {
+                "name": "Education",
+                "score": education_score,
+                "reason": "Education section found." if has_education else "No education section detected.",
+                "suggestion": "Add your educational background including degrees and institutions.",
+                "missing": [],
+            },
+            {
+                "name": "Formatting",
+                "score": formatting_score,
+                "reason": "Good structure with summary section." if has_summary else "Missing professional summary.",
+                "suggestion": "Add a professional summary at the top for better ATS parsing.",
+                "missing": [],
+            },
+            {
+                "name": "Sections",
+                "score": sections_score,
+                "reason": f"Contains {len(section_types)} section types." if section_types else "No sections detected.",
+                "suggestion": "Include at least 5-6 different section types for completeness.",
+                "missing": [s for s in ["summary", "experience", "education", "skills", "projects", "certifications"] if s not in section_types],
+            },
+            {
+                "name": "Contact Information",
+                "score": contact_score,
+                "reason": "Contact information detected." if has_contact else "No contact section found.",
+                "suggestion": "Add contact information section with links to professional profiles.",
+                "missing": [],
+            },
+        ]
+
+        strengths = []
+        improvements = []
+
+        if has_experience:
+            strengths.append("Experience section present with detailed entries")
+        if has_education:
+            strengths.append("Education section present")
+        if has_skills:
+            strengths.append("Skills section present")
+        if has_summary:
+            strengths.append("Professional summary provides context")
+        if keyword_count >= 5:
+            strengths.append(f"Good keyword coverage ({keyword_count} keywords)")
+        if len(section_types) >= 5:
+            strengths.append("Comprehensive section coverage")
+
+        if not has_experience:
+            improvements.append("Add work experience section")
+        if not has_education:
+            improvements.append("Add education section")
+        if not has_skills:
+            improvements.append("Add skills section")
+        if keyword_count < 5:
+            improvements.append("Increase keyword coverage with relevant technologies")
+        if not has_summary:
+            improvements.append("Add professional summary for better ATS parsing")
+
+        return {
+            "overall": overall,
+            "categories": categories,
+            "strengths": strengths,
+            "improvements": improvements,
+        }
+
+    async def analyze_health(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> dict:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        sections = resume.sections or []
+        text = self._extract_text(sections)
+        lower_text = text.lower()
+
+        section_types = {s.section_type for s in sections}
+
+        score = 50
+        strengths = []
+        improvements = []
+        recommendations = []
+
+        if "experience" in section_types:
+            score += 15
+            strengths.append({"label": "Experience", "detail": "Work experience section present"})
+        else:
+            improvements.append({"label": "Experience", "detail": "Work experience section missing"})
+            recommendations.append("Add detailed work experience with achievements")
+
+        if "education" in section_types:
+            score += 10
+            strengths.append({"label": "Education", "detail": "Education section present"})
+        else:
+            improvements.append({"label": "Education", "detail": "Education section missing"})
+            recommendations.append("Add educational background")
+
+        if "skills" in section_types:
+            score += 10
+            keywords = self._count_keywords(text)
+            if len(keywords) >= 5:
+                strengths.append({"label": "Technical Skills", "detail": f"Strong technical skills ({len(keywords)} keywords)"})
+                score += 5
+            else:
+                strengths.append({"label": "Skills", "detail": "Skills section present"})
+        else:
+            improvements.append({"label": "Skills", "detail": "Skills section missing"})
+            recommendations.append("Add a dedicated skills section")
+
+        if "summary" in section_types:
+            summary_text = ""
+            for s in sections:
+                if s.section_type == "summary":
+                    content = s.content or {}
+                    summary_text = content.get("text", "") if isinstance(content, dict) else str(content)
+            if len(summary_text) > 100:
+                strengths.append({"label": "Summary", "detail": "Well-written professional summary"})
+                score += 5
+            else:
+                improvements.append({"label": "Summary", "detail": "Summary too generic or brief"})
+                recommendations.append("Expand your professional summary with specific achievements")
+        else:
+            improvements.append({"label": "Summary", "detail": "Professional summary missing"})
+            recommendations.append("Add a professional summary")
+
+        if "projects" in section_types:
+            strengths.append({"label": "Projects", "detail": "Projects section showcases practical work"})
+            score += 5
+
+        word_count = len(text.split())
+        if word_count > 300:
+            strengths.append({"label": "Content", "detail": f"Excellent content length ({word_count} words)"})
+            score += 5
+        elif word_count < 100:
+            improvements.append({"label": "Content", "detail": "Content too brief"})
+            recommendations.append("Expand resume content with more detail")
+
+        has_quantified = any(c.isdigit() for c in text) and any(c in text for c in ["%", "x", "K", "M"])
+        if has_quantified:
+            strengths.append({"label": "Achievements", "detail": "Includes quantified achievements"})
+            score += 5
+        else:
+            improvements.append({"label": "Achievements", "detail": "Missing quantified achievements"})
+            recommendations.append("Add measurable achievements with numbers and percentages")
+
+        ats_analysis = await self.analyze_ats(resume_id, user_id, None)
+        ats_score = ats_analysis["overall"]
+        if ats_score >= 70:
+            strengths.append({"label": "ATS Compatibility", "detail": f"Good ATS score ({ats_score}%)"})
+            score += 5
+        elif ats_score < 50:
+            improvements.append({"label": "ATS Compatibility", "detail": f"Low ATS score ({ats_score}%)"})
+            recommendations.append("Improve keyword coverage for better ATS matching")
+
+        overall = min(100, score)
+
+        return {
+            "overall": overall,
+            "strengths": strengths,
+            "improvements": improvements,
+            "recommendations": list(dict.fromkeys(recommendations)),
+        }
+
+    async def list_versions(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> list:
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        stmt = (
+            select(ResumeVersion)
+            .where(ResumeVersion.user_id == user_id)
+            .order_by(ResumeVersion.version.desc())
+        )
+        result = await self.session.execute(stmt)
+        versions = result.scalars().all()
+        return versions
+
+    async def analyze_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID, job_id: uuid.UUID | None = None) -> dict:
+        ats = await self.analyze_ats(resume_id, user_id, job_id)
+        health = await self.analyze_health(resume_id, user_id)
+        return {"ats": ats, "health": health}
+
+    async def export_resume_pdf(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> bytes:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+            import io
+
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=letter,
+                                     topMargin=0.75*inch, bottomMargin=0.75*inch,
+                                     leftMargin=0.75*inch, rightMargin=0.75*inch)
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle("ResumeTitle", parent=styles["Title"],
+                                          fontSize=18, spaceAfter=6, alignment=1)
+            normal = styles["Normal"]
+            section_style = ParagraphStyle("SectionHeading", parent=styles["Heading2"],
+                                            fontSize=13, spaceBefore=12, spaceAfter=4,
+                                            textColor="#2563eb")
+
+            elements = []
+            elements.append(Paragraph(resume.title or "Resume", title_style))
+            if resume.template:
+                elements.append(Paragraph(f"Template: {resume.template}", normal))
+            elements.append(Spacer(1, 12))
+
+            for section in (resume.sections or []):
+                elements.append(Paragraph(section.title or section.section_type, section_style))
+                content = section.content or {}
+                text = content.get("text", "") if isinstance(content, dict) else str(content)
+                for line in text.split("\n"):
+                    if line.strip():
+                        elements.append(Paragraph(line.strip(), normal))
+                elements.append(Spacer(1, 8))
+
+            doc.build(elements)
+            return buf.getvalue()
+        except ImportError:
+            raise ImportError("reportlab is required for PDF export")
+
+    async def export_resume_docx(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> bytes:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        try:
+            import docx
+            from docx import Document
+            import io
+
+            buf = io.BytesIO()
+            doc = Document()
+
+            title = doc.add_heading(resume.title or "Resume", 0)
+            if resume.template:
+                doc.add_paragraph(f"Template: {resume.template}")
+
+            for section in (resume.sections or []):
+                doc.add_heading(section.title or section.section_type, level=1)
+                content = section.content or {}
+                text = content.get("text", "") if isinstance(content, dict) else str(content)
+                for line in text.split("\n"):
+                    if line.strip():
+                        doc.add_paragraph(line.strip())
+
+            doc.save(buf)
+            return buf.getvalue()
+        except ImportError:
+            raise ImportError("python-docx is required for DOCX export")

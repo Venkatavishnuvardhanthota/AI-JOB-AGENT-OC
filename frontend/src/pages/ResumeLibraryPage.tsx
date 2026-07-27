@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useResumes, useDeleteResume, useUpdateResume } from '@/api/hooks'
+import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useResumes, useDeleteResume, useUpdateResume, useDownloadResume } from '@/api/hooks'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -14,20 +15,31 @@ export function ResumeLibraryPage() {
   const { data: resumes, isLoading } = useResumes()
   const deleteResume = useDeleteResume()
   const updateResume = useUpdateResume()
+  const downloadResume = useDownloadResume()
   const { addToast } = useToast()
+  const navigate = useNavigate()
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try { await deleteResume.mutateAsync(id); addToast('Resume deleted', 'info') }
     catch { addToast('Failed to delete', 'error') }
-  }
+  }, [deleteResume, addToast])
 
-  const handleDuplicate = () => {
+  const handleDuplicate = useCallback(() => {
     setShowCreateModal(true)
-  }
+  }, [])
 
-  const handleRename = async (id: string, title: string) => {
+  const handleRename = useCallback(async (id: string, title: string) => {
     await updateResume.mutateAsync({ id, data: { title } })
-  }
+  }, [updateResume])
+
+  const handleOptimize = useCallback((id: string) => {
+    navigate(`/resumes/${id}?tab=optimize`)
+  }, [navigate])
+
+  const handleDownload = useCallback(async (id: string) => {
+    try { await downloadResume.mutateAsync({ id, format: 'pdf' }) }
+    catch { addToast('Failed to download', 'error') }
+  }, [downloadResume, addToast])
 
   const list = (resumes as any) || []
   const isEmpty = !isLoading && list.length === 0
@@ -82,6 +94,8 @@ export function ResumeLibraryPage() {
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
               onRename={handleRename}
+              onOptimize={handleOptimize}
+              onDownload={handleDownload}
             />
           ))}
         </div>

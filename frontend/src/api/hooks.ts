@@ -415,6 +415,37 @@ export function useReorderSections(resumeId: string) {
   })
 }
 
+export function useAtsAnalysis(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'ats'],
+    queryFn: () => api.get<any>(`/resumes/${resumeId}/ats`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useResumeHealth(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'health'],
+    queryFn: () => api.get<any>(`/resumes/${resumeId}/health`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
+export function useAnalyzeResume() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.post(`/resumes/${id}/analyze`, data).then(unwrap),
+  })
+}
+
+export function useResumeVersions(resumeId: string) {
+  return useQuery({
+    queryKey: ['resumes', resumeId, 'versions'],
+    queryFn: () => api.get<any[]>(`/resumes/${resumeId}/versions`).then(unwrap),
+    enabled: !!resumeId,
+  })
+}
+
 export function useDownloadResume() {
   return useMutation({
     mutationFn: async ({ id, format }: { id: string; format?: string }) => {

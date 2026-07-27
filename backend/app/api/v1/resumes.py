@@ -7,6 +7,7 @@ from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models import User
 from app.schemas.resume import (
+    ResumeAnalyzeRequest,
     ResumeCompareRequest,
     ResumeCompareResponse,
     ResumeCreate,
@@ -416,7 +417,78 @@ async def compare_resumes(
     return {"success": True, "data": result}
 
 
-# ── Download ──
+# ── ATS / Health / Analyze ──
+
+
+@router.get("/{resume_id}/ats")
+async def analyze_ats(
+    resume_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    result = await service.analyze_ats(uuid.UUID(resume_id), current_user.id, None)
+    return {"success": True, "data": result}
+
+
+@router.get("/{resume_id}/health")
+async def resume_health(
+    resume_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    result = await service.analyze_health(uuid.UUID(resume_id), current_user.id)
+    return {"success": True, "data": result}
+
+
+@router.post("/{resume_id}/analyze")
+async def analyze_resume(
+    resume_id: str,
+    body: ResumeAnalyzeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    result = await service.analyze_resume(
+        uuid.UUID(resume_id),
+        current_user.id,
+        job_id=uuid.UUID(body.job_id) if body.job_id else None,
+    )
+    return {"success": True, "data": result}
+
+
+# ── Versions List ──
+
+
+@router.get("/{resume_id}/versions")
+async def list_versions(
+    resume_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    versions = await service.list_versions(uuid.UUID(resume_id), current_user.id)
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": str(v.id),
+                "version": v.version,
+                "title": v.title,
+                "status": v.status,
+                "source": v.source,
+                "change_summary": v.change_summary,
+                "resume_type": v.resume_type,
+                "generated_for_job_id": str(v.generated_for_job_id) if v.generated_for_job_id else None,
+                "created_at": v.created_at.isoformat(),
+            }
+            for v in versions
+        ],
+    }
+
+
+# ── Download / Export ──
 
 
 @router.get("/{resume_id}/download/{format}")
@@ -427,8 +499,9 @@ async def download_resume(
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.get_resume(uuid.UUID(resume_id), current_user.id)
+    rid = uuid.UUID(resume_id)
     if format == "json":
+        resume = await service.get_resume(rid, current_user.id)
         data = ResumeExportData(
             version=resume.version,
             title=resume.title,
@@ -443,4 +516,17 @@ async def download_resume(
             updated_at=resume.updated_at,
         )
         return {"success": True, "data": data.model_dump()}
-    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'json'.")
+    elif format == "pdf":
+        content = await service.export_resume_pdf(rid, current_user.id)
+        from fastapi.responses import Response
+        return Response(content=content, media_type="application/pdf",
+                        headers={"Content-Disposition": f'attachment; filename="resume.pdf"'})
+    elif format == "docx":
+        content = await service.export_resume_docx(rid, current_user.id)
+        from fastapi.responses import Response
+        return Response(
+            content=content,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="resume.docx"'},
+        )
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'json', 'pdf', or 'docx'.")

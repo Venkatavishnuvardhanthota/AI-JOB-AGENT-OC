@@ -166,3 +166,64 @@ class ResumePreviewResponse(BaseModel):
 class TemplateResponse(BaseModel):
     id: str
     name: str
+
+
+# ── ATS / Health / Analysis ──
+
+
+class AtsCategory(BaseModel):
+    name: str
+    score: float
+    reason: str
+    suggestion: str
+    missing: list[str] = []
+
+
+class AtsAnalysisResponse(BaseModel):
+    overall: float
+    categories: list[AtsCategory]
+    strengths: list[str]
+    improvements: list[str]
+
+
+class ResumeHealthResponse(BaseModel):
+    overall: float
+    strengths: list[dict]
+    improvements: list[dict]
+    recommendations: list[str]
+
+
+class ResumeAnalyzeRequest(BaseModel):
+    job_id: str
+    target_role: str | None = None
+
+
+class ResumeAnalyzeResponse(BaseModel):
+    ats: AtsAnalysisResponse
+    health: ResumeHealthResponse
+
+
+class ResumeVersionListItem(BaseModel):
+    id: uuid.UUID
+    version: int
+    title: str | None
+    status: str
+    source: str
+    change_summary: str | None
+    resume_type: str | None
+    generated_for_job_id: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TimelineEntry(BaseModel):
+    type: str
+    description: str
+    timestamp: datetime
+    version: int | None = None
+
+
+class ResumeTimelineResponse(BaseModel):
+    entries: list[TimelineEntry]
