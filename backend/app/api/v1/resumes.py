@@ -1,21 +1,27 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models import User
 from app.schemas.resume import (
+    ResumeCompareRequest,
+    ResumeCompareResponse,
     ResumeCreate,
+    ResumeDuplicateRequest,
     ResumeExportData,
+    ResumeGenerateRequest,
     ResumeImportData,
     ResumeListResponse,
+    ResumeOptimizeRequest,
     ResumeResponse,
     ResumeSectionCreate,
     ResumeSectionResponse,
     ResumeSectionUpdate,
     ResumeUpdate,
+    ResumeUploadResponse,
     ResumeVersionCreate,
 )
 from app.services.resume import ResumeService
@@ -283,3 +289,138 @@ async def list_templates(
         "success": True,
         "data": [{"id": str(t.id), "name": t.name} for t in templates],
     }
+
+
+# ── Upload ──
+
+
+@router.post("/upload", status_code=201)
+async def upload_resume(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    content = await file.read()
+    result = await service.parse_upload(content, file.filename or "resume")
+    resume = await service.create_resume(
+        user_id=current_user.id,
+        title=result.get("title", file.filename or "Uploaded Resume"),
+        change_summary="Uploaded from file",
+        sections=result.get("sections", []),
+    )
+    return {
+        "success": True,
+        "data": {
+            "resume": ResumeResponse.model_validate(resume).model_dump(),
+            "confidence": result.get("confidence", 100),
+            "needs_review": result.get("needs_review", []),
+        },
+    }
+
+
+# ── Generate From Profile ──
+
+
+@router.post("/generate", status_code=201)
+async def generate_resume(
+    body: ResumeGenerateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    resume = await service.generate_from_profile(
+        user_id=current_user.id,
+        title=body.title or "Generated Resume",
+        template=body.template,
+        section_filter=body.sections,
+    )
+    return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
+
+
+# ── Duplicate ──
+
+
+@router.post("/{resume_id}/duplicate", status_code=201)
+async def duplicate_resume(
+    resume_id: str,
+    body: ResumeDuplicateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    resume = await service.duplicate_resume(
+        uuid.UUID(resume_id),
+        current_user.id,
+        title=body.title,
+        change_summary=body.change_summary,
+    )
+    return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
+
+
+# ── Optimize ──
+
+
+@router.post("/{resume_id}/optimize")
+async def optimize_resume(
+    resume_id: str,
+    body: ResumeOptimizeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    resume = await service.optimize_for_job(
+        uuid.UUID(resume_id),
+        current_user.id,
+        job_id=uuid.UUID(body.job_id),
+        target_role=body.target_role,
+    )
+    return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
+
+
+# ── Compare ──
+
+
+@router.post("/compare")
+async def compare_resumes(
+    body: ResumeCompareRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    result = await service.compare_versions(
+        uuid.UUID(body.left_id),
+        uuid.UUID(body.right_id),
+        current_user.id,
+    )
+    return {"success": True, "data": result}
+
+
+# ── Download ──
+
+
+@router.get("/{resume_id}/download/{format}")
+async def download_resume(
+    resume_id: str,
+    format: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    resume = await service.get_resume(uuid.UUID(resume_id), current_user.id)
+    if format == "json":
+        data = ResumeExportData(
+            version=resume.version,
+            title=resume.title,
+            description=resume.description,
+            template=resume.template,
+            resume_type=resume.resume_type,
+            status=resume.status,
+            source=resume.source,
+            change_summary=resume.change_summary,
+            sections=[ResumeSectionResponse.model_validate(s) for s in (resume.sections or [])],
+            created_at=resume.created_at,
+            updated_at=resume.updated_at,
+        )
+        return {"success": True, "data": data.model_dump()}
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'json'.")

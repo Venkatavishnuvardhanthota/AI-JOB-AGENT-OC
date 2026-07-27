@@ -12,6 +12,7 @@ import { JobsSearchPage } from './pages/JobsSearchPage'
 import { SavedJobsPage } from './pages/SavedJobsPage'
 import { JobDetailPage } from './pages/JobDetailPage'
 import { ResumeLibraryPage } from './pages/ResumeLibraryPage'
+import { ResumeDetailPage } from './pages/ResumeDetailPage'
 import { CareerProfilePage } from './pages/CareerProfilePage'
 import { WorkflowMonitorPage } from './pages/WorkflowMonitorPage'
 import { OrchestrationsPage } from './pages/OrchestrationsPage'
@@ -54,6 +55,7 @@ function App() {
               <Route path="/jobs/saved" element={<SavedJobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
               <Route path="/resumes" element={<ResumeLibraryPage />} />
+              <Route path="/resumes/:id" element={<ResumeDetailPage />} />
               <Route path="/profile" element={<CareerProfilePage />} />
               <Route path="/workflows/monitor" element={<WorkflowMonitorPage />} />
               <Route path="/workflows/orchestrations" element={<OrchestrationsPage />} />

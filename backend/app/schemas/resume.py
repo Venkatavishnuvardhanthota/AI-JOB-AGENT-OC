@@ -120,14 +120,43 @@ class ResumeListResponse(BaseModel):
         from_attributes = True
 
 
-class ResumePreviewResponse(BaseModel):
-    html: str
+class ResumeGenerateRequest(BaseModel):
+    title: str | None = None
+    template: str | None = None
+    sections: list[str] | None = None
+
+
+class ResumeOptimizeRequest(BaseModel):
+    job_id: str
+    target_role: str | None = None
+
+
+class ResumeCompareRequest(BaseModel):
+    left_id: str
+    right_id: str
 
 
 class ResumeCompareResponse(BaseModel):
     left_version: int
     right_version: int
     changes: list[dict]
+
+
+class ResumeDuplicateRequest(BaseModel):
+    title: str
+    change_summary: str | None = None
+
+
+class ResumeUploadResponse(BaseModel):
+    filename: str
+    file_size: int
+    sections: list[ResumeSectionCreate]
+    confidence: float
+    needs_review: list[str]
+
+
+class ResumePreviewResponse(BaseModel):
+    html: str
 
 
 class TemplateResponse(BaseModel):

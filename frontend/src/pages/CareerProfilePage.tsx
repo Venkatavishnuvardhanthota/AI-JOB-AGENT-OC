@@ -57,7 +57,13 @@ export function CareerProfilePage() {
     } catch { addToast('Failed to update profile', 'error') }
   }
 
-  if (profileLoading) return <div className="space-y-4">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+  if (profileLoading) return (
+    <div className="space-y-6 max-w-4xl">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-48 rounded-xl" />
+      {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+    </div>
+  )
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -132,7 +138,7 @@ export function CareerProfilePage() {
               ))}
               {profile?.bio && <div className="text-sm mt-2"><span className="text-muted-foreground">Bio:</span><p className="mt-1 whitespace-pre-wrap">{profile.bio}</p></div>}
               {!profile?.headline && !profile?.bio && !profile?.location && (
-                <p className="text-sm text-muted-foreground">No details added yet. Click Edit to add your information.</p>
+                <p className="text-sm text-muted-foreground text-center py-8">No personal details added yet. Click Edit to add your information.</p>
               )}
             </div>
           )}
