@@ -60,6 +60,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         ],
       },
       { label: 'Discovery', icon: Search, href: '/discovery' },
+      { label: 'Matching', icon: Brain, href: '/matching' },
     ],
   },
   {
