@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useResume, useResumeSections, useCreateResumeSection, useUpdateResumeSection, useDeleteResumeSection, useUpdateResume, useReorderSections, useDuplicateResume, useDownloadResume } from '@/api/hooks'
+import { ExportPreviewModal } from '@/components/cover-letter/export-preview-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -8,14 +9,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/toast'
+import { cn } from '@/lib/utils'
 import { AtsScore } from '@/components/resume/ats-score'
 import { ResumeHealth } from '@/components/resume/resume-health'
 import { ResumeCompare } from '@/components/resume/resume-compare'
 import { VersionHistory } from '@/components/resume/version-history'
 import { ResumeOptimize } from '@/components/resume/resume-optimize'
 import {
-  ArrowLeft, Plus, Pencil, Trash2, Save, FileText, ArrowUp, ArrowDown, Layout,
-  Sparkles, TrendingUp, Heart, History, ArrowLeftRight, Download, Copy,
+  ArrowLeft, Plus, Pencil, Trash2, Save, FileText, Layout,
+  Sparkles, TrendingUp, Heart, History, ArrowLeftRight, Download, Copy, GripVertical, Eye,
 } from 'lucide-react'
 
 const SECTION_TYPES = [
@@ -40,6 +42,7 @@ export function ResumeDetailPage() {
   const [editingTitle, setEditingTitle] = useState(false)
   const [title, setTitle] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [showExportPreview, setShowExportPreview] = useState(false)
   const [editingSection, setEditingSection] = useState<any | null>(null)
   const [sectionType, setSectionType] = useState('summary')
   const [sectionTitle, setSectionTitle] = useState('')
@@ -85,19 +88,6 @@ export function ResumeDetailPage() {
     catch { addToast('Failed to delete section', 'error') }
   }, [deleteSection, addToast])
 
-  const handleMoveSection = useCallback(async (index: number, direction: 'up' | 'down') => {
-    const list = sortedSections
-    const target = direction === 'up' ? index - 1 : index + 1
-    if (target < 0 || target >= list.length) return
-    const copy = [...list]
-    ;[copy[index], copy[target]] = [copy[target], copy[index]]
-    const newOrder = copy.map((s: any, i: number) => ({ section_id: s.id, sort_order: i }))
-    try {
-      await reorderSections.mutateAsync(newOrder)
-      addToast('Section moved', 'success')
-    } catch { addToast('Failed to reorder', 'error') }
-  }, [sections, reorderSections, addToast])
-
   const handleDuplicate = useCallback(async () => {
     try {
       const result = await duplicateResume.mutateAsync({ id: id!, data: { title: `${resume?.title || 'Resume'} (Copy)` } }) as any
@@ -140,6 +130,35 @@ export function ResumeDetailPage() {
 
   const sortedSections = ((sections as any) || []).slice().sort((a: any, b: any) => a.sort_order - b.sort_order)
 
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
+    setDragIdx(idx)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(idx))
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const handleDrop = useCallback(async (e: React.DragEvent, dropIdx: number) => {
+    e.preventDefault()
+    if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); return }
+    const copy = [...sortedSections]
+    const [moved] = copy.splice(dragIdx, 1)
+    copy.splice(dropIdx, 0, moved)
+    const newOrder = copy.map((s: any, i: number) => ({ section_id: s.id, sort_order: i }))
+    try {
+      await reorderSections.mutateAsync(newOrder)
+      addToast('Section reordered', 'success')
+    } catch { addToast('Failed to reorder', 'error') }
+    setDragIdx(null)
+  }, [dragIdx, sortedSections, reorderSections, addToast])
+
+  const handleDragEnd = useCallback(() => { setDragIdx(null) }, [])
+
   return (
     <div className="space-y-6 max-w-4xl">
       <Link to="/resumes" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
@@ -180,6 +199,9 @@ export function ResumeDetailPage() {
         <div className="flex flex-wrap gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={handleDuplicate} aria-label="Duplicate resume">
             <Copy className="h-4 w-4 mr-1" /> Duplicate
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowExportPreview(true)} aria-label="Preview and export">
+            <Eye className="h-4 w-4 mr-1" /> Preview
           </Button>
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} aria-label="Download as PDF">
             <Download className="h-4 w-4 mr-1" /> PDF
@@ -236,16 +258,25 @@ export function ResumeDetailPage() {
               ) : (
                 <div className="space-y-2">
                   {sortedSections.map((section: any, index: number) => (
-                    <div key={section.id} className="flex items-start gap-2 group">
-                      <div className="flex flex-col gap-0.5 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleMoveSection(index, 'up')} disabled={index === 0} aria-label="Move up">
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleMoveSection(index, 'down')} disabled={index === sortedSections.length - 1} aria-label="Move down">
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
+                    <div
+                      key={section.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={cn(
+                        'flex items-start gap-2 group',
+                        dragIdx === index && 'opacity-40'
+                      )}
+                    >
+                      <div className="flex flex-col gap-0.5 pt-2 cursor-grab active:cursor-grabbing">
+                        <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <div className="flex-1 rounded-lg border border-glass-border p-3 group-hover:border-primary/30 transition-colors">
+                      <div className={cn(
+                        'flex-1 rounded-lg border p-3 transition-colors',
+                        dragIdx !== null && dragIdx !== index ? 'border-primary/40 bg-primary/5' : 'border-glass-border group-hover:border-primary/30'
+                      )}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 min-w-0">
                             <FileText className="h-5 w-5 text-primary shrink-0" />
@@ -344,6 +375,19 @@ export function ResumeDetailPage() {
           </div>
         </div>
       )}
+
+      <ExportPreviewModal
+        open={showExportPreview}
+        onClose={() => setShowExportPreview(false)}
+        content={sortedSections.map((s: any) =>
+          `<div style="margin-bottom:12px"><strong>${s.title || s.section_type}</strong><p>${s.content?.text || ''}</p></div>`
+        ).join('')}
+        title={resume.title || 'Resume'}
+        onExport={async (format: string) => {
+          if (format === 'pdf') await handleDownloadPdf()
+          else await handleDownloadDocx()
+        }}
+      />
     </div>
   )
 }

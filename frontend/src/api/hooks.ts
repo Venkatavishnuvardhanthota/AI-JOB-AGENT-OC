@@ -350,11 +350,95 @@ export function useScoredJobs(params?: { min_score?: number; page?: number; page
   })
 }
 
-// ── Cover Letters (via profile) ──
-export function useCoverLetters() {
+// ── Cover Letters ──
+export function useCoverLetters(status?: string) {
   return useQuery({
-    queryKey: ['cover-letters'],
-    queryFn: () => api.get<any[]>('/profile/cover-letters').catch(() => []),
+    queryKey: ['cover-letters', status],
+    queryFn: () => {
+      const q = status ? `?status=${status}` : ''
+      return api.get<any[]>(`/cover-letters${q}`).then(unwrap)
+    },
+  })
+}
+
+export function useCoverLetter(id: string) {
+  return useQuery({
+    queryKey: ['cover-letters', id],
+    queryFn: () => api.get<any>(`/cover-letters/${id}`).then(unwrap),
+    enabled: !!id,
+  })
+}
+
+export function useCreateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters', data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useUpdateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.patch(`/cover-letters/${id}`, data).then(unwrap),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cover-letters'] }) },
+  })
+}
+
+export function useDeleteCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/cover-letters/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useDuplicateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/cover-letters/${id}/duplicate`).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useGenerateCoverLetter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters/generate', data).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cover-letters'] }),
+  })
+}
+
+export function useAIAssistCoverLetter() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.post(`/cover-letters/${id}/ai-assist`, data).then(unwrap),
+  })
+}
+
+export function useExportCoverLetter() {
+  return useMutation({
+    mutationFn: async ({ id, format }: { id: string; format: string }) => {
+      const token = localStorage.getItem('access_token')
+      const res = await fetch(`/api/v1/cover-letters/${id}/export/${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `cover-letter.${format}`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); window.URL.revokeObjectURL(url)
+      return res
+    },
+  })
+}
+
+export function useApplicationPackage() {
+  return useMutation({
+    mutationFn: (data: any) => api.post('/cover-letters/application-package', data).then(unwrap),
   })
 }
 

@@ -61,7 +61,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'AI Tools',
     items: [
       { label: 'Applications', icon: FileText, href: '/applications' },
-      { label: 'Cover Letters', icon: Sparkles, href: '#', comingSoon: true },
+      { label: 'Cover Letters', icon: Sparkles, href: '/cover-letters' },
       { label: 'Interview Prep', icon: Brain, href: '#', comingSoon: true },
     ],
   },
