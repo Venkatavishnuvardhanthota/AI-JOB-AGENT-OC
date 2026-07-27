@@ -38,5 +38,9 @@ frontend/dist/
 frontend/.env.local
 frontend/*.tsbuildinfo
 
+# Logs
+*.log
+uvicorn_*.txt
+
 # Docker
 docker-data/
