@@ -18,6 +18,7 @@ from app.schemas.resume import (
     ResumeOptimizeRequest,
     ResumeResponse,
     ResumeSectionCreate,
+    ResumeSectionReorder,
     ResumeSectionResponse,
     ResumeSectionUpdate,
     ResumeUpdate,
@@ -217,6 +218,25 @@ async def export_resume(
 
 
 # ── Sections ──
+
+
+@router.put("/{resume_id}/sections/reorder")
+async def reorder_sections(
+    resume_id: str,
+    body: ResumeSectionReorder,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ResumeService(db)
+    sections = await service.reorder_sections(
+        uuid.UUID(resume_id),
+        current_user.id,
+        [item.model_dump() for item in body.order],
+    )
+    return {
+        "success": True,
+        "data": [ResumeSectionResponse.model_validate(s).model_dump() for s in sections],
+    }
 
 
 @router.get("/{resume_id}/sections")

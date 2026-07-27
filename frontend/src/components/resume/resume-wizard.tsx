@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCreateResume, useGenerateResume, useDuplicateResume } from '@/api/hooks'
 import { useToast } from '@/components/ui/toast'
+import { TemplateSelector } from './template-selector'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +20,7 @@ export function ResumeWizard({ mode, resumes = [], onComplete }: ResumeWizardPro
   const { addToast } = useToast()
 
   const [title, setTitle] = useState(mode === 'generate' ? 'Generated Resume' : '')
+  const [template, setTemplate] = useState('')
   const [duplicateTarget, setDuplicateTarget] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -27,6 +29,7 @@ export function ResumeWizard({ mode, resumes = [], onComplete }: ResumeWizardPro
     try {
       await generateResume.mutateAsync({
         title: title || 'Generated Resume',
+        template: template || undefined,
         sections: ['summary', 'experience', 'education', 'skills', 'projects'],
       })
       addToast('Resume generated from profile!', 'success')
@@ -38,7 +41,7 @@ export function ResumeWizard({ mode, resumes = [], onComplete }: ResumeWizardPro
   const handleCreateBlank = async () => {
     setSaving(true)
     try {
-      await createResume.mutateAsync({ title: title.trim() || 'Untitled Resume' })
+      await createResume.mutateAsync({ title: title.trim() || 'Untitled Resume', template: template || undefined })
       addToast('Resume created!', 'success')
       onComplete()
     } catch { addToast('Failed to create resume', 'error') }
@@ -64,7 +67,7 @@ export function ResumeWizard({ mode, resumes = [], onComplete }: ResumeWizardPro
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">Select a resume to duplicate and give it a new name.</p>
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          {resumes.filter(r => !r.archived).map((r) => (
+          {resumes.filter((r: any) => !r.archived).map((r: any) => (
             <button
               key={r.id}
               type="button"
@@ -97,6 +100,11 @@ export function ResumeWizard({ mode, resumes = [], onComplete }: ResumeWizardPro
       <div>
         <label className="text-xs text-muted-foreground block mb-1">Resume Title</label>
         <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Software Engineer Resume" />
+      </div>
+
+      <div>
+        <label className="text-xs text-muted-foreground block mb-2">Template</label>
+        <TemplateSelector value={template} onChange={setTemplate} />
       </div>
 
       {mode === 'generate' && (

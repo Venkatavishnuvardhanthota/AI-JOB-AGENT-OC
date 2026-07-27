@@ -263,71 +263,212 @@ class ResumeService:
 
     # ── Upload / Parse ──
 
+    RESUME_HEADINGS = [
+        "summary", "professional summary", "profile", "about me",
+        "experience", "work experience", "employment", "professional experience",
+        "education", "academic background", "academic",
+        "skills", "technical skills", "core competencies", "technologies",
+        "projects", "personal projects", "professional projects",
+        "certifications", "certificates", "licenses",
+        "languages", "language proficiency",
+        "publications", "research",
+        "awards", "honors", "achievements",
+        "links", "social links", "profiles",
+        "additional", "additional sections", "other",
+    ]
+
+    def _classify_section(self, heading: str) -> str:
+        h = heading.lower().strip().rstrip(":")
+        for category, keywords in {
+            "summary": ["summary", "professional summary", "profile", "about me", "objective", "career objective"],
+            "experience": ["experience", "work experience", "employment", "professional experience", "work history"],
+            "education": ["education", "academic", "university", "college", "school", "degree", "qualification"],
+            "skills": ["skills", "competencies", "technologies", "technical", "tools", "expertise"],
+            "projects": ["projects", "side projects", "professional projects"],
+            "certifications": ["certifications", "certificates", "licenses", "professional development"],
+            "languages": ["languages", "language"],
+            "publications": ["publications", "research", "papers"],
+            "awards": ["awards", "honors", "achievements", "recognition"],
+            "links": ["links", "profiles", "social", "github", "linkedin", "portfolio"],
+        }.items():
+            if any(kw in h for kw in keywords):
+                return category
+        return "custom"
+
+    def _parse_pdf_text(self, content: bytes) -> list[dict]:
+        try:
+            import fitz
+            doc = fitz.open(stream=content, filetype="pdf")
+            text = ""
+            for page in doc:
+                text += page.get_text() + "\n"
+            doc.close()
+        except Exception:
+            return [{"section_type": "custom", "title": "Extracted Content", "content": {"text": "Could not parse PDF."}, "sort_order": 0}]
+
+        return self._segment_text(text)
+
+    def _parse_docx_text(self, content: bytes) -> list[dict]:
+        try:
+            import docx
+            from docx import Document
+            import io
+            doc = Document(io.BytesIO(content))
+            paragraphs = [(p.text, p.style.name if p.style else "") for p in doc.paragraphs]
+        except Exception:
+            return [{"section_type": "custom", "title": "Extracted Content", "content": {"text": "Could not parse DOCX."}, "sort_order": 0}]
+
+        sections = []
+        current_type = "summary"
+        current_title = "Professional Summary"
+        current_lines = []
+
+        for text, style in paragraphs:
+            if not text.strip():
+                continue
+            is_heading = any(h in style.lower() for h in ["heading", "title", "header"]) or (
+                text.strip().rstrip(":").lower() in self.RESUME_HEADINGS
+                or any(h in text.strip().rstrip(":").lower() for h in self.RESUME_HEADINGS)
+            )
+            if is_heading:
+                if current_lines:
+                    sections.append({
+                        "section_type": current_type,
+                        "title": current_title,
+                        "content": {"text": "\n".join(current_lines).strip()},
+                    })
+                heading_text = text.strip().rstrip(":")
+                current_type = self._classify_section(heading_text)
+                current_title = heading_text
+                current_lines = []
+            elif current_type:
+                current_lines.append(text.strip())
+
+        if current_lines:
+            sections.append({
+                "section_type": current_type,
+                "title": current_title,
+                "content": {"text": "\n".join(current_lines).strip()},
+            })
+
+        return [s for s in sections if s.get("content", {}).get("text")]
+
+    def _segment_text(self, text: str) -> list[dict]:
+        lines = text.split("\n")
+        sections = []
+        current_type = "summary"
+        current_title = "Professional Summary"
+        current_lines = []
+
+        def is_section_heading(line: str) -> bool:
+            clean = line.strip().rstrip(":").lower()
+            if clean in self.RESUME_HEADINGS:
+                return True
+            if sum(1 for h in self.RESUME_HEADINGS if h in clean) >= 1 and len(clean) < 60:
+                return True
+            return False
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if is_section_heading(stripped):
+                if current_lines:
+                    sections.append({
+                        "section_type": current_type,
+                        "title": current_title,
+                        "content": {"text": "\n".join(current_lines).strip()},
+                    })
+                heading_text = stripped.rstrip(":")
+                current_type = self._classify_section(heading_text)
+                current_title = heading_text
+                current_lines = []
+            else:
+                current_lines.append(stripped)
+
+        if current_lines:
+            sections.append({
+                "section_type": current_type,
+                "title": current_title,
+                "content": {"text": "\n".join(current_lines).strip()},
+            })
+
+        return [s for s in sections if s.get("content", {}).get("text")]
+
     async def parse_upload(self, content: bytes, filename: str) -> dict:
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-        sections = []
-        needs_review = []
-        title = filename
+        title = filename.rsplit(".", 1)[0] if "." in filename else filename
 
         try:
-            text = content.decode("utf-8", errors="replace")
+            if ext == "pdf":
+                sections = self._parse_pdf_text(content)
+            elif ext == "docx":
+                sections = self._parse_docx_text(content)
+            else:
+                text = content.decode("utf-8", errors="replace")
+                sections = self._segment_text(text)
+
+            confidence = min(90, 50 + len(sections) * 10) if sections else 0
+
+            needs_review = []
+            known_types = {"summary", "experience", "education", "skills", "projects", "certifications", "languages", "publications", "awards", "links"}
+            for s in sections:
+                if s["section_type"] not in known_types or not s.get("content", {}).get("text"):
+                    needs_review.append(s["section_type"])
+                elif s["section_type"] in ("custom",) and not s.get("title"):
+                    needs_review.append(s["section_type"])
+
+            if not sections:
+                sections = [{
+                    "section_type": "summary",
+                    "title": "Professional Summary",
+                    "content": {"text": "Uploaded resume. Please review extracted content."},
+                }]
+                confidence = 30
+                needs_review = ["summary"]
+
+            for i, s in enumerate(sections):
+                s["sort_order"] = i
+
+            return {
+                "title": title,
+                "sections": sections,
+                "confidence": confidence,
+                "needs_review": needs_review,
+            }
         except Exception:
-            text = str(content)
+            return {
+                "title": title,
+                "sections": [{
+                    "section_type": "summary",
+                    "title": "Professional Summary",
+                    "content": {"text": "Uploaded resume. Please review and update extracted content."},
+                    "sort_order": 0,
+                }],
+                "confidence": 20,
+                "needs_review": ["summary"],
+            }
 
-        if ext == "pdf":
-            sections.append({
-                "section_type": "summary",
-                "title": "Professional Summary",
-                "content": {"text": "Extracted from PDF upload. Please review and update."},
-                "sort_order": 0,
-            })
-            needs_review.append("summary")
-        elif ext == "docx":
-            sections.append({
-                "section_type": "summary",
-                "title": "Professional Summary",
-                "content": {"text": "Extracted from DOCX upload. Please review and update."},
-                "sort_order": 0,
-            })
-            needs_review.append("summary")
-        else:
-            sections.append({
-                "section_type": "summary",
-                "title": "Professional Summary",
-                "content": {"text": text[:500] if text else "Uploaded resume content."},
-                "sort_order": 0,
-            })
-
-        sections.append({
-            "section_type": "experience",
-            "title": "Experience",
-            "content": {"text": "Uploaded resume. Please review extracted content."},
-            "sort_order": 1,
-        })
-        needs_review.append("experience")
-
-        sections.append({
-            "section_type": "education",
-            "title": "Education",
-            "content": {"text": "Uploaded resume. Please review extracted content."},
-            "sort_order": 2,
-        })
-        needs_review.append("education")
-
-        sections.append({
-            "section_type": "skills",
-            "title": "Skills",
-            "content": {"text": "Uploaded resume. Please review extracted content."},
-            "sort_order": 3,
-        })
-        needs_review.append("skills")
-
-        return {
-            "title": title,
-            "sections": sections,
-            "confidence": 50,
-            "needs_review": needs_review,
-        }
+    async def reorder_sections(
+        self,
+        resume_id: uuid.UUID,
+        user_id: uuid.UUID,
+        order: list[dict],
+    ) -> list:
+        resume = await self.resume_repo.get_with_sections(resume_id)
+        if not resume or resume.user_id != user_id:
+            raise NotFoundError("Resume not found.")
+        updated = []
+        for item in order:
+            section_id = item.get("section_id")
+            sort_order = item.get("sort_order", 0)
+            for section in (resume.sections or []):
+                if str(section.id) == str(section_id):
+                    section.sort_order = sort_order
+                    await self.section_repo.update(section)
+                    updated.append(section)
+                    break
+        return updated
 
     # ── Generate From Profile ──
 

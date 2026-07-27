@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Upload, Sparkles, FileText, Copy, ArrowLeft } from 'lucide-react'
+import { useCreateResume } from '@/api/hooks'
+import { useToast } from '@/components/ui/toast'
+import { Upload, Sparkles, FileText, Copy, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { ResumeUpload } from './resume-upload'
 import { ResumeWizard } from './resume-wizard'
+import { ResumePreview } from './resume-preview'
 
 interface CreateResumeModalProps {
   open: boolean
@@ -11,12 +14,72 @@ interface CreateResumeModalProps {
   resumes?: any[]
 }
 
-type Step = 'choose' | 'upload' | 'generate' | 'blank' | 'duplicate'
+type Step = 'choose' | 'upload' | 'upload-preview' | 'generate' | 'blank' | 'duplicate'
+
+interface ParsedResult {
+  title: string
+  sections: { section_type: string; title: string; content: { text: string }; sort_order: number }[]
+  confidence: number
+  needs_review: string[]
+}
 
 export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: CreateResumeModalProps) {
   const [step, setStep] = useState<Step>('choose')
+  const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null)
+  const [saving, setSaving] = useState(false)
+  const createResume = useCreateResume()
+  const { addToast } = useToast()
 
   if (!open) return null
+
+  const handleUploadComplete = (result: any) => {
+    if (result?.resume) {
+      setParsedResult({
+        title: result.resume.title || 'Uploaded Resume',
+        sections: (result.resume.sections || []).map((s: any) => ({
+          section_type: s.section_type,
+          title: s.title || s.section_type,
+          content: s.content || { text: '' },
+          sort_order: s.sort_order || 0,
+        })),
+        confidence: result.confidence || 100,
+        needs_review: result.needs_review || [],
+      })
+      setStep('upload-preview')
+    } else {
+      onCreated()
+      onClose()
+    }
+  }
+
+  const handleSavePreview = async (title: string, sections: any[]) => {
+    setSaving(true)
+    try {
+      await createResume.mutateAsync({
+        title,
+        sections: sections.map((s, i) => ({
+          section_type: s.section_type,
+          title: s.title,
+          content: s.content,
+          sort_order: i,
+        })),
+      })
+      addToast('Resume saved!', 'success')
+      onCreated()
+    } catch {
+      addToast('Failed to save resume', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleGoBack = () => {
+    if (step === 'upload-preview') {
+      setStep('upload')
+    } else {
+      setStep('choose')
+    }
+  }
 
   return (
     <div
@@ -63,7 +126,7 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
                 </div>
                 <div>
                   <p className="font-semibold">Generate From Career Profile</p>
-                  <p className="text-xs text-muted-foreground mt-1">Use your saved profile to generate a professional ATS resume.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Use your saved profile to generate a professional resume.</p>
                 </div>
               </button>
 
@@ -116,7 +179,33 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
             <h2 className="text-xl font-semibold mb-4">Upload Resume</h2>
-            <ResumeUpload onComplete={() => { onCreated(); onClose() }} />
+            <ResumeUpload onComplete={handleUploadComplete} />
+          </div>
+        )}
+
+        {step === 'upload-preview' && parsedResult && (
+          <div className="p-6">
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="h-5 w-5 text-success" />
+              <span className="text-sm text-muted-foreground">
+                Extracted with {parsedResult.confidence}% confidence
+                {parsedResult.needs_review.length > 0 && ` — ${parsedResult.needs_review.length} section(s) need review`}
+              </span>
+            </div>
+            <ResumePreview
+              sections={parsedResult.sections}
+              title={parsedResult.title}
+              onSave={handleSavePreview}
+              onCancel={() => { setParsedResult(null); setStep('choose') }}
+              saving={saving}
+            />
           </div>
         )}
 
@@ -130,7 +219,6 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
             <h2 className="text-xl font-semibold mb-4">Generate From Career Profile</h2>
-            <p className="text-sm text-muted-foreground mb-4">Select sections to include in your generated resume.</p>
             <ResumeWizard mode="generate" onComplete={() => { onCreated(); onClose() }} />
           </div>
         )}

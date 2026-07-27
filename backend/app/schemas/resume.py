@@ -33,9 +33,13 @@ class ResumeSectionResponse(BaseModel):
         from_attributes = True
 
 
-class ResumeSectionReorder(BaseModel):
+class ResumeSectionReorderItem(BaseModel):
     section_id: uuid.UUID
     sort_order: int
+
+
+class ResumeSectionReorder(BaseModel):
+    order: list[ResumeSectionReorderItem]
 
 
 class ResumeCreate(BaseModel):

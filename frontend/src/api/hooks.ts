@@ -406,6 +406,15 @@ export function useCompareResumes() {
   })
 }
 
+export function useReorderSections(resumeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (order: { section_id: string; sort_order: number }[]) =>
+      api.put(`/resumes/${resumeId}/sections/reorder`, { order }).then(unwrap),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes', resumeId, 'sections'] }),
+  })
+}
+
 export function useDownloadResume() {
   return useMutation({
     mutationFn: async ({ id, format }: { id: string; format?: string }) => {

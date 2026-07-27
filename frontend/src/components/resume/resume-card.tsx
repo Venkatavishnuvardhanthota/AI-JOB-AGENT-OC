@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/components/ui/toast'
-import { FileText, MoreVertical, ExternalLink, Copy, Trash2, Pencil } from 'lucide-react'
+import { FileText, MoreVertical, ExternalLink, Copy, Trash2, Pencil, Calendar, Layout } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 
@@ -21,6 +21,7 @@ interface ResumeCardProps {
     title: string
     version: number
     template?: string
+    target_role?: string
     status: string
     section_count: number
     created_at: string
@@ -113,13 +114,22 @@ export function ResumeCard({ resume, onDelete, onDuplicate, onRename }: ResumeCa
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {resume.template && <Badge variant="secondary" className="text-xs">{resume.template}</Badge>}
+          {resume.template && (
+            <Badge variant="secondary" className="text-xs gap-1">
+              <Layout className="h-3 w-3" /> {resume.template}
+            </Badge>
+          )}
+          {resume.target_role && (
+            <Badge variant="outline" className="text-xs">{resume.target_role}</Badge>
+          )}
           <Badge variant={resume.status === 'complete' ? 'success' : 'warning'} className="text-xs">
             {resume.status}
           </Badge>
         </div>
 
-        <p className="text-xs text-muted-foreground">Updated {formatDate(resume.created_at)}</p>
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <Calendar className="h-3 w-3" /> Updated {formatDate(resume.created_at)}
+        </p>
       </CardContent>
     </Card>
   )
