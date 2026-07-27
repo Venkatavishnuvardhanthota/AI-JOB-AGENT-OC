@@ -16,11 +16,13 @@ import {
   Menu,
   LogOut,
   X,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { Logo } from '@/components/ui/logo'
 
 interface NavItem {
   label: string
@@ -35,6 +37,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'Main',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+      { label: 'Calendar', icon: Calendar, href: '/calendar' },
     ],
   },
   {
@@ -60,7 +63,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'AI Tools',
     items: [
-      { label: 'Applications', icon: FileText, href: '/applications' },
+      {
+        label: 'Applications', icon: FileText, href: '/applications',
+        children: [
+          { label: 'All Applications', href: '/applications' },
+          { label: 'Pipeline Board', href: '/applications/board' },
+        ],
+      },
       { label: 'Cover Letters', icon: Sparkles, href: '/cover-letters' },
       { label: 'Interview Prep', icon: Brain, href: '#', comingSoon: true },
     ],
@@ -68,7 +77,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Operations',
     items: [
-      { label: 'Reports', icon: BarChart3, href: '/reports' },
+      { label: 'Analytics', icon: BarChart3, href: '/analytics' },
       { label: 'Notifications', icon: Bell, href: '#', comingSoon: true },
       { label: 'Settings', icon: Settings, href: '/settings',
         children: [
@@ -83,7 +92,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Jobs', 'Settings']))
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Jobs', 'Applications', 'Settings']))
   const location = useLocation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -126,11 +135,8 @@ export function Sidebar() {
     <>
       <div className={cn("flex h-14 items-center border-b border-glass-border px-4", collapsed && "justify-center")}>
         {!collapsed && (
-          <Link to="/dashboard" className="flex items-center gap-2" aria-label="AI Job Agent Home">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-white text-xs font-bold">
-              AJ
-            </div>
-            <span className="font-semibold text-foreground text-sm">AI Job Agent</span>
+          <Link to="/dashboard" aria-label="AI Job Agent Home">
+            <Logo size="md" />
           </Link>
         )}
         <Button
@@ -291,11 +297,8 @@ export function Sidebar() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <aside className="relative z-10 flex h-screen w-60 flex-col border-r border-glass-border bg-dark-900">
             <div className="flex h-14 items-center justify-between border-b border-glass-border px-4">
-              <Link to="/dashboard" className="flex items-center gap-2" aria-label="AI Job Agent Home">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-white text-xs font-bold">
-                  AJ
-                </div>
-                <span className="font-semibold text-foreground text-sm">AI Job Agent</span>
+              <Link to="/dashboard" aria-label="AI Job Agent Home">
+                <Logo size="md" />
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Close menu">
                 <X className="h-4 w-4" />

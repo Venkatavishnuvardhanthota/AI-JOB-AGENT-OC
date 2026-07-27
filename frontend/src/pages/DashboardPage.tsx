@@ -1,17 +1,19 @@
+import { useState } from 'react'
 import { useJobStats, useProfileCompleteness, useApplications, useSavedJobs, useResumes } from '@/api/hooks'
 import { StatCard } from '@/components/layout/stat-card'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { WelcomeBanner } from '@/components/onboarding/welcome-banner'
 import { OnboardingChecklist } from '@/components/onboarding/checklist'
+import { WelcomeDialog, isWelcomeDismissed } from '@/components/onboarding/welcome-dialog'
+import { ProfileWizard } from '@/components/onboarding/profile-wizard'
 import { ProfileCompletionCard } from '@/components/dashboard/profile-completion'
 import { QuickActions } from '@/components/dashboard/quick-actions'
+import { DashboardSkeleton } from '@/components/layout/loading-skeletons'
 import { Briefcase, FileText, Eye, CheckCircle, Activity, Clock, Cpu } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
 import { timeAgo } from '@/lib/utils'
 
 export function DashboardPage() {
@@ -23,6 +25,8 @@ export function DashboardPage() {
   const { data: resumes } = useResumes()
 
   const [dismissWelcome, setDismissWelcome] = useState(false)
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(!isWelcomeDismissed())
+  const [showWizard, setShowWizard] = useState(false)
 
   const loading = statsLoading || appsLoading || savedLoading
 
@@ -32,24 +36,26 @@ export function DashboardPage() {
   const completenessScore = completeness?.overall_score ?? 0
   const isFirstTime = !dismissWelcome && completenessScore === 0 && !hasResumes
 
+  const handleWelcomeComplete = () => {
+    setShowWelcomeDialog(false)
+    if (completenessScore === 0 && !hasResumes) {
+      setShowWizard(true)
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="space-y-6" aria-label="Loading dashboard">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-80 rounded-xl lg:col-span-2" />
-          <Skeleton className="h-80 rounded-xl" />
-        </div>
-        <Skeleton className="h-48 rounded-xl" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
     <div className="space-y-6">
+      {showWelcomeDialog && (
+        <WelcomeDialog onComplete={handleWelcomeComplete} />
+      )}
+      {showWizard && (
+        <ProfileWizard onComplete={() => setShowWizard(false)} />
+      )}
+
       <PageHeader
         title={`Welcome back, ${[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'User'}`}
         description="Here's an overview of your job search activity."

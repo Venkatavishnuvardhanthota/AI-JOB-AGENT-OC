@@ -1,13 +1,80 @@
 const API_BASE_URL = '/api/v1'
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000
+
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+let sessionTimer: ReturnType<typeof setTimeout> | null = null
+let onSessionExpired: (() => void) | null = null
+
+type RefreshResult = { access_token: string; refresh_token?: string }
+
+async function attemptRefresh(): Promise<boolean> {
+  if (isRefreshing && refreshPromise) return refreshPromise
+  const refreshToken = localStorage.getItem('refresh_token')
+  if (!refreshToken) return false
+  isRefreshing = true
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+      if (!res.ok) throw new Error('Refresh failed')
+      const json = await res.json()
+      const data: RefreshResult = json?.data ?? json
+      localStorage.setItem('access_token', data.access_token)
+      if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
+      resetSessionTimer()
+      return true
+    } catch {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('remembered_email')
+      onSessionExpired?.()
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+  return refreshPromise
+}
+
+function resetSessionTimer() {
+  if (sessionTimer) clearTimeout(sessionTimer)
+  sessionTimer = setTimeout(() => {
+    onSessionExpired?.()
+  }, SESSION_TIMEOUT_MS)
+}
+
+export function setOnSessionExpired(cb: () => void) {
+  onSessionExpired = cb
+}
+
+export function clearSessionTimer() {
+  if (sessionTimer) clearTimeout(sessionTimer)
+  sessionTimer = null
+}
+
+export function touchSession() {
+  resetSessionTimer()
+}
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
+    if (response.status === 401) {
+      const refreshed = await attemptRefresh()
+      if (refreshed) throw new Error('__RETRY__')
+      throw new Error('Session expired. Please sign in again.')
+    }
     const error = await response.json().catch(() => ({}))
     throw new Error(error.detail || `HTTP ${response.status}`)
   }
   if (response.status === 204) {
     return undefined as T
   }
+  touchSession()
   return response.json()
 }
 
@@ -20,9 +87,21 @@ function getAuthHeaders(): Record<string, string> {
   return headers
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 1): Promise<Response> {
+  const response = await fetch(url, options)
+  if (response.status === 401 && retries > 0) {
+    const refreshed = await attemptRefresh()
+    if (refreshed) {
+      const newHeaders = { ...options.headers as Record<string, string>, ...getAuthHeaders() }
+      return fetchWithRetry(url, { ...options, headers: newHeaders }, 0)
+    }
+  }
+  return response
+}
+
 export const api = {
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     })
@@ -30,7 +109,7 @@ export const api = {
   },
 
   async post<T>(endpoint: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: body ? JSON.stringify(body) : undefined,
@@ -39,7 +118,7 @@ export const api = {
   },
 
   async put<T>(endpoint: string, body: unknown): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body),
@@ -48,7 +127,7 @@ export const api = {
   },
 
   async patch<T>(endpoint: string, body: unknown): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body),
@@ -57,7 +136,7 @@ export const api = {
   },
 
   async delete<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     })
@@ -69,7 +148,7 @@ export const api = {
     formData.append('file', file)
     const headers = getAuthHeaders()
     delete headers['Content-Type']
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers,
       body: formData,

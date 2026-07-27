@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,9 +21,11 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
   const { addToast } = useToast()
   const [serverError, setServerError] = useState('')
+  const from = (location.state as any)?.from?.pathname || '/dashboard'
 
   const {
     register,
@@ -42,7 +44,7 @@ export function LoginPage() {
     try {
       await login(data.email, data.password, data.rememberMe)
       addToast('Welcome back! You have been logged in successfully.', 'success')
-      navigate('/dashboard')
+      navigate(from, { replace: true })
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Invalid email or password')
     }

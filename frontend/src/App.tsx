@@ -1,35 +1,38 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from '@/components/ui/toast'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { LoginPage } from './pages/LoginPage'
-import { RegisterPage } from './pages/RegisterPage'
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
-import { VerifyEmailPage } from './pages/VerifyEmailPage'
-import { AuthSecurityPage } from './pages/AuthSecurityPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { ApplicationsPage } from './pages/ApplicationsPage'
-import { JobsSearchPage } from './pages/JobsSearchPage'
-import { SavedJobsPage } from './pages/SavedJobsPage'
-import { JobDetailPage } from './pages/JobDetailPage'
-import { ResumeLibraryPage } from './pages/ResumeLibraryPage'
-import { ResumeDetailPage } from './pages/ResumeDetailPage'
-import { CoverLettersPage } from './pages/CoverLettersPage'
-import { CoverLetterDetailPage } from './pages/CoverLetterDetailPage'
-import { CareerProfilePage } from './pages/CareerProfilePage'
-import { WorkflowMonitorPage } from './pages/WorkflowMonitorPage'
-import { OrchestrationsPage } from './pages/OrchestrationsPage'
-import { ExecutionHistoryPage } from './pages/ExecutionHistoryPage'
-import { OperationsPage } from './pages/OperationsPage'
-import { ReportsPage } from './pages/ReportsPage'
-import { BrowserSessionsPage } from './pages/BrowserSessionsPage'
-import { ProvidersPage } from './pages/ProvidersPage'
-import { LogsPage } from './pages/LogsPage'
-import { SettingsAccountPage } from './pages/SettingsAccountPage'
-import { SettingsPreferencesPage } from './pages/SettingsPreferencesPage'
+import { GuestRoute } from './components/GuestRoute'
+import { ErrorBoundary } from '@/components/layout/error-boundary'
+import { AuthLoader } from '@/components/layout/loading-skeletons'
+
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })))
+const AuthSecurityPage = lazy(() => import('./pages/AuthSecurityPage').then(m => ({ default: m.AuthSecurityPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
+const ErrorPage = lazy(() => import('./pages/ErrorPage').then(m => ({ default: m.ErrorPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const ApplicationsPage = lazy(() => import('./pages/ApplicationsPage').then(m => ({ default: m.ApplicationsPage })))
+const ApplicationDetailPage = lazy(() => import('./pages/ApplicationDetailPage').then(m => ({ default: m.ApplicationDetailPage })))
+const KanbanPage = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const JobsSearchPage = lazy(() => import('./pages/JobsSearchPage').then(m => ({ default: m.JobsSearchPage })))
+const SavedJobsPage = lazy(() => import('./pages/SavedJobsPage').then(m => ({ default: m.SavedJobsPage })))
+const JobDetailPage = lazy(() => import('./pages/JobDetailPage').then(m => ({ default: m.JobDetailPage })))
+const ResumeLibraryPage = lazy(() => import('./pages/ResumeLibraryPage').then(m => ({ default: m.ResumeLibraryPage })))
+const ResumeDetailPage = lazy(() => import('./pages/ResumeDetailPage').then(m => ({ default: m.ResumeDetailPage })))
+const CoverLettersPage = lazy(() => import('./pages/CoverLettersPage').then(m => ({ default: m.CoverLettersPage })))
+const CoverLetterDetailPage = lazy(() => import('./pages/CoverLetterDetailPage').then(m => ({ default: m.CoverLetterDetailPage })))
+const CareerProfilePage = lazy(() => import('./pages/CareerProfilePage').then(m => ({ default: m.CareerProfilePage })))
+const SettingsAccountPage = lazy(() => import('./pages/SettingsAccountPage').then(m => ({ default: m.SettingsAccountPage })))
+const SettingsPreferencesPage = lazy(() => import('./pages/SettingsPreferencesPage').then(m => ({ default: m.SettingsPreferencesPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,48 +43,57 @@ const queryClient = new QueryClient({
   },
 })
 
+function LoadingFallback() {
+  return <AuthLoader />
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/auth/security" element={<AuthSecurityPage />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/applications" element={<ApplicationsPage />} />
-              <Route path="/jobs/search" element={<JobsSearchPage />} />
-              <Route path="/jobs/saved" element={<SavedJobsPage />} />
-              <Route path="/jobs/:id" element={<JobDetailPage />} />
-              <Route path="/resumes" element={<ResumeLibraryPage />} />
-              <Route path="/resumes/:id" element={<ResumeDetailPage />} />
-              <Route path="/cover-letters" element={<CoverLettersPage />} />
-              <Route path="/cover-letters/:id" element={<CoverLetterDetailPage />} />
-              <Route path="/profile" element={<CareerProfilePage />} />
-              <Route path="/workflows/monitor" element={<WorkflowMonitorPage />} />
-              <Route path="/workflows/orchestrations" element={<OrchestrationsPage />} />
-              <Route path="/workflows/history" element={<ExecutionHistoryPage />} />
-              <Route path="/infrastructure/operations" element={<OperationsPage />} />
-              <Route path="/infrastructure/browser-sessions" element={<BrowserSessionsPage />} />
-              <Route path="/infrastructure/providers" element={<ProvidersPage />} />
-              <Route path="/infrastructure/logs" element={<LogsPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/settings/account" element={<SettingsAccountPage />} />
-              <Route path="/settings/preferences" element={<SettingsPreferencesPage />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          </Routes>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+                <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/auth/security" element={<AuthSecurityPage />} />
+                <Route path="/error" element={<ErrorPage />} />
+
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/applications" element={<ApplicationsPage />} />
+                  <Route path="/applications/board" element={<KanbanPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+                  <Route path="/applications/:id/*" element={<ApplicationDetailPage />} />
+                  <Route path="/jobs/search" element={<JobsSearchPage />} />
+                  <Route path="/jobs/saved" element={<SavedJobsPage />} />
+                  <Route path="/jobs/:id" element={<JobDetailPage />} />
+                  <Route path="/resumes" element={<ResumeLibraryPage />} />
+                  <Route path="/resumes/:id" element={<ResumeDetailPage />} />
+                  <Route path="/cover-letters" element={<CoverLettersPage />} />
+                  <Route path="/cover-letters/:id" element={<CoverLetterDetailPage />} />
+                  <Route path="/profile" element={<CareerProfilePage />} />
+                  <Route path="/settings/account" element={<SettingsAccountPage />} />
+                  <Route path="/settings/preferences" element={<SettingsPreferencesPage />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                </Route>
+
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>

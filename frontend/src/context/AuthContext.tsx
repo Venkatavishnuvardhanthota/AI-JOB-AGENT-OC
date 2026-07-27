@@ -5,7 +5,7 @@ import {
   useEffect,
   useState,
 } from 'react'
-import { api } from '../api/client'
+import { api, setOnSessionExpired, clearSessionTimer, touchSession } from '../api/client'
 import type { User } from '../types'
 
 interface AuthContextType {
@@ -19,6 +19,7 @@ interface AuthContextType {
   resetPassword: (token: string, newPassword: string) => Promise<void>
   verifyEmail: (token: string) => Promise<void>
   resendVerification: (email: string) => Promise<void>
+  deleteAccount: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -26,6 +27,16 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setOnSessionExpired(() => {
+      setUser(null)
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      window.location.href = '/auth/security?reason=session-expired'
+    })
+    return () => clearSessionTimer()
+  }, [])
 
   const fetchUser = useCallback(async () => {
     const token = localStorage.getItem('access_token')
@@ -37,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.get<any>('/auth/me')
       const userData = res?.data ?? res
       setUser(userData as User)
+      touchSession()
     } catch {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
@@ -57,12 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('refresh_token', tokens.refresh_token)
       if (rememberMe) {
         localStorage.setItem('remembered_email', email)
+        localStorage.setItem('keep_signed_in', 'true')
       } else {
         localStorage.removeItem('remembered_email')
+        localStorage.removeItem('keep_signed_in')
       }
       const userRes = await api.get<any>('/auth/me')
       const userData = userRes?.data ?? userRes
       setUser(userData as User)
+      touchSession()
     },
     [],
   )
@@ -90,6 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('keep_signed_in')
+      clearSessionTimer()
       setUser(null)
     }
   }, [])
@@ -110,6 +127,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await api.post('/auth/resend-verification', { email })
   }, [])
 
+  const deleteAccount = useCallback(async () => {
+    await api.delete('/auth/me')
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    clearSessionTimer()
+    setUser(null)
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -123,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         verifyEmail,
         resendVerification,
+        deleteAccount,
       }}
     >
       {children}

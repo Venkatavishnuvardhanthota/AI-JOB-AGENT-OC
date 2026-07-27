@@ -332,3 +332,165 @@ export interface ScoredJobResponse {
   match_score: number
   match_details: ScoreExplanation | null
 }
+
+export type ApplicationStatus =
+  | 'saved'
+  | 'preparing'
+  | 'ready_to_apply'
+  | 'applied'
+  | 'application_viewed'
+  | 'assessment'
+  | 'technical_interview'
+  | 'hr_interview'
+  | 'final_interview'
+  | 'offer'
+  | 'negotiation'
+  | 'accepted'
+  | 'rejected'
+  | 'withdrawn'
+  | 'archived'
+
+export type ApplicationPriority = 'critical' | 'high' | 'medium' | 'low'
+
+export interface Application {
+  id: string
+  user_id: string
+  job_id: string
+  job_title: string
+  company_name: string
+  company_id?: string
+  resume_id?: string
+  cover_letter_id?: string
+  status: ApplicationStatus
+  priority: ApplicationPriority
+  applied_date?: string
+  deadline?: string
+  salary?: string
+  location?: string
+  work_type?: string
+  source?: string
+  recruiter?: string
+  referral?: boolean
+  notes?: ApplicationNote[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ApplicationListResponse {
+  items: Application[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+export interface ApplicationStats {
+  total: number
+  applied_this_week: number
+  interviews: number
+  offers: number
+  acceptance_rate: number
+  response_rate: number
+  upcoming_deadlines: number
+  recent_activity: number
+  by_status: Record<string, number>
+  by_priority: Record<string, number>
+}
+
+export interface ApplicationCreateRequest {
+  job_id: string
+  resume_id?: string
+  cover_letter_id?: string
+  status?: ApplicationStatus
+  priority?: ApplicationPriority
+  notes?: string
+}
+
+export interface ApplicationUpdateRequest {
+  status?: ApplicationStatus
+  priority?: ApplicationPriority
+  applied_date?: string
+  deadline?: string
+  salary?: string
+  location?: string
+  work_type?: string
+  source?: string
+  recruiter?: string
+  referral?: boolean
+  resume_id?: string
+  cover_letter_id?: string
+}
+
+export interface ApplicationSearchParams {
+  search?: string
+  status?: ApplicationStatus | ApplicationStatus[]
+  priority?: ApplicationPriority | ApplicationPriority[]
+  company?: string
+  location?: string
+  recruiter?: string
+  source?: string
+  salary_min?: number
+  salary_max?: number
+  skills?: string[]
+  date_from?: string
+  date_to?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
+}
+
+export interface TimelineEntry {
+  id: string
+  application_id: string
+  event_type: string
+  description: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+export interface ApplicationNote {
+  id: string
+  application_id: string
+  title: string
+  content: string
+  author: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NoteCreateRequest {
+  title: string
+  content: string
+}
+
+export interface NoteUpdateRequest {
+  title?: string
+  content?: string
+}
+
+export interface ActivityEntry {
+  id: string
+  application_id: string
+  action: string
+  field?: string
+  old_value?: string
+  new_value?: string
+  created_at: string
+}
+
+export interface BulkActionRequest {
+  application_ids: string[]
+  action: 'archive' | 'delete' | 'status_change' | 'priority_change'
+  value?: string
+}
+
+export interface DocumentInfo {
+  id: string
+  type: 'resume' | 'cover_letter' | 'attachment'
+  name: string
+  version?: string
+  created_at: string
+  updated_at: string
+  file_url?: string
+}
