@@ -17,6 +17,7 @@ import {
   LogOut,
   X,
   Calendar,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
@@ -58,6 +59,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
           { label: 'Matching', href: '/jobs/search', comingSoon: false },
         ],
       },
+      { label: 'Discovery', icon: Search, href: '/discovery' },
     ],
   },
   {
