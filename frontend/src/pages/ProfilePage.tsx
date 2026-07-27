@@ -464,7 +464,7 @@ export function ProfilePage() {
 
       <div className="profile-header">
         <h1>My Profile</h1>
-        <p>Welcome, {user?.full_name || user?.email}</p>
+        <p>Welcome, {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email}</p>
       </div>
 
       <div className="section-card">

@@ -11,7 +11,7 @@ describe('App', () => {
       </BrowserRouter>,
     )
     expect(
-      screen.getByRole('heading', { name: /login/i }),
+      screen.getByRole('heading', { name: /welcome back/i }),
     ).toBeInTheDocument()
   })
 })

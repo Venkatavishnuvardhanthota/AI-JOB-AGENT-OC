@@ -14,8 +14,8 @@ export function SettingsAccountPage() {
   const changePassword = useChangePassword()
   const { addToast } = useToast()
 
-  const [firstName, setFirstName] = useState(user?.full_name?.split(' ')[0] || '')
-  const [lastName, setLastName] = useState(user?.full_name?.split(' ').slice(1).join(' ') || '')
+  const [firstName, setFirstName] = useState(user?.first_name || '')
+  const [lastName, setLastName] = useState(user?.last_name || '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

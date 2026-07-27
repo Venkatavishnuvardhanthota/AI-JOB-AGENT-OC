@@ -51,7 +51,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Welcome back, ${user?.full_name || user?.email || 'User'}`}
+        title={`Welcome back, ${[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'User'}`}
         description="Here's an overview of your job search activity."
       />
 
