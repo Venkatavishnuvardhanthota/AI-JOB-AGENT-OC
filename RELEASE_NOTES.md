@@ -1,3 +1,13 @@
+# AI Job Agent Version 2.1.0 — Release Notes
+
+**Release Date:** 2026-07-28
+
+**Version:** 2.1.0
+
+See [RELEASE_NOTES_v2.1.0.md](RELEASE_NOTES_v2.1.0.md) for the full v2.1.0 release notes.
+
+---
+
 # AI Job Agent Version 2.0.0 — Release Notes
 
 **Release Date:** 2026-07-24

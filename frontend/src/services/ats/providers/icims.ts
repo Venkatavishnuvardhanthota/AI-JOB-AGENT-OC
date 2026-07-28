@@ -27,7 +27,7 @@ interface ICIMSResponse {
   hasMore: boolean
 }
 
-function parseICIMSResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseICIMSResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as ICIMSResponse | ICIMSJob[]
   const jobs = Array.isArray(data) ? data : (data as ICIMSResponse).jobs ?? []
   return jobs.map((job: ICIMSJob) => {

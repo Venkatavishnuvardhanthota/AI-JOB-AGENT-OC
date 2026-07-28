@@ -20,7 +20,7 @@ interface BambooHRResponse {
   results: BambooHRJob[]
 }
 
-function parseBambooHRResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseBambooHRResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as BambooHRResponse | BambooHRJob[]
   const jobs = Array.isArray(data) ? data : (data as BambooHRResponse).results ?? []
   return jobs.map((job: BambooHRJob) => {

@@ -1,5 +1,5 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal'
-export type HealthStatus = 'healthy' | 'warning' | 'degraded' | 'critical' | 'offline'
+export type HealthStatus = 'healthy' | 'warning' | 'degraded' | 'critical' | 'offline' | 'unhealthy'
 export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical'
 export type AlertStatus = 'active' | 'acknowledged' | 'resolved' | 'suppressed'
 export type ServiceName =

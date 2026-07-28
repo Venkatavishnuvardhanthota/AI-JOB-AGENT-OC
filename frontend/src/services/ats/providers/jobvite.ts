@@ -23,7 +23,7 @@ interface JobviteResponse {
   jobs: JobviteJob[]
 }
 
-function parseJobviteResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseJobviteResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as JobviteResponse | JobviteJob[]
   const jobs = Array.isArray(data) ? data : (data as JobviteResponse).jobs ?? []
   return jobs.map((job: JobviteJob) => ({

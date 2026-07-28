@@ -1,7 +1,7 @@
 {
   "name": "ai-job-agent-frontend",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "dependencies": {
-
+    "@hookform/resolvers": "^5.5.7",
     "@radix-ui/react-accordion": "^1.2.18",
     "@radix-ui/react-alert-dialog": "^1.1.21",
     "@radix-ui/react-avatar": "^1.2.4",

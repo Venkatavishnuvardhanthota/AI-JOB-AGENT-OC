@@ -27,7 +27,7 @@ interface OracleResponse {
   limit: number
 }
 
-function parseOracleResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseOracleResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as OracleResponse | OracleJob[]
   const jobs = Array.isArray(data) ? data : (data as OracleResponse).items ?? []
   return jobs.map((job: OracleJob) => ({

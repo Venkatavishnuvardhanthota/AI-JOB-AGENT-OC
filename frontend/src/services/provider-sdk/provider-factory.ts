@@ -1,13 +1,11 @@
-import type { ProviderMetadata, ProviderContext, ProviderConfiguration, ProviderHealthCheckResult, CapabilityId, AuthCredentials, AuthMethodType, PipelineConfig } from './types'
+import type { ProviderMetadata, ProviderContext, ProviderConfiguration, ProviderHealthCheckResult, AuthCredentials } from './types'
 import type { SearchParams, SearchResult, Job, ProviderId, RawJob } from '../discovery/types'
 import { ProviderLifecycle } from './provider-lifecycle'
 import { requestPipeline } from './request-pipeline'
-import { responseNormalizer } from './response-normalizer'
-import { wrapWithObservability, initializeProviderObservability, trackProviderCapabilityUsage, emitProviderLog } from './observability-integration'
+import { wrapWithObservability, initializeProviderObservability, trackProviderCapabilityUsage } from './observability-integration'
 import { NotImplementedError } from './errors'
-import { capabilitySystem } from './capability-system'
 import { providerRegistry } from './provider-registry'
-import { normalizeJob, normalizeJobs } from '../discovery/normalization'
+import { normalizeJob } from '../discovery/normalization'
 
 export interface ProviderImplementation {
   metadata: ProviderMetadata
@@ -93,8 +91,6 @@ export function createProvider(implementation: ProviderImplementation): CreatedP
           return pipelineResult.data as { data: RawJob[]; total?: number; hasMore?: boolean; cursor?: string }
         })
 
-        const sourceUrl = createSourceUrl(metadata.id, params.keywords)
-        const jobs = responseNormalizer.normalizeMany(result.data, metadata.id, sourceUrl)
         const duration = Date.now() - startTime
 
         trackProviderCapabilityUsage(metadata.id, 'search', duration, true)

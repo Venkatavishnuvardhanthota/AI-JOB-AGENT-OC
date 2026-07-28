@@ -148,7 +148,7 @@ export const providerRegistry = {
   },
 
   hasCapability(capability: CapabilityId): boolean {
-    return providers.values().some(p =>
+    return Array.from(providers.values()).some(p =>
       p.configuration.enabled && capabilitySystem.hasCapability(p.metadata.capabilities, capability)
     )
   },

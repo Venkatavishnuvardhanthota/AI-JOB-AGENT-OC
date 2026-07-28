@@ -25,7 +25,7 @@ interface LeverResponse {
   data: LeverPosting[]
 }
 
-function parseLeverResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseLeverResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as LeverResponse | LeverPosting[]
   const postings = Array.isArray(data) ? data : (data as LeverResponse).data ?? []
   return postings.map((posting: LeverPosting) => {

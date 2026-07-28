@@ -22,7 +22,7 @@ interface WorkdayResponse {
   hasMore?: boolean
 }
 
-function parseWorkdayResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseWorkdayResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as WorkdayResponse | WorkdayJob[]
   const jobs = Array.isArray(data) ? data : (data as WorkdayResponse).results ?? []
   return jobs.map((job: WorkdayJob) => ({

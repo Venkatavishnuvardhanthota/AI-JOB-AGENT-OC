@@ -18,7 +18,7 @@ interface SRResponse {
   content: SRPosting[]
 }
 
-function parseSmartRecruitersResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseSmartRecruitersResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as SRResponse | SRPosting[]
   const postings = Array.isArray(data) ? data : (data as SRResponse).content ?? []
   return postings.map((posting: SRPosting) => ({

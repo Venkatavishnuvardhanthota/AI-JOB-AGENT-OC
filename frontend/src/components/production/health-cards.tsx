@@ -11,6 +11,7 @@ const statusConfig: Record<HealthStatus, { label: string; variant: string; icon:
   degraded: { label: 'Degraded', variant: 'warning', icon: AlertTriangle },
   critical: { label: 'Critical', variant: 'destructive', icon: Shield },
   offline: { label: 'Offline', variant: 'secondary', icon: WifiOff },
+  unhealthy: { label: 'Unhealthy', variant: 'destructive', icon: Shield },
 }
 
 export function HealthCards() {

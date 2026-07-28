@@ -1,4 +1,4 @@
-import type { PaginationConfig, PaginationStyle } from './ats-types'
+import type { PaginationConfig } from './ats-types'
 
 export interface PaginationParams {
   page: number

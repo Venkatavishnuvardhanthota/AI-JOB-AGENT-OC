@@ -1,4 +1,4 @@
-import type { SearchParams, RawJob } from '../discovery/types'
+import type { RawJob } from '../discovery/types'
 import type { AuthMethodType } from '../provider-sdk/types'
 
 export type PaginationStyle = 'page_per_page' | 'offset_limit' | 'cursor'

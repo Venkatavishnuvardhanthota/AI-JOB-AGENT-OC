@@ -1,6 +1,6 @@
-import type { ProviderContext, PipelineResult, PipelineStage, CacheEntry } from './types'
+import type { ProviderContext, PipelineResult, CacheEntry } from './types'
 import { ProviderError, TimeoutError, isRecoverableError } from './errors'
-import { v4Service, nowISO } from '../orchestration/utils'
+import { nowISO } from '../orchestration/utils'
 
 const DEFAULT_RETRY_CONFIG = { maxRetries: 3, baseDelayMs: 1000, maxDelayMs: 10000, retryableErrors: ['RATE_LIMIT_ERROR', 'TIMEOUT_ERROR', 'PROVIDER_UNAVAILABLE_ERROR'] }
 const DEFAULT_CACHE_CONFIG = { enabled: true, ttlMs: 300000, maxEntries: 500 }

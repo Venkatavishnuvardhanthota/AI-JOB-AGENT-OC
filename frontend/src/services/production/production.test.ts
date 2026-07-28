@@ -5,7 +5,7 @@ import { metricsService, recordJobDiscovered, recordJobMatched, recordPackageGen
 import { healthService } from './health-service'
 import { alertService, raiseHighErrorRate, raiseWorkflowFailure, raiseBrowserCrash, raiseQueueBacklog, raiseRetryStorm, raiseProviderFailure, raiseSlowResponse } from './alert-service'
 import { configService } from './config-service'
-import { securityService, secureStorage } from './security-service'
+import { securityService } from './security-service'
 import { performanceService } from './performance-service'
 import { recoveryService } from './recovery-analytics-service'
 import { maintenanceService } from './maintenance-service'

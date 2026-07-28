@@ -21,9 +21,7 @@ import { providerRegistry } from './provider-registry'
 import { createProvider, createAndRegisterProvider } from './provider-factory'
 import { responseNormalizer } from './response-normalizer'
 import { ProviderLifecycle } from './provider-lifecycle'
-import type { ProviderContext, ProviderMetadata, ProviderConfiguration } from './types'
-import type { SearchParams } from '../discovery/types'
-import type { AuthCredentials } from './types'
+import type { ProviderContext, ProviderMetadata } from './types'
 
 beforeEach(() => { providerRegistry.reset(); requestPipeline.clearCache() })
 
@@ -132,13 +130,13 @@ describe('Capability System', () => {
   it('checks if all capabilities are present', () => {
     const caps = ['search', 'apply', 'api', 'tracking'] as any
     expect(capabilitySystem.hasAllCapabilities(caps, ['search', 'api'])).toBe(true)
-    expect(capabilitySystem.hasAllCapabilities(caps, ['search', 'oauth'])).toBe(false)
+    expect(capabilitySystem.hasAllCapabilities(caps, ['search', 'salary_range'])).toBe(false)
   })
 
   it('checks if any capability is present', () => {
     const caps = ['search', 'apply'] as any
-    expect(capabilitySystem.hasAnyCapability(caps, ['search', 'oauth'])).toBe(true)
-    expect(capabilitySystem.hasAnyCapability(caps, ['oauth', 'tracking'])).toBe(false)
+    expect(capabilitySystem.hasAnyCapability(caps, ['search', 'salary_range'])).toBe(true)
+    expect(capabilitySystem.hasAnyCapability(caps, ['salary_range', 'tracking'])).toBe(false)
   })
 
   it('returns missing capabilities', () => {
@@ -333,8 +331,8 @@ describe('Request Pipeline', () => {
   it('supports pipeline hooks', async () => {
     const log: string[] = []
     const hook = {
-      beforeExecute: async <T>(input: T, _ctx: ProviderContext) => { log.push('before'); return input },
-      afterExecute: async <T>(result: any, _ctx: ProviderContext) => { log.push('after'); return result },
+      beforeExecute: async (input: any, _ctx: ProviderContext) => { log.push('before'); return input },
+      afterExecute: async (result: any, _ctx: ProviderContext) => { log.push('after'); return result },
       onError: async (_error: Error, _ctx: ProviderContext) => { log.push('error') },
     }
     requestPipeline.addHook(hook)
@@ -490,7 +488,7 @@ describe('Provider Factory', () => {
     const provider = createProvider({
       metadata: { id: 'search-test', name: 'Search Test', version: '1.0.0', description: 'Test', capabilities: ['search'], authMethods: [] },
       async search(_params, _ctx) {
-        return { data: [{ externalId: '1', title: 'Engineer', company: 'Acme', location: 'Remote', description: 'Job desc' }], total: 1 }
+        return { data: [{ externalId: '1', title: 'Engineer', company: 'Acme', location: 'Remote', description: 'Job desc', companyLogo: null, companyWebsite: null, remote: null, employmentType: null, experienceLevel: null, salaryMin: null, salaryMax: null, currency: null, responsibilities: [], requiredSkills: [], preferredSkills: [], benefits: [], visaSponsorship: null, postedDate: null, applicationDeadline: null, easyApply: false, tags: [], metadata: {} }], total: 1 }
       },
     })
     const result = await provider.search({ keywords: 'engineer', location: null, remote: null, salaryMin: null, salaryMax: null, experienceLevel: null, employmentType: null, postedWithinDays: null, easyApplyOnly: false, page: 1, pageSize: 10 })
@@ -562,7 +560,7 @@ describe('Provider Factory', () => {
   })
 
   it('createAndRegisterProvider registers in the SDK registry', () => {
-    const provider = createAndRegisterProvider({
+    createAndRegisterProvider({
       metadata: { id: 'auto-reg', name: 'Auto Reg', version: '1.0.0', description: 'Test', capabilities: ['search'], authMethods: [] },
       async search(_params, _ctx) { return { data: [] } },
     })

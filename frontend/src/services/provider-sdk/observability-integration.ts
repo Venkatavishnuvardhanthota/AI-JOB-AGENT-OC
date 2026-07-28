@@ -6,7 +6,7 @@ import { alertService, raiseProviderFailure } from '../production/alert-service'
 import { healthService } from '../production/health-service'
 import type { ServiceName } from '../production/production-types'
 
-function toServiceName(providerId: string): ServiceName {
+function toServiceName(_providerId: string): ServiceName {
   return 'discovery-engine'
 }
 
@@ -46,7 +46,7 @@ export function emitProviderLog(
   providerId: string,
   level: 'debug' | 'info' | 'warn' | 'error',
   message: string,
-  context?: Partial<ProviderContext>,
+  _context?: Partial<ProviderContext>,
   data?: Record<string, unknown>
 ): void {
   const ctx = observabilityService.createContext({ providerId })

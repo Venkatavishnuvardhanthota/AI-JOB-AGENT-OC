@@ -1,9 +1,9 @@
 import { createProvider, type ProviderImplementation } from '../provider-sdk'
 import type { SearchParams, RawJob } from '../discovery/types'
-import type { ProviderContext } from '../provider-sdk/types'
+import type { ProviderContext, CapabilityId } from '../provider-sdk/types'
 import type { PortalProviderConfig, PortalJobRaw } from './portal-types'
 import { normalizePortalJob } from './portal-types'
-import { toPortalSearchInput, generateMockJob } from './portal-filters'
+import { generateMockJob } from './portal-filters'
 
 function generateMockJobsData(params: SearchParams, config: PortalProviderConfig, providerId: string): { data: RawJob[]; total: number; hasMore: boolean } {
   const count = Math.min(params.pageSize, config.mockOptions.count)
@@ -28,12 +28,12 @@ export function createPortalProvider(config: PortalProviderConfig): ReturnType<t
       name: config.name,
       version: config.version,
       description: config.description,
-      capabilities: config.capabilities,
+      capabilities: config.capabilities as CapabilityId[],
       authMethods: [],
       configSchema: {},
     },
 
-    search: async (params: SearchParams, ctx: ProviderContext) => {
+    search: async (params: SearchParams, _ctx: ProviderContext) => {
       const result = generateMockJobsData(params, config, providerId)
       return result
     },

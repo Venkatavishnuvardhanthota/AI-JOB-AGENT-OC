@@ -19,7 +19,7 @@ interface GreenhouseResponse {
   meta?: { total?: number; page?: number; per_page?: number }
 }
 
-function parseGreenhouseResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseGreenhouseResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as GreenhouseResponse | GreenhouseJob[]
   const jobs = Array.isArray(data) ? data : (data as GreenhouseResponse).jobs ?? []
   return jobs.map((job: GreenhouseJob) => ({

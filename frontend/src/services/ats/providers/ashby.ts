@@ -22,7 +22,7 @@ interface AshbyResponse {
   cursor?: string
 }
 
-function parseAshbyResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseAshbyResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as AshbyResponse | AshbyPosting[]
   const postings = Array.isArray(data) ? data : (data as AshbyResponse).jobPostings ?? []
   return postings.map((posting: AshbyPosting) => ({

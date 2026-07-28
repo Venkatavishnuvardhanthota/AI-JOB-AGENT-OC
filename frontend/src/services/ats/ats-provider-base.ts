@@ -1,6 +1,6 @@
 import { createAndRegisterProvider, type ProviderImplementation } from '../provider-sdk/provider-factory'
 import type { SearchParams } from '../discovery/types'
-import type { ProviderContext } from '../provider-sdk/types'
+import type { ProviderContext, CapabilityId } from '../provider-sdk/types'
 import type { ATSProviderConfig, ATSJobRaw } from './ats-types'
 import { normalizeATSJob } from './ats-types'
 import { atsFetch } from './ats-http-client'
@@ -32,9 +32,8 @@ export interface ATSProviderImplementation {
 }
 
 function createSearchImplementation(impl: ATSProviderImplementation) {
-  return async (params: SearchParams, ctx: ProviderContext) => {
+  return async (params: SearchParams, _ctx: ProviderContext) => {
     const config = impl.config
-    let allJobs: ATSJobRaw[] = []
     let total = 0
     let hasMore = false
     let cursor: string | undefined
@@ -97,7 +96,7 @@ export function createATSProvider(impl: ATSProviderImplementation): ReturnType<t
       name: config.name,
       version: config.version,
       description: config.description,
-      capabilities: config.capabilities,
+      capabilities: config.capabilities as CapabilityId[],
       authMethods: config.authMethods,
       configSchema: {},
     },

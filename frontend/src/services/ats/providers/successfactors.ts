@@ -26,7 +26,7 @@ interface SuccessFactorsResponse {
   results: SuccessFactorsJob[]
 }
 
-function parseSuccessFactorsResponse(response: unknown, providerId: string): ATSJobRaw[] {
+function parseSuccessFactorsResponse(response: unknown, _providerId: string): ATSJobRaw[] {
   const data = response as SuccessFactorsResponse | SuccessFactorsJob[]
   const jobs = Array.isArray(data) ? data : (data as SuccessFactorsResponse).results ?? []
   return jobs.map((job: SuccessFactorsJob) => {

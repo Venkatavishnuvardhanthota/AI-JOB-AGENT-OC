@@ -1,4 +1,4 @@
-import type { SearchParams, RawJob } from '../discovery/types'
+import type { RawJob } from '../discovery/types'
 
 export interface PortalProviderConfig {
   id: string
