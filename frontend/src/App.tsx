@@ -33,6 +33,7 @@ const ResumeDetailPage = lazy(() => import('./pages/ResumeDetailPage').then(m =>
 const CoverLettersPage = lazy(() => import('./pages/CoverLettersPage').then(m => ({ default: m.CoverLettersPage })))
 const CoverLetterDetailPage = lazy(() => import('./pages/CoverLetterDetailPage').then(m => ({ default: m.CoverLetterDetailPage })))
 const BrowserSessionsPage = lazy(() => import('./pages/BrowserSessionsPage').then(m => ({ default: m.BrowserSessionsPage })))
+const ApplicationGenerationPage = lazy(() => import('./pages/ApplicationGenerationPage').then(m => ({ default: m.ApplicationGenerationPage })))
 const CareerProfilePage = lazy(() => import('./pages/CareerProfilePage').then(m => ({ default: m.CareerProfilePage })))
 const SettingsAccountPage = lazy(() => import('./pages/SettingsAccountPage').then(m => ({ default: m.SettingsAccountPage })))
 const SettingsPreferencesPage = lazy(() => import('./pages/SettingsPreferencesPage').then(m => ({ default: m.SettingsPreferencesPage })))
@@ -90,6 +91,7 @@ function App() {
                   <Route path="/cover-letters" element={<CoverLettersPage />} />
                   <Route path="/cover-letters/:id" element={<CoverLetterDetailPage />} />
                   <Route path="/browser" element={<BrowserSessionsPage />} />
+                  <Route path="/application-generation" element={<ApplicationGenerationPage />} />
                   <Route path="/profile" element={<CareerProfilePage />} />
                   <Route path="/settings/account" element={<SettingsAccountPage />} />
                   <Route path="/settings/preferences" element={<SettingsPreferencesPage />} />

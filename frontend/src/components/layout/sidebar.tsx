@@ -75,6 +75,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         ],
       },
       { label: 'Cover Letters', icon: Sparkles, href: '/cover-letters' },
+      { label: 'Application Gen', icon: FileText, href: '/application-generation' },
       { label: 'Browser Automation', icon: Globe, href: '/browser' },
       { label: 'Interview Prep', icon: Brain, href: '#', comingSoon: true },
     ],
