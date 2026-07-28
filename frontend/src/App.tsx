@@ -23,6 +23,9 @@ const ApplicationDetailPage = lazy(() => import('./pages/ApplicationDetailPage')
 const KanbanPage = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const ProductionDashboardPage = lazy(() => import('./pages/ProductionDashboardPage').then(m => ({ default: m.ProductionDashboardPage })))
+const DiscoveryPage = lazy(() => import('./pages/DiscoveryPage').then(m => ({ default: m.DiscoveryPage })))
+const MatchingPage = lazy(() => import('./pages/MatchingPage').then(m => ({ default: m.MatchingPage })))
 const JobsSearchPage = lazy(() => import('./pages/JobsSearchPage').then(m => ({ default: m.JobsSearchPage })))
 const SavedJobsPage = lazy(() => import('./pages/SavedJobsPage').then(m => ({ default: m.SavedJobsPage })))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage').then(m => ({ default: m.JobDetailPage })))
@@ -30,9 +33,13 @@ const ResumeLibraryPage = lazy(() => import('./pages/ResumeLibraryPage').then(m 
 const ResumeDetailPage = lazy(() => import('./pages/ResumeDetailPage').then(m => ({ default: m.ResumeDetailPage })))
 const CoverLettersPage = lazy(() => import('./pages/CoverLettersPage').then(m => ({ default: m.CoverLettersPage })))
 const CoverLetterDetailPage = lazy(() => import('./pages/CoverLetterDetailPage').then(m => ({ default: m.CoverLetterDetailPage })))
+const BrowserSessionsPage = lazy(() => import('./pages/BrowserSessionsPage').then(m => ({ default: m.BrowserSessionsPage })))
+const ApplicationGenerationPage = lazy(() => import('./pages/ApplicationGenerationPage').then(m => ({ default: m.ApplicationGenerationPage })))
+const OrchestrationPage = lazy(() => import('./pages/OrchestrationPage').then(m => ({ default: m.OrchestrationPage })))
 const CareerProfilePage = lazy(() => import('./pages/CareerProfilePage').then(m => ({ default: m.CareerProfilePage })))
 const SettingsAccountPage = lazy(() => import('./pages/SettingsAccountPage').then(m => ({ default: m.SettingsAccountPage })))
 const SettingsPreferencesPage = lazy(() => import('./pages/SettingsPreferencesPage').then(m => ({ default: m.SettingsPreferencesPage })))
+const ProviderManagementPage = lazy(() => import('./pages/ProviderManagementPage').then(m => ({ default: m.ProviderManagementPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +82,9 @@ function App() {
                   <Route path="/applications/board" element={<KanbanPage />} />
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/production" element={<ProductionDashboardPage />} />
+                  <Route path="/discovery" element={<DiscoveryPage />} />
+                  <Route path="/matching" element={<MatchingPage />} />
                   <Route path="/applications/:id" element={<ApplicationDetailPage />} />
                   <Route path="/applications/:id/*" element={<ApplicationDetailPage />} />
                   <Route path="/jobs/search" element={<JobsSearchPage />} />
@@ -84,9 +94,13 @@ function App() {
                   <Route path="/resumes/:id" element={<ResumeDetailPage />} />
                   <Route path="/cover-letters" element={<CoverLettersPage />} />
                   <Route path="/cover-letters/:id" element={<CoverLetterDetailPage />} />
+                  <Route path="/browser" element={<BrowserSessionsPage />} />
+                  <Route path="/application-generation" element={<ApplicationGenerationPage />} />
+                  <Route path="/orchestration" element={<OrchestrationPage />} />
                   <Route path="/profile" element={<CareerProfilePage />} />
                   <Route path="/settings/account" element={<SettingsAccountPage />} />
                   <Route path="/settings/preferences" element={<SettingsPreferencesPage />} />
+                  <Route path="/providers" element={<ProviderManagementPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Route>
 

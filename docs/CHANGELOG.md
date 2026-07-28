@@ -9,6 +9,109 @@ This project follows the principles of **Keep a Changelog** and **Semantic Versi
 
 ---
 
+# [2.1.0] - 2026-07-28
+
+## Added
+
+### Provider SDK (Phase 5.1)
+- Pluggable provider SDK with factory, registry, lifecycle management
+- Observability integration (metrics, logging, alerting)
+- Response normalization and request pipeline with caching/retry
+- Auth abstraction (OAuth, cookies, credentials, session tokens, browser session)
+- Capability system, error taxonomy, full test suite
+
+### Provider Routing (Phase 5.2)
+- Multi-provider search with aggregation and filtering
+- Fallback chain and continuous improvement scoring
+- Four routing strategies: weighted, performance-based, priority, capability-based
+- Search analytics tracking (performance, success rates, latency)
+- Timeline system for application lifecycle events
+
+### ATS Provider Integration (Phase 5.3)
+- 10 ATS provider implementations (Greenhouse, Lever, Ashby, Workday, SmartRecruiters, BambooHR, iCIMS, Jobvite, Oracle Recruiting, SAP SuccessFactors)
+- Generic ATS provider base with HTTP client, pagination, error handling
+
+### Portal Provider System (Phase 5.4)
+- Portal provider framework for Indian job portals
+- Implementations for Internshala, Unstop, Freshersworld
+- Mock data generation and cross-module registration
+
+### Discovery Engine (Phase 5.5)
+- Unified job discovery service with provider routing
+- Provider health monitoring and history tracking
+- Migration bridge to unified routing system
+
+### Matching Engine (Phase 5.6)
+- Semantic field mapper, answer engine, document selector
+- Complete matching service with typed contracts
+
+### Provider Management Center (Phase 5.7)
+- Provider Management Page with dynamic cards, search, filter, sort, bulk actions
+- Details drawer, discovery configuration, route/sidebar nav
+
+### Resume Generator Frontend (Phase 5.8)
+- Resume library, detail pages, templates, sections
+- PDF/DOCX export, ATS optimization controls
+
+### Cover Letter Generator Frontend (Phase 5.9)
+- Cover letter list, detail, creation pages
+- Rich text editor, template panel, compare/export
+
+### Application Engine Frontend (Phase 5.10)
+- Kanban board, status management, notes, tags, timeline
+- Analytics dashboards with charts and data export
+
+### Authentication System (Phase 5.11)
+- Auth service with token management, session storage, auto-refresh
+- React auth context, Login/Register/Reset Password pages
+- Guest/Protected route guards with TanStack Query
+
+### Browser Framework (Phase 5.12)
+- Playwright-based browser manager with session management
+- Navigation, form filling, data extraction, screenshots
+- Parallel execution with concurrency control
+
+### Production Services (Phase 5.13)
+- Observability, logging, metrics, health, alert services
+- Config service, security service, performance service
+- Recovery analytics, diagnostics, maintenance
+- Production dashboard with health cards
+
+### Provider Management Service Layer (Phase 5.14)
+- Provider-registry getAll() bug fix
+- CRUD, search, filter, sort, config management
+- Provider cards, details drawer, bulk actions, discovery config
+
+### Universal Form Intelligence Engine (Phase 5.15)
+- 15 modules: Field Detector, Semantic Field Mapper, Profile Mapper, Answer Engine, Document Selector, Validation Engine, Multi-Step Coordinator, Checkpoints, Recovery Manager, Approval Workflow, Submission Manager, Application Summary, Form Engine, Application Engine
+- 72 dedicated tests
+
+### Production Hardening (Phase 5.16)
+- Fixed 40 TypeScript errors across ATS, Portals, Provider SDK, Production services
+- HealthStatus type includes 'unhealthy' state
+- @hookform/resolvers dependency installed
+- 779 frontend tests passing
+
+## Changed
+- Version bumped from 2.0.0 to 2.1.0
+- Updated README with comprehensive documentation
+- ESLint config respects underscore-prefixed unused parameters
+- Repository cleanup and documentation refresh
+
+## Fixed
+- 40 TypeScript errors (unused imports, type mismatches, MapIterator bug)
+- Provider-registry getAll() returning MapIterator instead of array
+- Health status type mapping for provider health checks
+- Missing @hookform/resolvers/zod module resolution
+
+## Security
+- Auth service with token management and auto-refresh
+- Password strength validation
+- Route guards (ProtectedRoute, GuestRoute)
+- Session storage and management
+
+---
+
 # [Unreleased]
 
 ## Added

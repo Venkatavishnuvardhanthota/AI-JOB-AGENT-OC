@@ -12,11 +12,16 @@ import {
   BarChart3,
   Bell,
   Settings,
+  Server,
   ChevronLeft,
   Menu,
   LogOut,
   X,
   Calendar,
+  Search,
+  Globe,
+  Layers,
+  Activity,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
@@ -58,6 +63,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
           { label: 'Matching', href: '/jobs/search', comingSoon: false },
         ],
       },
+      { label: 'Discovery', icon: Search, href: '/discovery' },
+      { label: 'Matching', icon: Brain, href: '/matching' },
     ],
   },
   {
@@ -71,6 +78,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         ],
       },
       { label: 'Cover Letters', icon: Sparkles, href: '/cover-letters' },
+      { label: 'Orchestration', icon: Layers, href: '/orchestration' },
+      { label: 'Application Gen', icon: FileText, href: '/application-generation' },
+      { label: 'Browser Automation', icon: Globe, href: '/browser' },
       { label: 'Interview Prep', icon: Brain, href: '#', comingSoon: true },
     ],
   },
@@ -78,6 +88,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'Operations',
     items: [
       { label: 'Analytics', icon: BarChart3, href: '/analytics' },
+      { label: 'Production', icon: Activity, href: '/production' },
+      { label: 'Providers', icon: Server, href: '/providers' },
       { label: 'Notifications', icon: Bell, href: '#', comingSoon: true },
       { label: 'Settings', icon: Settings, href: '/settings',
         children: [
