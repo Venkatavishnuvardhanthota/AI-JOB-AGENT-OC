@@ -13,6 +13,12 @@ import { greenhouseProvider } from '../ats/providers/greenhouse'
 import { leverProvider } from '../ats/providers/lever'
 import { ashbyProvider } from '../ats/providers/ashby'
 import { smartrecruitersProvider } from '../ats/providers/smartrecruiters'
+import { workdayProvider } from '../ats/providers/workday'
+import { jobviteProvider } from '../ats/providers/jobvite'
+import { bamboohrProvider } from '../ats/providers/bamboohr'
+import { icimsProvider } from '../ats/providers/icims'
+import { oracleProvider } from '../ats/providers/oracle'
+import { successfactorsProvider } from '../ats/providers/successfactors'
 
 const PREFIX = 'ajapp_disc_'
 
@@ -42,6 +48,12 @@ const DEFAULT_PROVIDERS: JobProvider[] = [
   leverProvider,
   ashbyProvider,
   smartrecruitersProvider,
+  workdayProvider,
+  jobviteProvider,
+  bamboohrProvider,
+  icimsProvider,
+  oracleProvider,
+  successfactorsProvider,
 ]
 
 export const providerRegistry = {
