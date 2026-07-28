@@ -20,6 +20,7 @@ import {
   Search,
   Globe,
   Layers,
+  Activity,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
@@ -86,6 +87,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: 'Operations',
     items: [
       { label: 'Analytics', icon: BarChart3, href: '/analytics' },
+      { label: 'Production', icon: Activity, href: '/production' },
       { label: 'Notifications', icon: Bell, href: '#', comingSoon: true },
       { label: 'Settings', icon: Settings, href: '/settings',
         children: [

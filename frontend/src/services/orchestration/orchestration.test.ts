@@ -356,7 +356,7 @@ describe('workflow-orchestrator', () => {
 describe('dashboard-service', () => {
   it('provides dashboard data', () => {
     localStorage.clear()
-    const wf = workflowOrchestrator.createWorkflow('Engineer', 'Co', 0.8, 70)
+    workflowOrchestrator.createWorkflow('Engineer', 'Co', 0.8, 70)
     const data = workflowDashboardService.getDashboardData()
     expect(data.workflows.length).toBeGreaterThan(0)
     expect(data.running).toBe(1)

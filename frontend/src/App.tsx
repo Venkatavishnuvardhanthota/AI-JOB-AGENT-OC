@@ -23,6 +23,7 @@ const ApplicationDetailPage = lazy(() => import('./pages/ApplicationDetailPage')
 const KanbanPage = lazy(() => import('./pages/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const ProductionDashboardPage = lazy(() => import('./pages/ProductionDashboardPage').then(m => ({ default: m.ProductionDashboardPage })))
 const DiscoveryPage = lazy(() => import('./pages/DiscoveryPage').then(m => ({ default: m.DiscoveryPage })))
 const MatchingPage = lazy(() => import('./pages/MatchingPage').then(m => ({ default: m.MatchingPage })))
 const JobsSearchPage = lazy(() => import('./pages/JobsSearchPage').then(m => ({ default: m.JobsSearchPage })))
@@ -80,6 +81,7 @@ function App() {
                   <Route path="/applications/board" element={<KanbanPage />} />
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/production" element={<ProductionDashboardPage />} />
                   <Route path="/discovery" element={<DiscoveryPage />} />
                   <Route path="/matching" element={<MatchingPage />} />
                   <Route path="/applications/:id" element={<ApplicationDetailPage />} />
