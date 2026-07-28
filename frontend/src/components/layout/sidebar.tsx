@@ -18,6 +18,7 @@ import {
   X,
   Calendar,
   Search,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
@@ -74,6 +75,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         ],
       },
       { label: 'Cover Letters', icon: Sparkles, href: '/cover-letters' },
+      { label: 'Browser Automation', icon: Globe, href: '/browser' },
       { label: 'Interview Prep', icon: Brain, href: '#', comingSoon: true },
     ],
   },
