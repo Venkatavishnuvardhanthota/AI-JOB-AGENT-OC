@@ -56,6 +56,18 @@ const DEFAULT_PROVIDERS: JobProvider[] = [
   successfactorsProvider,
 ]
 
+const dynamicProviders = new Map<ProviderId, JobProvider>()
+
+function applyConfigs(providers: JobProvider[], configs: ProviderConfig[]): JobProvider[] {
+  return providers.map(dp => {
+    const config = configs.find(c => c.id === dp.id)
+    if (config) {
+      return { ...dp, enabled: config.enabled, priority: config.priority }
+    }
+    return dp
+  })
+}
+
 export const providerRegistry = {
   getAll(): JobProvider[] {
     const configs = get<ProviderConfig[]>('provider_configs', [])
@@ -73,13 +85,17 @@ export const providerRegistry = {
       set('provider_configs', defaults)
       return DEFAULT_PROVIDERS
     }
-    return DEFAULT_PROVIDERS.map(dp => {
-      const config = configs.find(c => c.id === dp.id)
+    const staticProviders = applyConfigs(DEFAULT_PROVIDERS, configs)
+    const dynamicProviderList: JobProvider[] = []
+    for (const [id, provider] of dynamicProviders) {
+      const config = configs.find(c => c.id === id)
       if (config) {
-        return { ...dp, enabled: config.enabled, priority: config.priority }
+        dynamicProviderList.push({ ...provider, enabled: config.enabled, priority: config.priority })
+      } else {
+        dynamicProviderList.push(provider)
       }
-      return dp
-    })
+    }
+    return [...staticProviders, ...dynamicProviderList]
   },
 
   get(id: ProviderId): JobProvider | undefined {
@@ -91,21 +107,25 @@ export const providerRegistry = {
   },
 
   register(provider: JobProvider): void {
+    dynamicProviders.set(provider.id, provider)
     const configs = get<ProviderConfig[]>('provider_configs', [])
-    configs.push({
-      id: provider.id,
-      name: provider.name,
-      enabled: provider.enabled,
-      priority: provider.priority,
-      capabilities: provider.capabilities,
-      baseUrl: null,
-      apiKeyRequired: false,
-      apiKeyConfigured: false,
-    })
-    set('provider_configs', configs)
+    if (!configs.find(c => c.id === provider.id)) {
+      configs.push({
+        id: provider.id,
+        name: provider.name,
+        enabled: provider.enabled,
+        priority: provider.priority,
+        capabilities: provider.capabilities,
+        baseUrl: null,
+        apiKeyRequired: false,
+        apiKeyConfigured: false,
+      })
+      set('provider_configs', configs)
+    }
   },
 
   remove(id: ProviderId): void {
+    dynamicProviders.delete(id)
     const configs = get<ProviderConfig[]>('provider_configs', [])
     set('provider_configs', configs.filter(c => c.id !== id))
   },

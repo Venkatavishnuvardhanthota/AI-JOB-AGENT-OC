@@ -12,6 +12,7 @@ import {
   BarChart3,
   Bell,
   Settings,
+  Server,
   ChevronLeft,
   Menu,
   LogOut,
@@ -88,6 +89,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'Analytics', icon: BarChart3, href: '/analytics' },
       { label: 'Production', icon: Activity, href: '/production' },
+      { label: 'Providers', icon: Server, href: '/providers' },
       { label: 'Notifications', icon: Bell, href: '#', comingSoon: true },
       { label: 'Settings', icon: Settings, href: '/settings',
         children: [
