@@ -1,7 +1,7 @@
 export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'internship' | 'temporary' | 'volunteer' | 'freelance'
 export type ExperienceLevel = 'internship' | 'entry' | 'associate' | 'mid_senior' | 'director' | 'executive'
 export type RemotePreference = 'remote' | 'hybrid' | 'onsite' | 'any'
-export type ProviderId = 'linkedin' | 'indeed' | 'naukri' | 'foundit' | 'wellfound' | 'ycombinator' | 'company_careers' | 'internshala' | 'unstop' | 'freshersworld'
+export type ProviderId = 'linkedin' | 'indeed' | 'naukri' | 'foundit' | 'wellfound' | 'ycombinator' | 'company_careers' | 'internshala' | 'unstop' | 'freshersworld' | 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters'
 export type ScheduleFrequency = 'manual' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'custom_cron'
 export type ProviderCapability = 'search' | 'filter_by_location' | 'filter_by_salary' | 'filter_by_experience' | 'filter_by_type' | 'easy_apply' | 'company_profile' | 'salary_range'
 export type ProviderStatus = 'healthy' | 'degraded' | 'unhealthy' | 'disabled'

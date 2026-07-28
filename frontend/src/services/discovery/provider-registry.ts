@@ -9,6 +9,10 @@ import { companyCareersProvider } from './providers/company-careers'
 import { internshalaProvider } from './providers/internshala'
 import { unstopProvider } from './providers/unstop'
 import { freshersworldProvider } from './providers/freshersworld'
+import { greenhouseProvider } from '../ats/providers/greenhouse'
+import { leverProvider } from '../ats/providers/lever'
+import { ashbyProvider } from '../ats/providers/ashby'
+import { smartrecruitersProvider } from '../ats/providers/smartrecruiters'
 
 const PREFIX = 'ajapp_disc_'
 
@@ -34,6 +38,10 @@ const DEFAULT_PROVIDERS: JobProvider[] = [
   internshalaProvider,
   unstopProvider,
   freshersworldProvider,
+  greenhouseProvider,
+  leverProvider,
+  ashbyProvider,
+  smartrecruitersProvider,
 ]
 
 export const providerRegistry = {
