@@ -3,10 +3,13 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.resume_strategy import ResumeStrategy
+
 
 class ApplicationPrepareRequest(BaseModel):
     job_id: uuid.UUID
-    resume_id: uuid.UUID
+    resume_id: uuid.UUID | None = None
+    resume_strategy_override: ResumeStrategy | None = None
     generate_cover_letter: bool = True
     generate_ai_answers: bool = True
 
@@ -16,6 +19,12 @@ class ApplicationResponse(BaseModel):
     job_id: uuid.UUID
     resume_id: uuid.UUID | None
     cover_letter_id: uuid.UUID | None
+    resume_strategy: str | None
+    original_resume_id: uuid.UUID | None
+    generated_resume_id: uuid.UUID | None
+    generated: bool
+    tailored: bool
+    generation_timestamp: datetime | None
     status: str
     notes: str | None
     submitted_at: datetime | None

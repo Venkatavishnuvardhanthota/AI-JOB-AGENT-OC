@@ -1,15 +1,15 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.core.exceptions import ValidationError as AppValidationError
 from app.models import User
 from app.schemas.resume import (
     ResumeAnalyzeRequest,
     ResumeCompareRequest,
-    ResumeCompareResponse,
     ResumeCreate,
     ResumeDuplicateRequest,
     ResumeExportData,
@@ -23,7 +23,6 @@ from app.schemas.resume import (
     ResumeSectionResponse,
     ResumeSectionUpdate,
     ResumeUpdate,
-    ResumeUploadResponse,
     ResumeVersionCreate,
 )
 from app.services.resume import ResumeService
@@ -36,10 +35,11 @@ router = APIRouter()
 async def list_resumes(
     current_user: User = Depends(get_current_user),
     archived: bool | None = Query(None),
+    origin: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resumes = await service.list_resumes(current_user.id, archived=archived)
+    resumes = await service.list_resumes(current_user.id, archived=archived, origin=origin)
     items = []
     for r in resumes:
         try:
@@ -54,6 +54,7 @@ async def list_resumes(
                 template=r.template,
                 status=r.status,
                 source=r.source,
+                origin=r.origin,
                 is_default=r.is_default,
                 archived=r.archived,
                 section_count=section_count,
@@ -300,6 +301,7 @@ async def delete_section(
 
 @router.get("/templates")
 async def list_templates(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     from app.repositories import ResumeTemplateRepository
@@ -520,13 +522,13 @@ async def download_resume(
         content = await service.export_resume_pdf(rid, current_user.id)
         from fastapi.responses import Response
         return Response(content=content, media_type="application/pdf",
-                        headers={"Content-Disposition": f'attachment; filename="resume.pdf"'})
+                        headers={"Content-Disposition": 'attachment; filename="resume.pdf"'})
     elif format == "docx":
         content = await service.export_resume_docx(rid, current_user.id)
         from fastapi.responses import Response
         return Response(
             content=content,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": f'attachment; filename="resume.docx"'},
+            headers={"Content-Disposition": 'attachment; filename="resume.docx"'},
         )
-    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'json', 'pdf', or 'docx'.")
+    raise AppValidationError(f"Unsupported format: {format}. Use 'json', 'pdf', or 'docx'.")

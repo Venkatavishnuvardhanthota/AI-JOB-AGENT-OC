@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base
+from database.models.skill import Skill
 
 
 class CareerProfile(Base):
@@ -19,6 +20,7 @@ class CareerProfile(Base):
     employment_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     current_salary: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     expected_salary: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    salary_preference: Mapped[str | None] = mapped_column(String(50), nullable=True)
     willing_to_relocate: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     visa_sponsorship_requirement: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     notice_period: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -32,10 +34,11 @@ class CareerProfile(Base):
     education = relationship("Education", back_populates="profile", cascade="all, delete-orphan")
     experience = relationship("Experience", back_populates="profile", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="profile", cascade="all, delete-orphan")
-    skills = relationship("Skill", back_populates="profile", cascade="all, delete-orphan")
+    skills = relationship("Skill", back_populates="profile", cascade="all, delete-orphan", order_by=func.lower(Skill.name))
     certifications = relationship("Certification", back_populates="profile", cascade="all, delete-orphan")
     languages = relationship("Language", back_populates="profile", cascade="all, delete-orphan")
     social_links = relationship("SocialLink", back_populates="profile", cascade="all, delete-orphan")
+    achievements = relationship("Achievement", back_populates="profile", cascade="all, delete-orphan")
     preferences = relationship("JobPreference", back_populates="profile", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (Index("ix_career_profiles_user_id", "user_id"),)

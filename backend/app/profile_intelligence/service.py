@@ -96,6 +96,7 @@ class ProfileIntelligenceService:
         certifications = []
         languages = []
         social_links = []
+        achievements = []
         preferences = None
 
         if profile:
@@ -113,6 +114,9 @@ class ProfileIntelligenceService:
             languages = profile.languages if hasattr(profile, "languages") and profile.languages is not None else []
             social_links = (
                 profile.social_links if hasattr(profile, "social_links") and profile.social_links is not None else []
+            )
+            achievements = (
+                profile.achievements if hasattr(profile, "achievements") and profile.achievements is not None else []
             )
             preferences = (
                 profile.preferences if hasattr(profile, "preferences") and profile.preferences is not None else None
@@ -134,6 +138,7 @@ class ProfileIntelligenceService:
             "certifications": certifications,
             "languages": languages,
             "social_links": social_links,
+            "achievements": achievements,
             "preferences": preferences,
             "has_resume": has_resume,
         }

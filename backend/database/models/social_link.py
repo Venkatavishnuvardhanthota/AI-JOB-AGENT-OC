@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,4 +17,11 @@ class SocialLink(Base):
 
     profile = relationship("CareerProfile", back_populates="social_links")
 
-    __table_args__ = (Index("ix_social_links_profile_id", "profile_id"),)
+    __table_args__ = (
+        Index("ix_social_links_profile_id", "profile_id"),
+        UniqueConstraint("profile_id", "platform", name="uq_social_link_profile_platform"),
+        CheckConstraint(
+            "platform IN ('linkedin', 'github', 'portfolio', 'website', 'other')",
+            name="ck_social_link_platform",
+        ),
+    )

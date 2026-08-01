@@ -69,7 +69,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
       throw new Error('Session expired. Please sign in again.')
     }
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+    const message = error?.error?.message || error?.detail || `HTTP ${response.status}`
+    throw new Error(message)
   }
   if (response.status === 204) {
     return undefined as T

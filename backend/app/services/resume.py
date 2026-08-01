@@ -24,7 +24,11 @@ class ResumeService:
 
     # ── Resume CRUD ──
 
-    async def list_resumes(self, user_id: uuid.UUID, archived: bool | None = None) -> list[ResumeVersion]:
+    async def list_resumes(
+        self, user_id: uuid.UUID, archived: bool | None = None, origin: str | None = None
+    ) -> list[ResumeVersion]:
+        if origin:
+            return await self.resume_repo.list_by_user_and_origin(user_id, origin)
         return await self.resume_repo.list_by_user(user_id, archived=archived)
 
     async def get_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
@@ -310,7 +314,6 @@ class ResumeService:
 
     def _parse_docx_text(self, content: bytes) -> list[dict]:
         try:
-            import docx
             from docx import Document
             import io
             doc = Document(io.BytesIO(content))
@@ -411,7 +414,7 @@ class ResumeService:
             confidence = min(90, 50 + len(sections) * 10) if sections else 0
 
             needs_review = []
-            known_types = {"summary", "experience", "education", "skills", "projects", "certifications", "languages", "publications", "awards", "links"}
+            known_types = {"summary", "experience", "education", "skills", "projects", "certifications", "languages", "achievements", "publications", "awards", "links"}
             for s in sections:
                 if s["section_type"] not in known_types or not s.get("content", {}).get("text"):
                     needs_review.append(s["section_type"])
@@ -478,6 +481,7 @@ class ResumeService:
         title: str = "Generated Resume",
         template: str | None = None,
         section_filter: list[str] | None = None,
+        enhance_with_ai: bool = False,
     ) -> ResumeVersion:
         sections_data = []
         stmt = select(CareerProfile).options(
@@ -485,6 +489,9 @@ class ResumeService:
             joinedload(CareerProfile.experience),
             joinedload(CareerProfile.projects),
             joinedload(CareerProfile.skills),
+            joinedload(CareerProfile.certifications),
+            joinedload(CareerProfile.languages),
+            joinedload(CareerProfile.achievements),
         ).where(CareerProfile.user_id == user_id)
         result = await self.session.execute(stmt)
         profile = result.unique().scalar_one_or_none()
@@ -493,7 +500,7 @@ class ResumeService:
 
         if "summary" in want:
             headline = (profile.headline if profile else None) or ""
-            bio = (profile.bio if profile else None) or ""
+            bio = (profile.professional_summary if profile else None) or ""
             text = f"{headline}\n\n{bio}" if bio else headline or "Professional with experience in the field."
             sections_data.append({
                 "section_type": "summary",
@@ -547,14 +554,77 @@ class ResumeService:
                 "sort_order": 4,
             })
 
+        if "certifications" in want and profile and profile.certifications:
+            cert_text = "\n".join(
+                f"{c.name}" + (f" - {c.issuer}" if getattr(c, "issuer", None) else "")
+                for c in profile.certifications
+            )
+            sections_data.append({
+                "section_type": "certifications",
+                "title": "Certifications",
+                "content": {"text": cert_text},
+                "sort_order": 5,
+            })
+
+        if "languages" in want and profile and profile.languages:
+            lang_text = ", ".join(
+                f"{lang.language}" + (f" ({lang.proficiency})" if getattr(lang, "proficiency", None) else "")
+                for lang in profile.languages
+            )
+            sections_data.append({
+                "section_type": "languages",
+                "title": "Languages",
+                "content": {"text": lang_text},
+                "sort_order": 6,
+            })
+
+        if "achievements" in want and profile and profile.achievements:
+            ach_text = "\n".join(
+                f"{a.title}" + (f" - {a.organization}" if getattr(a, "organization", None) else "")
+                for a in profile.achievements
+            )
+            sections_data.append({
+                "section_type": "achievements",
+                "title": "Achievements",
+                "content": {"text": ach_text},
+                "sort_order": 7,
+            })
+
+        if enhance_with_ai:
+            sections_data = await self._ai_enhance_sections(sections_data, user_id)
+
         return await self.create_resume(
             user_id=user_id,
             title=title,
             template=template,
             resume_type="generated",
-            change_summary="Generated from career profile",
+            change_summary="Generated from career profile" + (" with AI enhancement" if enhance_with_ai else ""),
             sections=sections_data,
         )
+
+    async def _ai_enhance_sections(self, sections_data: list[dict], user_id: uuid.UUID) -> list[dict]:
+        from app.ai.features.resume import ai_improve_resume_section
+
+        enhanced = []
+        for section in sections_data:
+            section_type = section["section_type"]
+            content_text = section.get("content", {}).get("text", "")
+            if not content_text.strip():
+                enhanced.append(section)
+                continue
+            try:
+                result = await ai_improve_resume_section(
+                    section_type=section_type,
+                    current_content=content_text,
+                    improvement_areas="grammar, tone, action_verbs, keywords",
+                )
+                improved = result.get("improved_content", "")
+                if improved:
+                    section["content"]["text"] = improved
+            except Exception:
+                pass
+            enhanced.append(section)
+        return enhanced
 
     # ── Duplicate ──
 
@@ -609,6 +679,7 @@ class ResumeService:
         user_id: uuid.UUID,
         job_id: uuid.UUID,
         target_role: str | None = None,
+        enhance_with_ai: bool = False,
     ) -> ResumeVersion:
         resume = await self.resume_repo.get_with_sections(resume_id)
         if not resume or resume.user_id != user_id:
@@ -623,17 +694,41 @@ class ResumeService:
             resume_type="optimized",
             source="optimization",
             status="draft",
-            change_summary=f"Optimized for job {job_id}" + (f" ({target_role})" if target_role else ""),
+            change_summary=f"Optimized for job {job_id}" + (f" ({target_role})" if target_role else "") + (" with AI enhancement" if enhance_with_ai else ""),
             previous_version_id=resume.id,
             generated_for_job_id=job_id,
         )
         created = await self.resume_repo.create(new_resume)
         for section in (resume.sections or []):
+            section_content = section.content
+
+            if enhance_with_ai:
+                try:
+                    from app.ai.features.resume import ai_improve_resume_section
+
+                    content_text = section_content.get("text", "") if isinstance(section_content, dict) else str(section_content) if section_content else ""
+                    if content_text.strip():
+                        result = await ai_improve_resume_section(
+                            section_type=section.section_type,
+                            current_content=content_text,
+                            target_role=target_role or "",
+                            job_context=f"Optimizing for job {job_id}",
+                            improvement_areas="grammar, tone, action_verbs, keywords, ats_optimization",
+                        )
+                        improved = result.get("improved_content", "")
+                        if improved:
+                            if isinstance(section_content, dict):
+                                section_content["text"] = improved
+                            else:
+                                section_content = improved
+                except Exception:
+                    pass
+
             new_section = ResumeSection(
                 resume_id=created.id,
                 section_type=section.section_type,
                 title=section.title,
-                content=section.content,
+                content=section_content,
                 sort_order=section.sort_order,
                 visible=section.visible,
             )
@@ -727,7 +822,6 @@ class ResumeService:
             raise NotFoundError("Resume not found.")
         sections = resume.sections or []
         text = self._extract_text(sections)
-        lower_text = text.lower()
 
         keywords = self._count_keywords(text)
         keyword_count = len(keywords)
@@ -851,7 +945,6 @@ class ResumeService:
             raise NotFoundError("Resume not found.")
         sections = resume.sections or []
         text = self._extract_text(sections)
-        lower_text = text.lower()
 
         section_types = {s.section_type for s in sections}
 
@@ -1006,14 +1099,13 @@ class ResumeService:
         if not resume or resume.user_id != user_id:
             raise NotFoundError("Resume not found.")
         try:
-            import docx
             from docx import Document
             import io
 
             buf = io.BytesIO()
             doc = Document()
 
-            title = doc.add_heading(resume.title or "Resume", 0)
+            doc.add_heading(resume.title or "Resume", 0)
             if resume.template:
                 doc.add_paragraph(f"Template: {resume.template}")
 

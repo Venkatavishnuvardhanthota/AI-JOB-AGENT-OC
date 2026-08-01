@@ -115,6 +115,7 @@ class ResumeListResponse(BaseModel):
     template: str | None
     status: str
     source: str
+    origin: str | None = None
     is_default: bool
     archived: bool
     section_count: int = 0

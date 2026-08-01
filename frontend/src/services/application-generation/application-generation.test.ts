@@ -151,7 +151,7 @@ describe('questionnaire-engine', () => {
   it('answers salary question when range is provided', () => {
     const [answer] = generateAnswers(mockRequest, ['expected_salary'])
     expect(answer.answer).toContain('USD')
-    expect(answer.answer).toContain('1,20')
+    expect(answer.answer).toContain('120,000')
   })
 })
 

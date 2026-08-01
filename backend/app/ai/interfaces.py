@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from app.ai.config import AIConfig
-from app.ai.schemas import AIRequest, AIResponse, ModelInfo, ProviderInfo
+from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, ModelInfo, ProviderInfo
 
 
 class AIProvider(ABC):
@@ -15,6 +15,18 @@ class AIProvider(ABC):
 
     def __init__(self, config: AIConfig) -> None:
         self.config = config
+
+    @property
+    def capabilities(self) -> CapabilityInfo:
+        return CapabilityInfo(
+            chat=True,
+            streaming=self.supports_streaming,
+            system_prompt_support=True,
+        )
+
+    def validate_config(self) -> list[str]:
+        errors: list[str] = []
+        return errors
 
     @abstractmethod
     async def generate(self, request: AIRequest) -> AIResponse: ...

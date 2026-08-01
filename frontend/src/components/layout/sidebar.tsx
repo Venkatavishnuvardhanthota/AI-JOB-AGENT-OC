@@ -95,6 +95,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         children: [
           { label: 'Account', href: '/settings/account' },
           { label: 'Preferences', href: '/settings/preferences' },
+          { label: 'AI Settings', href: '/settings/ai' },
         ],
       },
     ],
@@ -104,7 +105,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Jobs', 'Applications', 'Settings']))
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Jobs', 'Applications', 'Settings', 'AI Tools']))
   const location = useLocation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()

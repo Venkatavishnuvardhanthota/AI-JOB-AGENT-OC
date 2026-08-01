@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, jobsApi } from './client'
 import type {
-  User, UserProfile, ScoringConfigResponse,
+  User, UserProfile, ProfileCompleteness, Achievement, Skill,
+  ScoringConfigResponse,
   BatchScoreRequest, BatchScoreResponse, ScoredJobResponse,
 } from '@/types'
 
@@ -49,7 +50,7 @@ export function useProfile() {
 export function useProfileCompleteness() {
   return useQuery({
     queryKey: ['profile', 'completeness'],
-    queryFn: () => api.get('/profile/completeness').then(unwrap),
+    queryFn: () => api.get<ProfileCompleteness>('/profile/completeness').then(unwrap<ProfileCompleteness>),
   })
 }
 
@@ -72,7 +73,11 @@ export function useCreateProfileSection<T>(section: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: any) => api.post<T>(`/profile/${section}`, data).then(unwrap<T>),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile', section] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', section] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
   })
 }
 
@@ -81,7 +86,11 @@ export function useUpdateProfileSection<T>(section: string) {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.patch<T>(`/profile/${section}/${id}`, data).then(unwrap<T>),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile', section] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', section] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
   })
 }
 
@@ -89,7 +98,68 @@ export function useDeleteProfileSection(section: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.delete(`/profile/${section}/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile', section] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', section] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
+  })
+}
+
+export function useReplaceSkills() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (skills: string[]) => api.put<Skill[]>('/profile/skills', { skills }).then(unwrap<Skill[]>),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', 'skills'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
+  })
+}
+
+// ── Achievements ──
+export function useAchievements() {
+  return useQuery({
+    queryKey: ['profile', 'achievements'],
+    queryFn: () => api.get<Achievement[]>('/profile/achievements').then(unwrap<Achievement[]>),
+  })
+}
+
+export function useCreateAchievement() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<Achievement>) => api.post<Achievement>('/profile/achievements', data).then(unwrap<Achievement>),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', 'achievements'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
+  })
+}
+
+export function useUpdateAchievement() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Achievement> }) =>
+      api.patch<Achievement>(`/profile/achievements/${id}`, data).then(unwrap<Achievement>),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', 'achievements'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
+  })
+}
+
+export function useDeleteAchievement() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/profile/achievements/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile', 'achievements'] })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['profile', 'completeness'] })
+    },
   })
 }
 
@@ -128,12 +198,15 @@ export function useDeleteResumeSection(resumeId: string) {
 }
 
 // ── Resumes ──
-export function useResumes(archived?: boolean) {
+export function useResumes(archived?: boolean, origin?: string) {
   return useQuery({
-    queryKey: ['resumes', archived],
+    queryKey: ['resumes', archived, origin],
     queryFn: () => {
-      const params = archived != null ? `?archived=${archived}` : ''
-      return api.get<any[]>(`/resumes${params}`).then(unwrap)
+      const params = new URLSearchParams()
+      if (archived != null) params.set('archived', String(archived))
+      if (origin) params.set('origin', origin)
+      const qs = params.toString()
+      return api.get<any[]>(`/resumes${qs ? `?${qs}` : ''}`).then(unwrap)
     },
   })
 }
@@ -288,9 +361,17 @@ export function useApplication(id: string) {
 export function usePrepareApplication() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { job_id: string; resume_id?: string; generate_cover_letter?: boolean; generate_ai_answers?: boolean }) =>
-      api.post('/applications/prepare', data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    mutationFn: (data: {
+      job_id: string
+      resume_id?: string
+      resume_strategy_override?: string
+      generate_cover_letter?: boolean
+      generate_ai_answers?: boolean
+    }) => api.post('/applications/prepare', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['applications'] })
+      qc.invalidateQueries({ queryKey: ['resumes'] })
+    },
   })
 }
 
@@ -530,6 +611,70 @@ export function useResumeVersions(resumeId: string) {
   })
 }
 
+// ── AI ──
+export function useAIProviders() {
+  return useQuery({
+    queryKey: ['ai', 'providers'],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.listProviders()),
+  })
+}
+
+export function useAIProvider(provider: string) {
+  return useQuery({
+    queryKey: ['ai', 'providers', provider],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.getProvider(provider)),
+    enabled: !!provider,
+  })
+}
+
+export function useAIConfig() {
+  return useQuery({
+    queryKey: ['ai', 'config'],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.getConfig()),
+  })
+}
+
+export function useAIHealth() {
+  return useQuery({
+    queryKey: ['ai', 'health'],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.getHealth()),
+    refetchInterval: 30000,
+  })
+}
+
+export function useAIModels(provider?: string) {
+  return useQuery({
+    queryKey: ['ai', 'models', provider],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.getModels(provider)),
+  })
+}
+
+export function useAIPrompts() {
+  return useQuery({
+    queryKey: ['ai', 'prompts'],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.listPrompts()),
+  })
+}
+
+export function useTestAIConnection() {
+  return useMutation({
+    mutationFn: (provider: string) =>
+      import('@/services/ai').then(m => m.aiService.testConnection(provider)),
+  })
+}
+
+export function useUpdateAIConfig() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: import('@/types').AIUpdateConfigData) =>
+      import('@/services/ai').then(m => m.aiService.updateConfig(data)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai', 'config'] })
+      qc.invalidateQueries({ queryKey: ['ai', 'providers'] })
+    },
+  })
+}
+
 export function useDownloadResume() {
   return useMutation({
     mutationFn: async ({ id, format }: { id: string; format?: string }) => {
@@ -546,6 +691,47 @@ export function useDownloadResume() {
       document.body.appendChild(a); a.click()
       document.body.removeChild(a); window.URL.revokeObjectURL(url)
       return res
+    },
+  })
+}
+
+// ── Resume Strategy ──
+export function useResumeStrategy() {
+  return useQuery({
+    queryKey: ['ai', 'resume-strategy'],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.getResumeStrategy()),
+  })
+}
+
+export function useUpdateResumeStrategy() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: import('@/types').ResumeStrategySettingsUpdateData) =>
+      import('@/services/ai').then(m => m.aiService.updateResumeStrategy(data)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ai', 'resume-strategy'] }),
+  })
+}
+
+export function useResumeStrategyPreview(jobId: string) {
+  return useQuery({
+    queryKey: ['ai', 'strategy-preview', jobId],
+    queryFn: () => import('@/services/ai').then(m => m.aiService.previewResumeStrategy(jobId)),
+    enabled: !!jobId,
+  })
+}
+
+export function useResumeStrategySelect() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: {
+      job_id: string
+      strategy_override?: import('@/types').ResumeStrategyOption
+      resume_id?: string
+      generate_cover_letter?: boolean
+    }) => import('@/services/ai').then(m => m.aiService.selectResumeStrategy(data)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['applications'] })
+      qc.invalidateQueries({ queryKey: ['resumes'] })
     },
   })
 }

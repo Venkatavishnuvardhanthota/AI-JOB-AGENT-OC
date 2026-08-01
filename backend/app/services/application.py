@@ -2,10 +2,11 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import NotFoundError
 from app.models import Application
 from app.repositories import ApplicationAnswerRepository, ApplicationRepository, AttachmentRepository, JobRepository
 from app.services.audit import AuditService
+from app.services.resume_strategy import ResumeStrategyService
 
 
 class ApplicationService:
@@ -21,33 +22,20 @@ class ApplicationService:
         self,
         user_id: uuid.UUID,
         job_id: uuid.UUID,
-        resume_id: uuid.UUID,
+        resume_id: uuid.UUID | None = None,
+        resume_strategy_override: str | None = None,
         generate_cover_letter: bool = True,
         generate_ai_answers: bool = True,
-    ) -> Application:
-        existing = await self.app_repo.exists(user_id, job_id)
-        if existing:
-            raise ConflictError("Application already exists for this job.")
-
-        job = await self.job_repo.get_by_id(job_id)
-        if not job:
-            raise NotFoundError("Job not found.")
-
-        application = Application(
+    ) -> dict:
+        strategy_service = ResumeStrategyService(self.session)
+        result = await strategy_service.prepare_application(
             user_id=user_id,
             job_id=job_id,
+            strategy_override=resume_strategy_override,
             resume_id=resume_id,
-            status="Ready for Review",
+            generate_cover_letter=generate_cover_letter,
         )
-        created = await self.app_repo.create(application)
-        await self.audit_service.log(
-            "APPLICATION_PREPARED",
-            user_id=user_id,
-            entity="application",
-            entity_id=created.id,
-            outcome="success",
-        )
-        return created
+        return result
 
     async def list_applications(
         self, user_id: uuid.UUID, status: str | None = None, page: int = 1, page_size: int = 25
@@ -79,6 +67,7 @@ class ApplicationService:
         app.status = "Submitted"
         app.submitted_at = datetime.now(timezone.utc)
         await self.app_repo.update(app)
+        await ResumeStrategyService(self.session).finalize_application(app, submitted=True)
         await self.audit_service.log(
             "APPLICATION_SUBMITTED",
             entity="application",
@@ -91,6 +80,7 @@ class ApplicationService:
         app = await self.get_application(application_id, user_id=user_id)
         app.status = "Cancelled"
         await self.app_repo.update(app)
+        await ResumeStrategyService(self.session).finalize_application(app, submitted=False)
         await self.audit_service.log(
             "APPLICATION_CANCELLED",
             entity="application",

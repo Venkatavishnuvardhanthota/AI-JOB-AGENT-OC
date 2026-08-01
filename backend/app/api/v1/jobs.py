@@ -2,6 +2,7 @@ import json
 import uuid
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +18,12 @@ from app.services.company_research import CompanyResearchService
 from app.services.match_engine import MatchEngineService
 
 router = APIRouter()
+
+
+class JobUpdateRequest(BaseModel):
+    is_active: bool | None = None
+    viewed_at: str | None = None
+    applied_at: str | None = None
 
 
 # ── Fixed-path routes must come BEFORE /{job_id} ──
@@ -284,7 +291,7 @@ async def get_job(job_id: str, current_user: User = Depends(get_current_user), d
 @router.patch("/{job_id}")
 async def update_job(
     job_id: str,
-    body: dict,
+    body: JobUpdateRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -292,9 +299,9 @@ async def update_job(
     job = await repo.get_by_id(uuid.UUID(job_id))
     if not job:
         raise NotFoundError("Job not found.")
-    for key in ("is_active", "viewed_at", "applied_at"):
-        if key in body:
-            setattr(job, key, body[key])
+    update_data = body.model_dump(exclude_none=True)
+    for key, value in update_data.items():
+        setattr(job, key, value)
     await repo.update(job)
     return {"success": True, "data": {"id": str(job.id)}}
 

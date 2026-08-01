@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,13 +23,25 @@ class Application(Base):
     cover_letter_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("cover_letters.id", ondelete="SET NULL"), nullable=True
     )
+    resume_strategy: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    original_resume_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resume_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    generated_resume_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resume_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    generated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    tailored: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    generation_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(100), nullable=False, default="Draft")
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     user = relationship("User", back_populates="applications")
     job = relationship("Job", back_populates="applications")
-    resume = relationship("ResumeVersion", back_populates="applications")
+    resume = relationship("ResumeVersion", back_populates="applications", foreign_keys=[resume_id])
+    original_resume = relationship("ResumeVersion", foreign_keys=[original_resume_id])
+    generated_resume = relationship("ResumeVersion", foreign_keys=[generated_resume_id])
     answers = relationship("ApplicationAnswer", back_populates="application", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="application", cascade="all, delete-orphan")
     events = relationship("ApplicationEvent", back_populates="application", cascade="all, delete-orphan")
@@ -41,4 +53,6 @@ class Application(Base):
         Index("ix_applications_status_submitted_at", "status", "submitted_at"),
         Index("ix_applications_job_id_status", "job_id", "status"),
         Index("ix_applications_status", "status"),
+        Index("ix_applications_generated_resume_id", "generated_resume_id"),
+        Index("ix_applications_original_resume_id", "original_resume_id"),
     )

@@ -7,7 +7,7 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
 
 logger = structlog.get_logger(__name__)
 
@@ -23,6 +23,19 @@ class OpenRouterProvider(AIProvider):
     version = "1.0.0"
     supports_streaming = True
 
+    @property
+    def capabilities(self) -> CapabilityInfo:
+        return CapabilityInfo(
+            chat=True,
+            streaming=True,
+            vision=True,
+            json_mode=True,
+            function_calling=True,
+            tool_calling=True,
+            system_prompt_support=True,
+            structured_output=True,
+        )
+
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
         self._client = AIHTTPClient(
@@ -31,6 +44,12 @@ class OpenRouterProvider(AIProvider):
             timeout_seconds=config.timeout_seconds,
             max_retries=config.max_retries,
         )
+
+    def validate_config(self) -> list[str]:
+        errors: list[str] = []
+        if not self.config.openrouter_api_key:
+            errors.append("OPENROUTER_API_KEY is not set")
+        return errors
 
     async def generate(self, request: AIRequest) -> AIResponse:
         messages = []
@@ -120,4 +139,6 @@ class OpenRouterProvider(AIProvider):
             is_available=health,
             version=self.version,
             supports_streaming=self.supports_streaming,
+            capabilities=self.capabilities,
+            configured=bool(self.config.openrouter_api_key),
         )

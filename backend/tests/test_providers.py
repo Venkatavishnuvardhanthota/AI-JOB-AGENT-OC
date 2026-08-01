@@ -615,3 +615,41 @@ class TestProviderFactory:
         factory.register_all()
         assert registry.is_registered("openrouter")
         assert not registry.is_registered("ollama")
+
+    async def test_factory_warns_for_unknown_providers(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["openrouter", "unknown_provider"],
+            openrouter_api_key="sk-test",
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.is_registered("openrouter")
+        assert registry.count() == 1
+
+    async def test_factory_does_not_register_not_implemented(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["openai", "anthropic", "gemini"],
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.count() == 0
+
+    async def test_factory_normalizes_names(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["OpenRouter", "OLLAMA", "  openai  "],
+            openrouter_api_key="sk-test",
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.is_registered("openrouter")
+        assert registry.is_registered("ollama")
+        assert registry.count() == 2

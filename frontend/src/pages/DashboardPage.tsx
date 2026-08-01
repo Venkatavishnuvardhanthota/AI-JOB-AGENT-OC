@@ -33,7 +33,7 @@ export function DashboardPage() {
   const apps = (appsData as any)?.items || []
   const saved = (savedData as any)?.items || []
   const hasResumes = Array.isArray(resumes) && resumes.length > 0
-  const completenessScore = completeness?.overall_score ?? 0
+  const completenessScore = completeness?.percentage ?? 0
   const isFirstTime = !dismissWelcome && completenessScore === 0 && !hasResumes
 
   const handleWelcomeComplete = () => {

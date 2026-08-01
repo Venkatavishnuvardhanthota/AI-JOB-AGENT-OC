@@ -7,7 +7,7 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
 
 logger = structlog.get_logger(__name__)
 
@@ -21,6 +21,19 @@ class OllamaProvider(AIProvider):
     description = "Local Ollama server"
     version = "1.0.0"
     supports_streaming = False
+
+    @property
+    def capabilities(self) -> CapabilityInfo:
+        return CapabilityInfo(
+            chat=True,
+            streaming=False,
+            vision=False,
+            json_mode=False,
+            function_calling=False,
+            tool_calling=False,
+            system_prompt_support=True,
+            structured_output=False,
+        )
 
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
@@ -118,4 +131,6 @@ class OllamaProvider(AIProvider):
             is_available=health,
             version=self.version,
             supports_streaming=self.supports_streaming,
+            capabilities=self.capabilities,
+            configured=True,
         )

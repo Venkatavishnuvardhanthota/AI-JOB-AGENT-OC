@@ -86,3 +86,8 @@ class JobProviderFactory:
                 provider = provider_class(self._config)
                 self._registry.register(provider)
                 logger.info("Registered job provider", name=name)
+
+        registered_names = {name for name, _ in registrations}
+        missing = set(enabled) - registered_names
+        if missing:
+            logger.warning("Configured providers have no implementation", missing=sorted(missing))

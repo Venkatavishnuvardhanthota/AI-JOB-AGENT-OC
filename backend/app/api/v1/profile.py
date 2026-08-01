@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models import User
+from app.schemas.achievement import AchievementCreate, AchievementResponse, AchievementUpdate
 from app.schemas.career_profile import CareerProfileResponse, CareerProfileUpdate
 from app.schemas.certification import CertificationCreate, CertificationResponse, CertificationUpdate
 from app.schemas.education import EducationCreate, EducationResponse, EducationUpdate
@@ -13,7 +14,7 @@ from app.schemas.experience import ExperienceCreate, ExperienceResponse, Experie
 from app.schemas.job_preference import JobPreferenceResponse, JobPreferenceUpdate
 from app.schemas.language import LanguageCreate, LanguageResponse, LanguageUpdate
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
-from app.schemas.skill import SkillCreate, SkillResponse, SkillUpdate
+from app.schemas.skill import SkillBulkReplace, SkillCreate, SkillResponse, SkillUpdate
 from app.schemas.social_link import SocialLinkCreate, SocialLinkResponse, SocialLinkUpdate
 from app.services.profile import CareerProfileService
 
@@ -152,6 +153,18 @@ async def add_skill(
     service = CareerProfileService(db)
     skill = await service.add_skill(current_user.id, body.model_dump())
     return {"success": True, "data": SkillResponse.model_validate(skill).model_dump()}
+
+
+@router.put("/skills")
+async def replace_skills(
+    body: SkillBulkReplace,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = CareerProfileService(db)
+    skills = await service.replace_skills(current_user.id, body.skills)
+    skills.sort(key=lambda s: (s.name or "").lower())
+    return {"success": True, "data": [SkillResponse.model_validate(s).model_dump() for s in skills]}
 
 
 @router.patch("/skills/{skill_id}")
@@ -355,6 +368,52 @@ async def delete_social_link(
 ):
     service = CareerProfileService(db)
     await service.delete_social_link(current_user.id, link_id)
+
+
+# ── Achievements ──
+
+
+@router.get("/achievements")
+async def list_achievements(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    service = CareerProfileService(db)
+    profile = await service.get_profile(current_user.id)
+    return {
+        "success": True,
+        "data": [AchievementResponse.model_validate(a).model_dump() for a in profile.achievements],
+    }
+
+
+@router.post("/achievements", status_code=201)
+async def add_achievement(
+    body: AchievementCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = CareerProfileService(db)
+    achievement = await service.add_achievement(current_user.id, body.model_dump())
+    return {"success": True, "data": AchievementResponse.model_validate(achievement).model_dump()}
+
+
+@router.patch("/achievements/{achievement_id}")
+async def update_achievement(
+    achievement_id: uuid.UUID,
+    body: AchievementUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = CareerProfileService(db)
+    achievement = await service.update_achievement(current_user.id, achievement_id, body.model_dump(exclude_none=True))
+    return {"success": True, "data": AchievementResponse.model_validate(achievement).model_dump()}
+
+
+@router.delete("/achievements/{achievement_id}", status_code=204)
+async def delete_achievement(
+    achievement_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = CareerProfileService(db)
+    await service.delete_achievement(current_user.id, achievement_id)
 
 
 # ── Preferences ──

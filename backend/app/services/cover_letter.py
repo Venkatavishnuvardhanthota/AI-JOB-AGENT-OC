@@ -2,10 +2,9 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from app.core.exceptions import NotFoundError
-from app.models import CoverLetter, ResumeVersion
+from app.models import CoverLetter
 from app.repositories import CoverLetterRepository
 from app.services.audit import AuditService
 
@@ -94,7 +93,7 @@ class CoverLetterService:
         hiring_manager: str | None = None,
         additional_notes: str | None = None,
     ) -> CoverLetter:
-        from app.ai.dependencies import get_ai_service
+        from app.ai.features.cover_letter import ai_generate_cover_letter
         from app.services.job import JobService
         from app.services.resume import ResumeService
 
@@ -109,24 +108,17 @@ class CoverLetterService:
         company_name = getattr(job, "company", "") or ""
         job_desc = getattr(job, "description", "") or ""
 
-        prompt = self._build_prompt(
+        result = await ai_generate_cover_letter(
             job_title=job_title,
             company_name=company_name,
             job_description=job_desc,
             resume_text=resume_text,
             tone=tone,
-            hiring_manager=hiring_manager,
-            additional_notes=additional_notes,
+            style=template,
+            hiring_manager=hiring_manager or "",
         )
 
-        ai_service = get_ai_service()
-        result = await ai_service.generate(
-            prompt=prompt,
-            system_prompt="You are a professional cover letter writer. Write compelling, tailored cover letters.",
-            max_tokens=1500,
-        )
-
-        content = result.get("text", "") if isinstance(result, dict) else str(result)
+        content = result.get("cover_letter", "")
 
         cl = CoverLetter(
             user_id=user_id,
@@ -144,79 +136,17 @@ class CoverLetterService:
         await self.audit_service.log("COVER_LETTER_GENERATED_AI", user_id=user_id, entity="cover_letter", entity_id=created.id, outcome="success")
         return created
 
-    def _build_prompt(
-        self,
-        job_title: str,
-        company_name: str,
-        job_description: str,
-        resume_text: str,
-        tone: str = "professional",
-        hiring_manager: str | None = None,
-        additional_notes: str | None = None,
-    ) -> str:
-        tone_guide = {
-            "professional": "Write in a professional, confident tone. Be formal but engaging.",
-            "technical": "Use technical language relevant to the role. Highlight specific technologies and methodologies.",
-            "executive": "Write in an executive tone. Focus on leadership, strategy, and business impact.",
-            "friendly": "Write in a warm, approachable tone while remaining professional.",
-            "concise": "Be brief and direct. Use short paragraphs and clear language.",
-            "graduate": "Write as an early-career professional. Emphasize education, potential, and transferable skills.",
-            "career_change": "Write as someone transitioning careers. Highlight transferable skills and relevant experiences.",
-        }
-
-        salutation = f"Dear {hiring_manager}," if hiring_manager else "Dear Hiring Manager,"
-        guide = tone_guide.get(tone, tone_guide["professional"])
-
-        return f"""Write a cover letter for the following position.
-
-Job Title: {job_title}
-Company: {company_name}
-
-Job Description:
-{job_description[:3000]}
-
-Applicant's Resume:
-{resume_text[:3000]}
-
-Instructions:
-- {guide}
-- Start with: {salutation}
-- Highlight specific skills and experiences from the resume that match the job description.
-- Reference relevant projects and measurable achievements.
-- Explain why the applicant is a good fit for this specific role.
-- Keep the letter between 250-400 words.
-- End with a professional closing.
-{'Additional Notes: ' + additional_notes if additional_notes else ''}
-"""
-
     # ── AI-Assisted Editing ──
 
     async def ai_assist(self, content: str, instruction: str, context: str | None = None) -> str:
-        from app.ai.dependencies import get_ai_service
+        from app.ai.features.cover_letter import ai_assist_cover_letter
 
-        instructions_map = {
-            "rewrite": "Rewrite the following text to be more compelling and professional.",
-            "shorten": "Shorten the following text while preserving key information.",
-            "expand": "Expand the following text with more detail and examples.",
-            "professional": "Make the following text more professional in tone.",
-            "technical": "Add more technical language and detail to the following text.",
-            "grammar": "Fix grammar, spelling, and punctuation in the following text.",
-            "improve": "Improve the overall quality and flow of the following text.",
-            "remove_repetition": "Remove repetitive phrases from the following text.",
-        }
-
-        instruction_text = instructions_map.get(instruction, instruction)
-
-        prompt = f"""{instruction_text}
-
-Text to edit:
-{content[:2000]}
-
-Return only the edited text without explanations."""
-
-        ai_service = get_ai_service()
-        result = await ai_service.generate(prompt=prompt, max_tokens=1000)
-        return result.get("text", "") if isinstance(result, dict) else str(result)
+        result = await ai_assist_cover_letter(
+            content=content,
+            instruction=instruction,
+            context=context or "",
+        )
+        return result.get("edited_content", content)
 
     # ── Export ──
 
@@ -294,10 +224,7 @@ Return only the edited text without explanations."""
         cover_letter = await self.get(cover_letter_id, user_id)
         job = await job_svc.get_job(job_id)
 
-        from app.services.application import ApplicationService
-        app_svc = ApplicationService(self.session)
-
-        from app.schemas.resume import ResumeResponse, ResumeSectionResponse
+        from app.schemas.resume import ResumeResponse
         from app.schemas.cover_letter import CoverLetterResponse
 
         return {

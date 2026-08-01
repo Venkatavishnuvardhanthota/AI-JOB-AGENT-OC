@@ -114,15 +114,17 @@ Career Profile Module
 ### Contains
 
 - Professional summary
-- Portfolio links
-- GitHub
-- LinkedIn
-- Personal website
+- Headline, current role, desired role
+- Employment status, notice period
+- Current / expected salary and salary preference (`paid_only`, `paid_preferred`, `unpaid_acceptable`)
+- Willingness to relocate, visa sponsorship requirement
+- Portfolio links (portfolio, LinkedIn, GitHub, website)
 
 ### Business Rules
 
 - One profile per user.
 - AI cannot modify this table without user confirmation.
+- `paid_only` salary preference requires an expected salary.
 
 ---
 
@@ -143,7 +145,9 @@ Stores education history.
 
 - Institution required
 - Degree required
+- Location and CGPA optional
 - End date cannot precede start date
+- `currently_studying` leaves end date empty
 
 ---
 
@@ -158,12 +162,15 @@ Stores work history.
 - Company
 - Position
 - Employment dates
-- Responsibilities
+- Employment type (`full_time`, `part_time`, `contract`, `internship`, `freelance`, `self_employed`, `temporary`)
+- Responsibilities (list)
+- Achievements (list)
+- Technologies used (list)
 
 ### Business Rules
 
 - Multiple experience records allowed.
-- Current employment has no end date.
+- Current employment has no end date (`currently_working` requires `end_date` to be empty).
 - Description supports multiple responsibilities.
 
 ---
@@ -184,7 +191,7 @@ Projects may include:
 ### Business Rules
 
 - Project names should be unique within a profile.
-- GitHub and demo links are optional.
+- GitHub, demo, and live links are optional and URL-validated.
 
 ---
 
@@ -207,7 +214,11 @@ Stores user skills.
 
 ### Business Rules
 
-Duplicate skills are not permitted within a single profile.
+Duplicate skills are not permitted within a single profile (case-insensitive).
+
+### Attributes
+
+- Category, string `proficiency`, `skill_level`, `years_experience`, `display_order`
 
 ---
 
@@ -225,7 +236,11 @@ Examples
 - Coursera
 - Udemy
 
-Expiration dates are optional.
+Expiration dates are optional and must not precede the issue date.
+
+### Attributes
+
+- Issuer, `credential_id`, `credential_url`, `issue_date`, `expiration_date`
 
 ---
 
@@ -242,6 +257,50 @@ Stores spoken languages.
 - Professional Working
 - Intermediate
 - Beginner
+
+### Business Rules
+
+- Names are title-cased and trimmed.
+- Duplicate languages not permitted within a profile (case-insensitive).
+
+---
+
+# social_links
+
+## Purpose
+
+Stores links to professional social profiles.
+
+### Platform Values
+
+- `linkedin`, `github`, `portfolio`, `website`, `other`
+
+### Business Rules
+
+- One link per platform per profile.
+- URLs validated.
+- Response includes a computed display title.
+- Platform enforced by check constraint `ck_social_link_platform`; legacy non-normalized values are coerced to `other` on read and sanitized by migration `8c9d0e1f2a3b`.
+
+---
+
+# achievements
+
+## Purpose
+
+Stores user achievements.
+
+### Examples
+
+- Awards
+- Hackathon wins
+- Publications
+- Certifications of merit
+
+### Validation
+
+- Title required (max 255 characters).
+- Optional date, organization, type, description, URL.
 
 ---
 
@@ -481,7 +540,7 @@ All tables should enforce:
 | Module | Owns Tables |
 |---------|-------------|
 | Authentication | users |
-| Career Profile | career_profiles, education, experience, projects, skills, certifications, languages, job_preferences |
+| Career Profile | career_profiles, education, experience, projects, skills, certifications, languages, social_links, achievements, job_preferences |
 | Resume Studio | resume_versions |
 | Job Discovery | jobs, company_insights |
 | Application Pipeline | applications, application_answers, attachments, cover_letters |

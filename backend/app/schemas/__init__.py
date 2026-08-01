@@ -19,11 +19,13 @@ from app.schemas.auth import (
     TokenRefreshRequest,
     TokenRefreshResponse,
 )
+from app.schemas.achievement import AchievementCreate, AchievementResponse, AchievementUpdate
 from app.schemas.career_profile import (
     CareerProfileResponse,
     CareerProfileUpdate,
     ProfileCompletenessResponse,
     ResumeImportResponse,
+    SalaryPreference,
 )
 from app.schemas.certification import CertificationCreate, CertificationResponse, CertificationUpdate
 from app.schemas.common import (
@@ -61,6 +63,17 @@ from app.schemas.resume import (
     ResumeVersionCreate,
     TemplateResponse,
 )
+from app.schemas.resume_strategy import (
+    ResumeSelectionResult,
+    ResumeSelectionScore,
+    ResumeStrategy,
+    ResumeStrategyPrepareRequest,
+    ResumeStrategyPrepareResponse,
+    ResumeStrategyPreview,
+    ResumeStrategySettings,
+    ResumeStrategySettingsUpdate,
+    SaveGeneratedResumes,
+)
 from app.schemas.skill import SkillCreate, SkillResponse, SkillUpdate
 from app.schemas.social_link import SocialLinkCreate, SocialLinkResponse, SocialLinkUpdate
 from app.schemas.user import UserResponse, UserUpdate
@@ -81,6 +94,10 @@ __all__ = [
     "CareerProfileUpdate",
     "ProfileCompletenessResponse",
     "ResumeImportResponse",
+    "SalaryPreference",
+    "AchievementCreate",
+    "AchievementUpdate",
+    "AchievementResponse",
     "EducationCreate",
     "EducationUpdate",
     "EducationResponse",
@@ -132,6 +149,15 @@ __all__ = [
     "CoverLetterGenerateRequest",
     "AnswerGenerateRequest",
     "AnswerResponse",
+    "ResumeStrategy",
+    "SaveGeneratedResumes",
+    "ResumeStrategySettings",
+    "ResumeStrategySettingsUpdate",
+    "ResumeSelectionResult",
+    "ResumeSelectionScore",
+    "ResumeStrategyPreview",
+    "ResumeStrategyPrepareRequest",
+    "ResumeStrategyPrepareResponse",
     "PaginationParams",
     "PaginatedResponse",
     "SuccessResponse",

@@ -14,6 +14,7 @@ export interface ManagedProvider {
   config: ProviderConfig
   lastSearchTime: string | null
   jobsFoundToday: number
+  backendState: string | null
 }
 
 export interface ProviderCategory {

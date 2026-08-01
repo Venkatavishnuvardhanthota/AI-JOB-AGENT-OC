@@ -36,6 +36,7 @@ class AIHTTPClient:
             timeout=httpx.Timeout(timeout_seconds),
             limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
         )
+        self._default_headers = headers
 
     async def post(
         self,

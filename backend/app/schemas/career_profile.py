@@ -1,8 +1,10 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.achievement import AchievementResponse
 from app.schemas.certification import CertificationResponse
 from app.schemas.education import EducationResponse
 from app.schemas.experience import ExperienceResponse
@@ -11,6 +13,15 @@ from app.schemas.language import LanguageResponse
 from app.schemas.project import ProjectResponse
 from app.schemas.skill import SkillResponse
 from app.schemas.social_link import SocialLinkResponse
+from app.schemas.validators import validate_url
+
+
+class SalaryPreference(str, Enum):
+    """How the candidate wants to be compensated."""
+
+    PAID_ONLY = "paid_only"
+    PAID_PREFERRED = "paid_preferred"
+    UNPAID_ACCEPTABLE = "unpaid_acceptable"
 
 
 class CareerProfileResponse(BaseModel):
@@ -23,6 +34,7 @@ class CareerProfileResponse(BaseModel):
     employment_status: str | None = None
     current_salary: float | None = None
     expected_salary: float | None = None
+    salary_preference: SalaryPreference | None = None
     willing_to_relocate: bool | None = None
     visa_sponsorship_requirement: bool | None = None
     notice_period: str | None = None
@@ -38,6 +50,7 @@ class CareerProfileResponse(BaseModel):
     certifications: list[CertificationResponse] = []
     languages: list[LanguageResponse] = []
     social_links: list[SocialLinkResponse] = []
+    achievements: list[AchievementResponse] = []
     preferences: JobPreferenceResponse | None = None
     created_at: datetime
     updated_at: datetime
@@ -55,6 +68,7 @@ class CareerProfileUpdate(BaseModel):
     employment_status: str | None = Field(None, max_length=50)
     current_salary: float | None = Field(None, ge=0)
     expected_salary: float | None = Field(None, ge=0)
+    salary_preference: SalaryPreference | None = None
     willing_to_relocate: bool | None = None
     visa_sponsorship_requirement: bool | None = None
     notice_period: str | None = Field(None, max_length=100)
@@ -65,13 +79,8 @@ class CareerProfileUpdate(BaseModel):
 
     @field_validator("portfolio_url", "linkedin_url", "github_url", "website_url")
     @classmethod
-    def validate_urls(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        v = v.strip()
-        if v and not v.startswith(("http://", "https://")):
-            raise ValueError("URL must start with http:// or https://")
-        return v
+    def _validate_urls(cls, v: str | None) -> str | None:
+        return validate_url(v)
 
 
 class ProfileCompletenessResponse(BaseModel):

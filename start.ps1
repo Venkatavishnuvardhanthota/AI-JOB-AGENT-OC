@@ -99,8 +99,9 @@ Write-Host "  Backend healthy." -ForegroundColor Green
 
 # Step 6: Detect and run pending migrations
 Write-Host "[6/7] Checking migrations..." -ForegroundColor Yellow
-$migrationOutput = docker exec aja-backend alembic upgrade head 2>&1
-if ($LASTEXITCODE -eq 0) {
+$migrationOutput = & docker exec aja-backend alembic upgrade head 2>&1
+$migrationSuccess = $LASTEXITCODE -eq 0
+if ($migrationSuccess) {
     Write-Host "  Migrations up to date." -ForegroundColor Green
 } else {
     Write-Host "  Migration warning (may be first run): $migrationOutput" -ForegroundColor Yellow

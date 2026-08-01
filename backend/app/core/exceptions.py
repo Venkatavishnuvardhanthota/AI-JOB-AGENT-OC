@@ -38,6 +38,18 @@ class ConflictError(AppError):
     message = "Resource already exists."
 
 
+class NoResumeAvailableError(AppError):
+    status_code = 400
+    code = "NO_RESUME_AVAILABLE"
+    message = "No resume is available for this application."
+
+
+class InternalError(AppError):
+    status_code = 500
+    code = "INTERNAL_ERROR"
+    message = "An unexpected error occurred."
+
+
 class RateLimitError(AppError):
     status_code = 429
     code = "RATE_LIMIT_EXCEEDED"
