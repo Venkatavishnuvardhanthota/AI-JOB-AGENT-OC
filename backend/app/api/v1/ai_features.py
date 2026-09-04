@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.dependencies import get_ai_service
 from app.ai.exceptions import AIError
-from app.core.exceptions import ProviderError
 from app.ai.features.schemas import (
     AIFeatureResponse,
     ApplicationQuestionsRequest,
@@ -24,7 +24,10 @@ from app.ai.features.schemas import (
     SkillsRecommendRequest,
 )
 from app.ai.service import AIService
+from app.ai.trace import ai_trace
 from app.api.deps import get_current_user
+from app.core.database import get_db
+from app.core.exceptions import ProviderError
 
 router = APIRouter()
 
@@ -34,9 +37,11 @@ router = APIRouter()
     summary="AI-powered resume generation",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_resume_generate(
     body: ResumeGenerateRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_generate_resume
@@ -50,7 +55,7 @@ async def ai_resume_generate(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -58,9 +63,11 @@ async def ai_resume_generate(
     summary="AI-powered resume improvement",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_resume_improve(
     body: ResumeImproveRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_improve_resume_section
@@ -76,7 +83,7 @@ async def ai_resume_improve(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -84,9 +91,11 @@ async def ai_resume_improve(
     summary="AI-powered ATS optimization",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_resume_ats_optimize(
     body: ATSOptimizeRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_optimize_ats
@@ -100,7 +109,7 @@ async def ai_resume_ats_optimize(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -108,9 +117,11 @@ async def ai_resume_ats_optimize(
     summary="AI-powered project description enhancement",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_resume_project_enhance(
     body: ProjectEnhanceRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_enhance_project
@@ -126,7 +137,7 @@ async def ai_resume_project_enhance(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -134,9 +145,11 @@ async def ai_resume_project_enhance(
     summary="AI-powered experience description enhancement",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_resume_experience_enhance(
     body: ExperienceEnhanceRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_enhance_experience
@@ -153,7 +166,7 @@ async def ai_resume_experience_enhance(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -161,9 +174,11 @@ async def ai_resume_experience_enhance(
     summary="AI-powered profile enhancement",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_profile_enhance(
     body: ProfileEnhanceRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_enhance_profile_delegated
@@ -180,7 +195,7 @@ async def ai_profile_enhance(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -188,9 +203,11 @@ async def ai_profile_enhance(
     summary="AI-powered skill recommendations",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_skills_recommend(
     body: SkillsRecommendRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.resume import ai_recommend_skills
@@ -205,7 +222,7 @@ async def ai_skills_recommend(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -213,9 +230,11 @@ async def ai_skills_recommend(
     summary="AI-powered interview question generation",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_interview_questions(
     body: InterviewQuestionsRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.interview import ai_generate_interview_questions
@@ -232,7 +251,7 @@ async def ai_interview_questions(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -240,9 +259,11 @@ async def ai_interview_questions(
     summary="AI-powered application question answering",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_application_questions(
     body: ApplicationQuestionsRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.interview import ai_answer_application_questions
@@ -257,7 +278,7 @@ async def ai_application_questions(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -265,9 +286,11 @@ async def ai_application_questions(
     summary="AI-powered company research",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_company_research(
     body: CompanyResearchRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.company_research import ai_company_research
@@ -281,7 +304,7 @@ async def ai_company_research(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -289,9 +312,11 @@ async def ai_company_research(
     summary="AI-powered job description summarization",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_job_summarize(
     body: JobSummaryRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.company_research import ai_job_summary
@@ -307,7 +332,7 @@ async def ai_job_summarize(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -315,9 +340,11 @@ async def ai_job_summarize(
     summary="AI-powered email generation",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_email_generate(
     body: EmailGenerateRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.email import ai_generate_email
@@ -334,7 +361,7 @@ async def ai_email_generate(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -342,9 +369,11 @@ async def ai_email_generate(
     summary="AI-powered job matching enhancement",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_matching_enhance(
     body: MatchingEnhanceRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.matching import ai_enhance_matching
@@ -361,7 +390,7 @@ async def ai_matching_enhance(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -369,9 +398,11 @@ async def ai_matching_enhance(
     summary="AI-powered cover letter generation",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_cover_letter_generate(
     body: CoverLetterGenerateRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.cover_letter import ai_generate_cover_letter
@@ -388,7 +419,7 @@ async def ai_cover_letter_generate(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc
 
 
 @router.post(
@@ -396,9 +427,11 @@ async def ai_cover_letter_generate(
     summary="AI-powered cover letter editing assistance",
     response_model=AIFeatureResponse,
 )
+@ai_trace
 async def ai_cover_letter_assist(
     body: CoverLetterAssistRequest,
     ai_service: AIService = Depends(get_ai_service),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     from app.ai.features.cover_letter import ai_assist_cover_letter
@@ -411,4 +444,4 @@ async def ai_cover_letter_assist(
         )
         return AIFeatureResponse(data=result)
     except AIError as exc:
-        raise ProviderError(exc.message, details={"code": exc.code})
+        raise ProviderError(exc.message, details={"code": exc.code}) from exc

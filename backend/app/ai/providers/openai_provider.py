@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
@@ -7,7 +8,15 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import (
+    AIRequest,
+    AIResponse,
+    CapabilityInfo,
+    GenerationMetadata,
+    ModelInfo,
+    ProviderInfo,
+    UsageMetrics,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -38,15 +47,16 @@ class OpenAIProvider(AIProvider):
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
         self._client = AIHTTPClient(
-            base_url=config.openai_base_url,
-            api_key=config.openai_api_key,
-            timeout_seconds=config.timeout_seconds,
-            max_retries=config.max_retries,
+            base_url=self.param("base_url", config.openai_base_url),
+            api_key=self.param("api_key", config.openai_api_key),
+            timeout_seconds=self.param("timeout_seconds", config.timeout_seconds),
+            max_retries=self.param("max_retries", config.max_retries),
+            retry_delay_seconds=self.param("retry_delay_seconds", config.retry_delay_seconds),
         )
 
     def validate_config(self) -> list[str]:
         errors: list[str] = []
-        if not self.config.openai_api_key:
+        if not self.param("api_key", self.config.openai_api_key):
             errors.append("OPENAI_API_KEY is not set")
         return errors
 
@@ -60,10 +70,20 @@ class OpenAIProvider(AIProvider):
             "model": request.model,
             "messages": messages,
         }
-        if request.temperature is not None:
-            body["temperature"] = request.temperature
-        if request.max_tokens is not None:
-            body["max_tokens"] = request.max_tokens
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
+        if temperature is not None:
+            body["temperature"] = temperature
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", self.config.max_tokens)
+        )
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
         if request.stop_sequences:
             body["stop"] = request.stop_sequences
 
@@ -97,6 +117,41 @@ class OpenAIProvider(AIProvider):
             usage=usage,
             metadata=metadata,
         )
+
+    async def stream(self, request: AIRequest) -> AsyncIterator[str]:
+        messages = []
+        if request.system_prompt:
+            messages.append({"role": "system", "content": request.system_prompt})
+        messages.append({"role": "user", "content": request.prompt})
+
+        body: dict[str, Any] = {
+            "model": request.model,
+            "messages": messages,
+            "stream": True,
+        }
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
+        if temperature is not None:
+            body["temperature"] = temperature
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", self.config.max_tokens)
+        )
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+
+        async for payload in self._client.stream(CHAT_ENDPOINT, json=body):
+            choices = payload.get("choices") or []
+            if not choices:
+                continue
+            delta = choices[0].get("delta", {})
+            piece = delta.get("content")
+            if piece:
+                yield piece
 
     async def health_check(self) -> bool:
         try:
@@ -143,5 +198,5 @@ class OpenAIProvider(AIProvider):
             version=self.version,
             supports_streaming=self.supports_streaming,
             capabilities=self.capabilities,
-            configured=bool(self.config.openai_api_key),
+            configured=bool(self.param("api_key", self.config.openai_api_key)),
         )

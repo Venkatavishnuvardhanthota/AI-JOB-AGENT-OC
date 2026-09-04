@@ -48,7 +48,6 @@ from app.schemas.job_preference import JobPreferenceResponse, JobPreferenceUpdat
 from app.schemas.language import LanguageCreate, LanguageResponse, LanguageUpdate
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.schemas.resume import (
-    ResumeCompareResponse,
     ResumeCreate,
     ResumeExportData,
     ResumeImportData,
@@ -60,7 +59,6 @@ from app.schemas.resume import (
     ResumeSectionResponse,
     ResumeSectionUpdate,
     ResumeUpdate,
-    ResumeVersionCreate,
     TemplateResponse,
 )
 from app.schemas.resume_strategy import (
@@ -126,10 +124,8 @@ __all__ = [
     "ResumeResponse",
     "ResumeListResponse",
     "ResumePreviewResponse",
-    "ResumeCompareResponse",
     "ResumeExportData",
     "ResumeImportData",
-    "ResumeVersionCreate",
     "ResumeSectionCreate",
     "ResumeSectionUpdate",
     "ResumeSectionResponse",

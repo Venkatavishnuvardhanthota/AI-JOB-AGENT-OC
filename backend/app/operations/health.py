@@ -35,7 +35,7 @@ class OperationsHealthChecker(HealthChecker):
             from app.ai.dependencies import get_ai_service
 
             svc = get_ai_service()
-            available = svc.provider_manager.get_available_providers()
+            available = svc.list_providers()
             if available:
                 return self._result("ai_provider", HealthStatus.HEALTHY, f"{len(available)} provider(s) available")
             return self._result("ai_provider", HealthStatus.DEGRADED, "No AI providers available")

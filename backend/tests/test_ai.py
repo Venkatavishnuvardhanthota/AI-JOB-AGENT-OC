@@ -1,10 +1,11 @@
 import uuid
+from collections.abc import AsyncIterator
 
 import pytest
 import structlog
 
 from app.ai.config import AIConfig
-from app.ai.dependencies import _get_config, _get_registry, get_ai_service
+from app.ai.dependencies import _get_registry, get_ai_config, get_ai_service
 from app.ai.exceptions import (
     AIError,
     AIServiceValidationError,
@@ -40,6 +41,11 @@ class MockProvider(AIProvider):
             usage=UsageMetrics(prompt_tokens=10, completion_tokens=5, total_tokens=15),
             metadata=GenerationMetadata(model=request.model or "mock-model", provider=self.name, finish_reason="stop"),
         )
+
+    async def stream(self, request: AIRequest) -> AsyncIterator[str]:
+        content = f"Echo: {request.prompt[:20]}"
+        for chunk in content.split(" "):
+            yield chunk + " "
 
     async def health_check(self) -> bool:
         return True
@@ -129,6 +135,19 @@ def service(registry: AIProviderRegistry, config: AIConfig) -> AIService:
 @pytest.fixture
 def service_with_failing(registry_with_failing: AIProviderRegistry, config: AIConfig) -> AIService:
     return AIService(registry=registry_with_failing, config=config)
+
+
+@pytest.fixture
+def fallback_service(registry_with_failing: AIProviderRegistry) -> AIService:
+    return AIService(
+        registry=registry_with_failing,
+        config=AIConfig(
+            default_provider="failing",
+            default_model="primary-model",
+            fallback_provider="mock",
+            fallback_model="fallback-model",
+        ),
+    )
 
 
 # ── AI Exceptions ──
@@ -382,6 +401,28 @@ class TestAIService:
             await service_with_failing.generate(AIRequest(prompt="Hello", provider="failing"))
 
     @pytest.mark.asyncio
+    async def test_fallback_uses_fallback_model(self, fallback_service: AIService):
+        response = await fallback_service.generate(AIRequest(prompt="Hello"))
+        assert response.provider == "mock"
+        assert response.model == "fallback-model"
+
+    @pytest.mark.asyncio
+    async def test_generate_stream(self, service: AIService):
+        chunks = [chunk async for chunk in service.generate_stream(AIRequest(prompt="Hello world test"))]
+        assert "".join(chunks).strip() == "Echo: Hello world test"
+
+    def test_provider_param_override(self):
+        cfg = AIConfig(provider_params={"mock": {"temperature": 0.3, "base_url": "http://custom"}})
+        assert cfg.provider_param("mock", "temperature") == 0.3
+        assert cfg.provider_param("mock", "base_url") == "http://custom"
+        assert cfg.provider_param("mock", "max_tokens", default=99) == 99
+        assert cfg.provider_param("mock", "api_key") is None
+
+    def test_provider_param_env_fallback(self):
+        cfg = AIConfig(openrouter_api_key="sk-env", provider_params={"openrouter": {}})
+        assert cfg.provider_param("openrouter", "api_key") == "sk-env"
+
+    @pytest.mark.asyncio
     async def test_health_check_all(self, service: AIService):
         results = await service.health_check()
         assert "mock" in results
@@ -406,27 +447,27 @@ class TestAIService:
     @pytest.mark.asyncio
     async def test_available_models(self, service: AIService):
         results = await service.available_models()
-        assert "mock" in results
-        assert len(results["mock"]) == 1
-        assert results["mock"][0]["id"] == "mock-model"
+        assert any(m.id == "mock-model" for m in results)
+        assert len(results) == 1
 
     @pytest.mark.asyncio
     async def test_available_models_specific(self, service: AIService):
         results = await service.available_models(provider_name="mock")
-        assert len(results["mock"]) == 1
+        assert len(results) == 1
+        assert results[0].id == "mock-model"
 
     @pytest.mark.asyncio
     async def test_available_models_nonexistent(self, service: AIService):
         results = await service.available_models(provider_name="nonexistent")
-        assert results["nonexistent"] == []
+        assert results == []
 
     @pytest.mark.asyncio
     async def test_available_models_failing(self, service_with_failing: AIService):
         results = await service_with_failing.available_models()
-        assert results["mock"][0]["id"] == "mock-model"
-        assert results["mock"][0]["supports_json_mode"] is False
-        assert results["mock"][0]["supports_reasoning"] is False
-        assert results["failing"] == []
+        assert any(m.id == "mock-model" for m in results)
+        assert results[0].supports_json_mode is False
+        assert results[0].supports_reasoning is False
+        assert all(m.provider != "failing" for m in results)
 
     @pytest.mark.asyncio
     async def test_provider_info(self, service: AIService):
@@ -498,9 +539,9 @@ class TestAIDependencies:
         r2 = _get_registry()
         assert r1 is r2
 
-    def test_get_config_is_singleton(self):
-        c1 = _get_config()
-        c2 = _get_config()
+    def test_get_config_singleton_until_applied(self):
+        c1 = get_ai_config()
+        c2 = get_ai_config()
         assert c1 is c2
 
     def test_get_ai_service(self):

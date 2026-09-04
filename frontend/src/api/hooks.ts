@@ -212,7 +212,7 @@ export function useResumes(archived?: boolean, origin?: string) {
 }
 
 export function useResume(id: string) {
-  return useQuery({
+  return useQuery<any>({
     queryKey: ['resumes', id],
     queryFn: () => api.get<any>(`/resumes/${id}`).then(unwrap),
     enabled: !!id,
@@ -232,7 +232,10 @@ export function useUpdateResume() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.patch(`/resumes/${id}`, data).then(unwrap),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['resumes'] }); },
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['resumes'] })
+      qc.invalidateQueries({ queryKey: ['resumes', id] })
+    },
   })
 }
 
@@ -257,13 +260,6 @@ export function useRestoreResume() {
   return useMutation({
     mutationFn: (id: string) => api.post(`/resumes/${id}/restore`, undefined).then(unwrap),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes'] }),
-  })
-}
-
-export function useResumeTemplates() {
-  return useQuery({
-    queryKey: ['resume-templates'],
-    queryFn: () => api.get<any[]>('/resumes/templates').then(unwrap),
   })
 }
 
@@ -547,27 +543,12 @@ export function useGenerateResume() {
   })
 }
 
-export function useDuplicateResume() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: any }) =>
-      api.post(`/resumes/${id}/duplicate`, data || {}).then(unwrap),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['resumes'] }),
-  })
-}
-
 export function useOptimizeResume() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.post(`/resumes/${id}/optimize`, data).then(unwrap),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['resumes'] }); },
-  })
-}
-
-export function useCompareResumes() {
-  return useMutation({
-    mutationFn: (data: any) => api.post('/resumes/compare', data).then(unwrap),
   })
 }
 
@@ -600,14 +581,6 @@ export function useAnalyzeResume() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.post(`/resumes/${id}/analyze`, data).then(unwrap),
-  })
-}
-
-export function useResumeVersions(resumeId: string) {
-  return useQuery({
-    queryKey: ['resumes', resumeId, 'versions'],
-    queryFn: () => api.get<any[]>(`/resumes/${resumeId}/versions`).then(unwrap),
-    enabled: !!resumeId,
   })
 }
 
@@ -671,6 +644,30 @@ export function useUpdateAIConfig() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ai', 'config'] })
       qc.invalidateQueries({ queryKey: ['ai', 'providers'] })
+    },
+  })
+}
+
+export function useUpdateProviderConfig() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ provider, data }: { provider: string; data: import('@/types').AIProviderConfigUpdateData }) =>
+      import('@/services/ai').then(m => m.aiService.updateProviderConfig(provider, data)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai', 'providers'] })
+      qc.invalidateQueries({ queryKey: ['ai', 'config'] })
+    },
+  })
+}
+
+export function useDeleteProviderConfig() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (provider: string) =>
+      import('@/services/ai').then(m => m.aiService.deleteProviderConfig(provider)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai', 'providers'] })
+      qc.invalidateQueries({ queryKey: ['ai', 'config'] })
     },
   })
 }

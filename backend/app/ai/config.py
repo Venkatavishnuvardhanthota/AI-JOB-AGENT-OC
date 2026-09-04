@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -15,6 +17,19 @@ class AIConfig(BaseModel):
         default_factory=lambda: ["openrouter"], description="List of enabled providers"
     )
     streaming_enabled: bool = Field(default=False, description="Enable streaming responses")
+    provider_params: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description=(
+            "Per-provider overrides (api_key, base_url, default_model, temperature, "
+            "max_tokens, timeout_seconds, max_retries, retry_delay_seconds, streaming_enabled)"
+        ),
+    )
+
+    def provider_param(self, provider: str, key: str, default: Any = None) -> Any:
+        params = self.provider_params.get(provider) or {}
+        if key in params:
+            return params[key]
+        return getattr(self, f"{provider}_{key}", default)
 
     # OpenRouter
     openrouter_api_key: str | None = Field(default=None, description="OpenRouter API key")

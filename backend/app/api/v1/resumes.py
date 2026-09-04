@@ -9,9 +9,7 @@ from app.core.exceptions import ValidationError as AppValidationError
 from app.models import User
 from app.schemas.resume import (
     ResumeAnalyzeRequest,
-    ResumeCompareRequest,
     ResumeCreate,
-    ResumeDuplicateRequest,
     ResumeExportData,
     ResumeGenerateRequest,
     ResumeImportData,
@@ -23,7 +21,6 @@ from app.schemas.resume import (
     ResumeSectionResponse,
     ResumeSectionUpdate,
     ResumeUpdate,
-    ResumeVersionCreate,
 )
 from app.services.resume import ResumeService
 
@@ -39,7 +36,8 @@ async def list_resumes(
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resumes = await service.list_resumes(current_user.id, archived=archived, origin=origin)
+    origins = [o.strip() for o in origin.split(",") if o.strip()] if origin else None
+    resumes = await service.list_resumes(current_user.id, archived=archived, origin=origins)
     items = []
     for r in resumes:
         try:
@@ -59,6 +57,7 @@ async def list_resumes(
                 archived=r.archived,
                 section_count=section_count,
                 created_at=r.created_at,
+                updated_at=r.updated_at,
             ).model_dump()
         )
     return {"success": True, "data": items}
@@ -86,25 +85,25 @@ async def create_resume(
 
 @router.get("/{resume_id}")
 async def get_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.get_resume(uuid.UUID(resume_id), current_user.id)
+    resume = await service.get_resume(resume_id, current_user.id)
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
 
 @router.patch("/{resume_id}")
 async def update_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     body: ResumeUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
     resume = await service.update_resume(
-        uuid.UUID(resume_id),
+        resume_id,
         current_user.id,
         body.model_dump(exclude_none=True),
     )
@@ -113,60 +112,56 @@ async def update_resume(
 
 @router.delete("/{resume_id}", status_code=204)
 async def delete_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    await service.delete_resume(uuid.UUID(resume_id), current_user.id)
+    await service.delete_resume(resume_id, current_user.id)
 
 
 @router.post("/{resume_id}/archive")
 async def archive_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.archive_resume(uuid.UUID(resume_id), current_user.id)
+    await service.archive_resume(resume_id, current_user.id)
+    resume = await service.get_resume(resume_id, current_user.id)
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
 
 @router.post("/{resume_id}/restore")
 async def restore_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.restore_resume(uuid.UUID(resume_id), current_user.id)
+    await service.restore_resume(resume_id, current_user.id)
+    resume = await service.get_resume(resume_id, current_user.id)
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
 
 @router.post("/{resume_id}/versions", status_code=201)
 async def create_resume_version(
-    resume_id: str,
-    body: ResumeVersionCreate,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    service = ResumeService(db)
-    resume = await service.create_version(
-        uuid.UUID(resume_id),
-        current_user.id,
-        change_summary=body.change_summary,
-    )
-    return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
+    raise AppValidationError("Version creation is disabled; save changes on the resume instead.")
 
 
 @router.put("/{resume_id}/default")
 async def set_default_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.set_default_resume(uuid.UUID(resume_id), current_user.id)
+    await service.set_default_resume(resume_id, current_user.id)
+    resume = await service.get_resume(resume_id, current_user.id)
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
 
@@ -190,12 +185,12 @@ async def import_resume(
 
 @router.get("/{resume_id}/export")
 async def export_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.export_resume(uuid.UUID(resume_id), current_user.id)
+    resume = await service.export_resume(resume_id, current_user.id)
     export_data = ResumeExportData(
         version=resume.version,
         title=resume.title,
@@ -224,14 +219,14 @@ async def export_resume(
 
 @router.put("/{resume_id}/sections/reorder")
 async def reorder_sections(
-    resume_id: str,
+    resume_id: uuid.UUID,
     body: ResumeSectionReorder,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
     sections = await service.reorder_sections(
-        uuid.UUID(resume_id),
+        resume_id,
         current_user.id,
         [item.model_dump() for item in body.order],
     )
@@ -243,12 +238,12 @@ async def reorder_sections(
 
 @router.get("/{resume_id}/sections")
 async def list_sections(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    resume = await service.get_resume(uuid.UUID(resume_id), current_user.id)
+    resume = await service.get_resume(resume_id, current_user.id)
     sections = resume.sections or []
     return {
         "success": True,
@@ -258,27 +253,27 @@ async def list_sections(
 
 @router.post("/{resume_id}/sections", status_code=201)
 async def add_section(
-    resume_id: str,
+    resume_id: uuid.UUID,
     body: ResumeSectionCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    section = await service.add_section(uuid.UUID(resume_id), current_user.id, body.model_dump())
+    section = await service.add_section(resume_id, current_user.id, body.model_dump())
     return {"success": True, "data": ResumeSectionResponse.model_validate(section).model_dump()}
 
 
 @router.patch("/{resume_id}/sections/{section_id}")
 async def update_section(
     resume_id: str,
-    section_id: str,
+    section_id: uuid.UUID,
     body: ResumeSectionUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
     section = await service.update_section(
-        uuid.UUID(section_id),
+        section_id,
         current_user.id,
         body.model_dump(exclude_none=True),
     )
@@ -288,30 +283,12 @@ async def update_section(
 @router.delete("/{resume_id}/sections/{section_id}", status_code=204)
 async def delete_section(
     resume_id: str,
-    section_id: str,
+    section_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    await service.delete_section(uuid.UUID(section_id), current_user.id)
-
-
-# ── Templates ──
-
-
-@router.get("/templates")
-async def list_templates(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    from app.repositories import ResumeTemplateRepository
-
-    repo = ResumeTemplateRepository(db)
-    templates = await repo.list_by_user(uuid.UUID(int=0))
-    return {
-        "success": True,
-        "data": [{"id": str(t.id), "name": t.name} for t in templates],
-    }
+    await service.delete_section(section_id, current_user.id)
 
 
 # ── Upload ──
@@ -331,6 +308,7 @@ async def upload_resume(
         title=result.get("title", file.filename or "Uploaded Resume"),
         change_summary="Uploaded from file",
         sections=result.get("sections", []),
+        origin="uploaded",
     )
     return {
         "success": True,
@@ -355,28 +333,8 @@ async def generate_resume(
     resume = await service.generate_from_profile(
         user_id=current_user.id,
         title=body.title or "Generated Resume",
-        template=body.template,
         section_filter=body.sections,
-    )
-    return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
-
-
-# ── Duplicate ──
-
-
-@router.post("/{resume_id}/duplicate", status_code=201)
-async def duplicate_resume(
-    resume_id: str,
-    body: ResumeDuplicateRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = ResumeService(db)
-    resume = await service.duplicate_resume(
-        uuid.UUID(resume_id),
-        current_user.id,
-        title=body.title,
-        change_summary=body.change_summary,
+        enhance_with_ai=body.enhance_with_ai,
     )
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
 
@@ -386,37 +344,20 @@ async def duplicate_resume(
 
 @router.post("/{resume_id}/optimize")
 async def optimize_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     body: ResumeOptimizeRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
     resume = await service.optimize_for_job(
-        uuid.UUID(resume_id),
+        resume_id,
         current_user.id,
         job_id=uuid.UUID(body.job_id),
         target_role=body.target_role,
+        enhance_with_ai=body.enhance_with_ai,
     )
     return {"success": True, "data": ResumeResponse.model_validate(resume).model_dump()}
-
-
-# ── Compare ──
-
-
-@router.post("/compare")
-async def compare_resumes(
-    body: ResumeCompareRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = ResumeService(db)
-    result = await service.compare_versions(
-        uuid.UUID(body.left_id),
-        uuid.UUID(body.right_id),
-        current_user.id,
-    )
-    return {"success": True, "data": result}
 
 
 # ── ATS / Health / Analyze ──
@@ -424,70 +365,40 @@ async def compare_resumes(
 
 @router.get("/{resume_id}/ats")
 async def analyze_ats(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    result = await service.analyze_ats(uuid.UUID(resume_id), current_user.id, None)
+    result = await service.analyze_ats(resume_id, current_user.id, None)
     return {"success": True, "data": result}
 
 
 @router.get("/{resume_id}/health")
 async def resume_health(
-    resume_id: str,
+    resume_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    result = await service.analyze_health(uuid.UUID(resume_id), current_user.id)
+    result = await service.analyze_health(resume_id, current_user.id)
     return {"success": True, "data": result}
 
 
 @router.post("/{resume_id}/analyze")
 async def analyze_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     body: ResumeAnalyzeRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
     result = await service.analyze_resume(
-        uuid.UUID(resume_id),
+        resume_id,
         current_user.id,
         job_id=uuid.UUID(body.job_id) if body.job_id else None,
     )
     return {"success": True, "data": result}
-
-
-# ── Versions List ──
-
-
-@router.get("/{resume_id}/versions")
-async def list_versions(
-    resume_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = ResumeService(db)
-    versions = await service.list_versions(uuid.UUID(resume_id), current_user.id)
-    return {
-        "success": True,
-        "data": [
-            {
-                "id": str(v.id),
-                "version": v.version,
-                "title": v.title,
-                "status": v.status,
-                "source": v.source,
-                "change_summary": v.change_summary,
-                "resume_type": v.resume_type,
-                "generated_for_job_id": str(v.generated_for_job_id) if v.generated_for_job_id else None,
-                "created_at": v.created_at.isoformat(),
-            }
-            for v in versions
-        ],
-    }
 
 
 # ── Download / Export ──
@@ -495,15 +406,14 @@ async def list_versions(
 
 @router.get("/{resume_id}/download/{format}")
 async def download_resume(
-    resume_id: str,
+    resume_id: uuid.UUID,
     format: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = ResumeService(db)
-    rid = uuid.UUID(resume_id)
     if format == "json":
-        resume = await service.get_resume(rid, current_user.id)
+        resume = await service.get_resume(resume_id, current_user.id)
         data = ResumeExportData(
             version=resume.version,
             title=resume.title,
@@ -519,12 +429,12 @@ async def download_resume(
         )
         return {"success": True, "data": data.model_dump()}
     elif format == "pdf":
-        content = await service.export_resume_pdf(rid, current_user.id)
+        content = await service.export_resume_pdf(resume_id, current_user.id)
         from fastapi.responses import Response
         return Response(content=content, media_type="application/pdf",
                         headers={"Content-Disposition": 'attachment; filename="resume.pdf"'})
     elif format == "docx":
-        content = await service.export_resume_docx(rid, current_user.id)
+        content = await service.export_resume_docx(resume_id, current_user.id)
         from fastapi.responses import Response
         return Response(
             content=content,

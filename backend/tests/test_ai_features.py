@@ -5,6 +5,20 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pydantic import ValidationError
 
+from app.ai.features.company_research import (
+    ai_company_research,
+    ai_job_summary,
+)
+from app.ai.features.cover_letter import (
+    ai_assist_cover_letter,
+    ai_generate_cover_letter,
+)
+from app.ai.features.email import ai_generate_email
+from app.ai.features.interview import (
+    ai_answer_application_questions,
+    ai_generate_interview_questions,
+)
+from app.ai.features.matching import ai_enhance_matching
 from app.ai.features.resume import (
     ai_enhance_experience,
     ai_enhance_profile,
@@ -15,23 +29,9 @@ from app.ai.features.resume import (
     ai_optimize_ats,
     ai_recommend_skills,
 )
-from app.ai.features.cover_letter import (
-    ai_assist_cover_letter,
-    ai_generate_cover_letter,
-)
-from app.ai.features.interview import (
-    ai_answer_application_questions,
-    ai_generate_interview_questions,
-)
-from app.ai.features.company_research import (
-    ai_company_research,
-    ai_job_summary,
-)
-from app.ai.features.email import ai_generate_email
-from app.ai.features.matching import ai_enhance_matching
 from app.ai.features.schemas import (
-    ATSOptimizeRequest,
     ApplicationQuestionsRequest,
+    ATSOptimizeRequest,
     CompanyResearchRequest,
     CoverLetterAssistRequest,
     CoverLetterGenerateRequest,
@@ -580,7 +580,7 @@ class TestFeaturesPackageExports:
             assert hasattr(features, name), f"{name} not exported from features package"
 
     def test_import_from_package(self):
-        from app.ai.features import ai_generate_resume, ai_enhance_project, ai_enhance_experience
+        from app.ai.features import ai_enhance_experience, ai_enhance_project, ai_generate_resume
         assert callable(ai_generate_resume)
         assert callable(ai_enhance_project)
         assert callable(ai_enhance_experience)
@@ -592,11 +592,22 @@ class TestFeaturesPackageExports:
 @pytest.fixture
 def app():
     import uuid
+
     from fastapi import FastAPI
-    from app.api.v1.ai_features import router
+
     from app.api.deps import get_current_user
     from app.api.responses import handle_app_error
-    from app.core.exceptions import AppError, AuthenticationError, AuthorizationError, ConflictError, NotFoundError, ValidationError
+    from app.api.v1.ai_features import router
+    from app.core.database import get_db
+    from app.core.exceptions import (
+        AppError,
+        AuthenticationError,
+        AuthorizationError,
+        ConflictError,
+        NotFoundError,
+        ValidationError,
+    )
+    from tests.test_ai_api import FakeSession
 
     class MockUser:
         id = uuid.uuid4()
@@ -614,12 +625,13 @@ def app():
     application.add_exception_handler(ConflictError, handle_app_error)
     application.include_router(router, prefix="/ai")
     application.dependency_overrides[get_current_user] = lambda: MockUser()
+    application.dependency_overrides[get_db] = lambda: FakeSession()
     return application
 
 
 @pytest.fixture
 async def client(app):
-    from httpx import AsyncClient, ASGITransport
+    from httpx import ASGITransport, AsyncClient
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

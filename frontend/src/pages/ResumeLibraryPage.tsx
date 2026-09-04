@@ -16,7 +16,10 @@ type LibraryTab = 'master' | 'generated'
 export function ResumeLibraryPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [activeTab, setActiveTab] = useState<LibraryTab>('master')
-  const { data: resumes, isLoading } = useResumes(undefined, activeTab)
+  const { data: resumes, isLoading } = useResumes(
+    undefined,
+    activeTab === 'generated' ? 'ai_generated,ai_tailored' : 'master'
+  )
   const deleteResume = useDeleteResume()
   const updateResume = useUpdateResume()
   const downloadResume = useDownloadResume()
@@ -27,10 +30,6 @@ export function ResumeLibraryPage() {
     try { await deleteResume.mutateAsync(id); addToast('Resume deleted', 'info') }
     catch { addToast('Failed to delete', 'error') }
   }, [deleteResume, addToast])
-
-  const handleDuplicate = useCallback(() => {
-    setShowCreateModal(true)
-  }, [])
 
   const handleRename = useCallback(async (id: string, title: string) => {
     await updateResume.mutateAsync({ id, data: { title } })
@@ -85,7 +84,6 @@ export function ResumeLibraryPage() {
             key={resume.id}
             resume={resume}
             onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
             onRename={handleRename}
             onOptimize={handleOptimize}
             onDownload={handleDownload}
@@ -146,7 +144,6 @@ export function ResumeLibraryPage() {
           setShowCreateModal(false)
           addToast('Resume created!', 'success')
         }}
-        resumes={list}
       />
     </div>
   )

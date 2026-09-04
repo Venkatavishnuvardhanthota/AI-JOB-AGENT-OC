@@ -143,7 +143,6 @@ Examples:
 
 - Duplicate application
 - Email already exists
-- Duplicate resume version
 
 HTTP Status:
 

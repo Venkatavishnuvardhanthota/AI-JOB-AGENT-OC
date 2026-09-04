@@ -1,14 +1,16 @@
 """Tests for AI API endpoints."""
 
 import uuid
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
-from app.api.v1.ai import router as ai_router
 from app.api.deps import get_current_user
 from app.api.responses import handle_app_error
+from app.api.v1.ai import router as ai_router
+from app.core.database import get_db
 from app.core.exceptions import (
     AppError,
     AuthenticationError,
@@ -17,6 +19,8 @@ from app.core.exceptions import (
     NotFoundError,
     ValidationError,
 )
+from database.models.ai_settings import AISettings
+from database.models.provider_configuration import ProviderConfiguration
 
 
 class MockUser:
@@ -25,6 +29,86 @@ class MockUser:
     email = "test@example.com"
     first_name = "Test"
     last_name = "User"
+
+
+class _FakeScalars:
+    def __init__(self, rows: list[Any]) -> None:
+        self._rows = list(rows)
+
+    def first(self) -> Any | None:
+        return self._rows[0] if self._rows else None
+
+    def all(self) -> list[Any]:
+        return self._rows
+
+
+class _FakeResult:
+    def __init__(self, rows: list[Any]) -> None:
+        self._rows = list(rows)
+
+    def scalars(self) -> _FakeScalars:
+        return _FakeScalars(self._rows)
+
+    def unique(self) -> "_FakeResult":
+        return self
+
+    def scalar_one_or_none(self) -> Any | None:
+        return self._rows[0] if self._rows else None
+
+
+class FakeSession:
+    """In-memory stand-in for the AsyncSession used by config endpoints."""
+
+    def __init__(self) -> None:
+        self.settings_row: Any = None
+        self.provider_rows: list[Any] = []
+
+    async def execute(self, stmt):
+        entity = None
+        descriptions = getattr(stmt, "column_descriptions", None)
+        if descriptions:
+            entity = descriptions[0].get("entity")
+        if entity is AISettings:
+            rows = [self.settings_row] if self.settings_row is not None else []
+        elif entity is ProviderConfiguration:
+            rows = list(self.provider_rows)
+        else:
+            rows = []
+        return _FakeResult(rows)
+
+    async def get(self):
+        return self.settings_row
+
+    async def upsert(self, settings: Any):
+        self.settings_row = settings
+        return settings
+
+    async def get_by_provider_name(self, provider_name: str):
+        return next((r for r in self.provider_rows if r.provider_name == provider_name), None)
+
+    async def list_by_type(self, provider_type: str):
+        return [r for r in self.provider_rows if r.provider_type == provider_type]
+
+    def add(self, obj: Any) -> None:
+        if isinstance(obj, AISettings):
+            self.settings_row = obj
+        elif isinstance(obj, ProviderConfiguration):
+            self.provider_rows.append(obj)
+
+    async def delete(self, obj: Any) -> None:
+        if isinstance(obj, ProviderConfiguration) and obj in self.provider_rows:
+            self.provider_rows.remove(obj)
+
+    async def flush(self) -> None:
+        pass
+
+    async def commit(self) -> None:
+        pass
+
+
+@pytest.fixture
+def fake_session() -> FakeSession:
+    return FakeSession()
 
 
 def _register_error_handlers(application: FastAPI) -> None:
@@ -37,11 +121,12 @@ def _register_error_handlers(application: FastAPI) -> None:
 
 
 @pytest.fixture
-def app() -> FastAPI:
+def app(fake_session: FakeSession) -> FastAPI:
     application = FastAPI()
     _register_error_handlers(application)
     application.include_router(ai_router, prefix="/ai")
     application.dependency_overrides[get_current_user] = lambda: MockUser()
+    application.dependency_overrides[get_db] = lambda: fake_session
     return application
 
 
@@ -74,6 +159,46 @@ class TestAIAPIEndpoints:
         data = response.json()
         assert data["success"] is True
         assert "updates" in data["data"]
+        assert data["data"]["updates"] == ["default_provider"]
+
+    @pytest.mark.asyncio
+    async def test_update_config_persists(self, client: AsyncClient, fake_session: FakeSession):
+        response = await client.put(
+            "/ai/config",
+            json={"default_provider": "gemini", "default_model": "gemini-2.0-flash", "temperature": 0.4},
+        )
+        assert response.status_code == 200
+        assert fake_session.settings_row is not None
+        assert fake_session.settings_row.default_provider == "gemini"
+        assert fake_session.settings_row.default_model == "gemini-2.0-flash"
+        assert fake_session.settings_row.temperature == 0.4
+
+    @pytest.mark.asyncio
+    async def test_save_provider_config(self, client: AsyncClient, fake_session: FakeSession):
+        response = await client.put(
+            "/ai/providers/openai/config",
+            json={"api_key": "sk-test", "base_url": "https://custom.openai.com", "default_model": "gpt-4o-mini"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["data"]["saved_config"]["api_key_set"] is True
+        assert fake_session.settings_row is None
+        assert any(r.provider_name == "openai" for r in fake_session.provider_rows)
+
+    @pytest.mark.asyncio
+    async def test_delete_provider_config(self, client: AsyncClient, fake_session: FakeSession):
+        await client.put("/ai/providers/openai/config", json={"api_key": "sk-test"})
+        response = await client.delete("/ai/providers/openai/config")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["deleted"] is True
+        assert not any(r.provider_name == "openai" for r in fake_session.provider_rows)
+
+    @pytest.mark.asyncio
+    async def test_save_provider_config_unknown_provider(self, client: AsyncClient):
+        response = await client.put("/ai/providers/unknown-provider/config", json={"api_key": "sk-test"})
+        assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_list_providers(self, client: AsyncClient):
@@ -104,6 +229,19 @@ class TestAIAPIEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
+        assert isinstance(data["data"], list)
+
+    @pytest.mark.asyncio
+    async def test_list_models_specific_provider(self, client: AsyncClient):
+        response = await client.get("/ai/models?provider=openrouter")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert isinstance(data["data"], list)
+        if data["data"]:
+            assert isinstance(data["data"][0], dict)
+            assert "id" in data["data"][0]
+            assert "provider" in data["data"][0]
 
     @pytest.mark.asyncio
     async def test_list_prompts(self, client: AsyncClient):
@@ -164,7 +302,7 @@ class TestAIPromptsRegistration:
         registry = get_prompt_registry()
         for t in registry.list():
             assert t.template, f"Template {t.name} has empty template"
-            assert t.name, f"Template missing name"
+            assert t.name, "Template missing name"
 
     def test_prompt_variables_extracted(self):
         from app.ai.dependencies import get_prompt_registry

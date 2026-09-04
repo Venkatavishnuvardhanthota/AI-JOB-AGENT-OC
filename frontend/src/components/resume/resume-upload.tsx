@@ -7,7 +7,7 @@ import { Upload, File, AlertCircle, CheckCircle2, Loader2, X } from 'lucide-reac
 import { cn } from '@/lib/utils'
 
 interface ResumeUploadProps {
-  onComplete: (resumeId?: string) => void
+  onComplete: (result: any) => void
 }
 
 const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
@@ -64,7 +64,7 @@ export function ResumeUpload({ onComplete }: ResumeUploadProps) {
       clearInterval(interval)
       setProgress(100)
       addToast('Resume uploaded successfully!', 'success')
-      setTimeout(() => onComplete(result?.id), 1000)
+      setTimeout(() => onComplete(result), 1000)
     } catch (e: any) {
       clearInterval(interval)
       setError(e.message || 'Upload failed')

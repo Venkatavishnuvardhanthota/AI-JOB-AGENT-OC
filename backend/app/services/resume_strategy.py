@@ -261,7 +261,7 @@ class ResumeStrategyService:
         )
         new_resume.title = self._build_resume_name(job, latest_version + 1)
         new_resume.resume_type = "tailored"
-        new_resume.origin = "generated"
+        new_resume.origin = "ai_tailored"
         new_resume.parent_resume_id = source_resume.id
         new_resume.generation_metadata = {
             "mode": "tailor",
@@ -298,7 +298,7 @@ class ResumeStrategyService:
             title=self._build_resume_name(job, latest_version + 1),
             enhance_with_ai=True,
         )
-        generated.origin = "generated"
+        generated.origin = "ai_generated"
         generated.resume_type = "generated"
         generated.generated_for_job_id = job.id
         generated.generation_metadata = {
@@ -425,7 +425,7 @@ class ResumeStrategyService:
         selected = None
         if resume_id is not None:
             selected = await self.resume_repo.get_with_sections(resume_id)
-            if not selected or selected.user_id != user_id or selected.origin != "master":
+            if not selected or selected.user_id != user_id or selected.origin not in ("master", "uploaded"):
                 raise NotFoundError("Resume not found.")
         else:
             selection = await self.select_resume(user_id, job)
@@ -559,7 +559,9 @@ class ResumeStrategyService:
         )
 
     async def list_generated_resumes(self, user_id: uuid.UUID) -> list[ResumeVersion]:
-        return await self.resume_repo.list_by_user_and_origin(user_id, "generated")
+        return await self.resume_repo.list_by_user_and_origins(
+            user_id, ["ai_generated", "ai_tailored"]
+        )
 
     async def list_master_resumes(self, user_id: uuid.UUID) -> list[ResumeVersion]:
-        return await self.resume_repo.list_by_user_and_origin(user_id, "master")
+        return await self.resume_repo.list_by_user_and_origins(user_id, ["master", "uploaded"])

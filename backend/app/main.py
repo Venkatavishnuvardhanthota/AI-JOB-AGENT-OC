@@ -1,5 +1,4 @@
 import os
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -10,7 +9,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.api.responses import error_response, handle_app_error
 from app.api.v1.router import api_router
-from app.middleware.request_id import RequestIDMiddleware
 from app.core.config import settings
 from app.core.database import close_db
 from app.core.exceptions import (
@@ -22,6 +20,7 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.core.logging import configure_logging, logger
+from app.middleware.request_id import RequestIDMiddleware
 
 
 @asynccontextmanager
@@ -33,6 +32,16 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.BROWSER_SCREENSHOT_DIR, exist_ok=True)
 
     _run_startup_self_test(app)
+
+    try:
+        from app.ai.dependencies import apply_config
+        from app.core.database import get_session_factory
+
+        factory = get_session_factory()
+        async with factory() as db:
+            await apply_config(db)
+    except Exception:
+        logger.exception("Failed to load persisted AI configuration at startup")
 
     yield
     await close_db()

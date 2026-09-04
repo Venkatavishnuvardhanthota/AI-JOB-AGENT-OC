@@ -60,10 +60,6 @@ class ResumeUpdate(BaseModel):
     change_summary: str | None = None
 
 
-class ResumeVersionCreate(BaseModel):
-    change_summary: str | None = None
-
-
 class ResumeExportData(BaseModel):
     version: int
     title: str | None
@@ -96,6 +92,7 @@ class ResumeResponse(BaseModel):
     template: str | None
     status: str
     source: str
+    origin: str | None = None
     resume_type: str | None
     is_default: bool
     change_summary: str | None
@@ -120,6 +117,7 @@ class ResumeListResponse(BaseModel):
     archived: bool
     section_count: int = 0
     created_at: datetime
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -127,29 +125,14 @@ class ResumeListResponse(BaseModel):
 
 class ResumeGenerateRequest(BaseModel):
     title: str | None = None
-    template: str | None = None
     sections: list[str] | None = None
+    enhance_with_ai: bool = False
 
 
 class ResumeOptimizeRequest(BaseModel):
     job_id: str
     target_role: str | None = None
-
-
-class ResumeCompareRequest(BaseModel):
-    left_id: str
-    right_id: str
-
-
-class ResumeCompareResponse(BaseModel):
-    left_version: int
-    right_version: int
-    changes: list[dict]
-
-
-class ResumeDuplicateRequest(BaseModel):
-    title: str
-    change_summary: str | None = None
+    enhance_with_ai: bool = True
 
 
 class ResumeUploadResponse(BaseModel):
@@ -202,29 +185,3 @@ class ResumeAnalyzeRequest(BaseModel):
 class ResumeAnalyzeResponse(BaseModel):
     ats: AtsAnalysisResponse
     health: ResumeHealthResponse
-
-
-class ResumeVersionListItem(BaseModel):
-    id: uuid.UUID
-    version: int
-    title: str | None
-    status: str
-    source: str
-    change_summary: str | None
-    resume_type: str | None
-    generated_for_job_id: str | None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class TimelineEntry(BaseModel):
-    type: str
-    description: str
-    timestamp: datetime
-    version: int | None = None
-
-
-class ResumeTimelineResponse(BaseModel):
-    entries: list[TimelineEntry]

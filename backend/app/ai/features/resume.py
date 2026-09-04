@@ -22,7 +22,11 @@ async def ai_generate_resume(
             "profile_data": profile_data,
             "target_role": target_role,
             "target_company": target_company,
-            "section_types": ", ".join(section_types) if section_types else "summary, experience, education, skills, projects",
+            "section_types": (
+                ", ".join(section_types)
+                if section_types
+                else "summary, experience, education, skills, projects"
+            ),
         },
         max_tokens=3000,
     )

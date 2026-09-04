@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
+from typing import Any
 
 import structlog
 
@@ -11,15 +13,33 @@ from app.ai.service import AIService
 
 logger = structlog.get_logger(__name__)
 
+_config_store: dict[str, Any] = {"config": None, "revision": 0}
+_registered_revision: int = -1
+
 
 @lru_cache
 def _get_registry() -> AIProviderRegistry:
     return AIProviderRegistry()
 
 
-@lru_cache
-def _get_config() -> AIConfig:
+def _build_env_config() -> AIConfig:
     from app.core.config import settings
+
+    provider_params: dict[str, dict[str, Any]] = {}
+    for name, key_attr, url_attr, model_attr in [
+        ("openrouter", "OPENROUTER_API_KEY", "OPENROUTER_BASE_URL", "OPENROUTER_DEFAULT_MODEL"),
+        ("openai", "OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENAI_DEFAULT_MODEL"),
+        ("anthropic", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "ANTHROPIC_DEFAULT_MODEL"),
+        ("gemini", "GEMINI_API_KEY", "GEMINI_BASE_URL", "GEMINI_DEFAULT_MODEL"),
+        ("ollama", None, "OLLAMA_BASE_URL", "OLLAMA_DEFAULT_MODEL"),
+    ]:
+        params: dict[str, Any] = {}
+        if key_attr and getattr(settings, key_attr, None):
+            params["api_key"] = getattr(settings, key_attr)
+        if url_attr:
+            params["base_url"] = getattr(settings, url_attr)
+        params["default_model"] = getattr(settings, model_attr)
+        provider_params[name] = params
 
     return AIConfig(
         default_provider=settings.AI_DEFAULT_PROVIDER,
@@ -47,7 +67,100 @@ def _get_config() -> AIConfig:
         gemini_default_model=settings.GEMINI_DEFAULT_MODEL,
         ollama_base_url=settings.OLLAMA_BASE_URL,
         ollama_default_model=settings.OLLAMA_DEFAULT_MODEL,
+        provider_params=provider_params,
     )
+
+
+async def build_config_from_db(db: Any) -> AIConfig:
+    """Build AIConfig by merging environment defaults with persisted settings."""
+    from database.repositories.ai_settings import AISettingsRepository
+    from database.repositories.provider_configuration import ProviderConfigurationRepository
+
+    config = _build_env_config()
+    ai_settings_repo = AISettingsRepository(db)
+    provider_config_repo = ProviderConfigurationRepository(db)
+
+    saved = await ai_settings_repo.get()
+    if saved is not None:
+        enabled = (
+            [p.strip() for p in (saved.enabled_providers or "").split(",") if p.strip()]
+            or config.enabled_providers
+        )
+        config = config.model_copy(
+            update={
+                "default_provider": saved.default_provider or config.default_provider,
+                "default_model": saved.default_model or config.default_model,
+                "fallback_provider": saved.fallback_provider or config.fallback_provider,
+                "fallback_model": saved.fallback_model or config.fallback_model,
+                "temperature": saved.temperature if saved.temperature is not None else config.temperature,
+                "max_tokens": saved.max_tokens if saved.max_tokens is not None else config.max_tokens,
+                "timeout_seconds": saved.timeout_seconds or config.timeout_seconds,
+                "max_retries": saved.max_retries if saved.max_retries is not None else config.max_retries,
+                "retry_delay_seconds": (
+                    saved.retry_delay_seconds if saved.retry_delay_seconds is not None else config.retry_delay_seconds
+                ),
+                "streaming_enabled": (
+                    saved.streaming_enabled if saved.streaming_enabled is not None else config.streaming_enabled
+                ),
+                "enabled_providers": enabled,
+            }
+        )
+
+    saved_providers = await provider_config_repo.list_by_type("ai")
+    params: dict[str, dict[str, Any]] = {k: dict(v) for k, v in config.provider_params.items()}
+    for row in saved_providers:
+        existing = dict(params.get(row.provider_name) or {})
+        if row.api_key:
+            existing["api_key"] = row.api_key
+        if row.api_url:
+            existing["base_url"] = row.api_url
+        if row.default_model:
+            existing["default_model"] = row.default_model
+        existing["enabled"] = bool(row.is_enabled)
+        if row.config:
+            try:
+                extra = json.loads(row.config)
+            except (TypeError, ValueError):
+                extra = {}
+            for key in (
+                "temperature",
+                "max_tokens",
+                "timeout_seconds",
+                "max_retries",
+                "retry_delay_seconds",
+                "streaming_enabled",
+            ):
+                if extra.get(key) is not None:
+                    existing[key] = extra[key]
+        params[row.provider_name] = existing
+
+    enabled_set = set(config.enabled_providers)
+    for name, p in params.items():
+        if p.get("enabled") is False:
+            enabled_set.discard(name)
+        elif p.get("enabled") is True:
+            enabled_set.add(name)
+
+    return config.model_copy(
+        update={
+            "provider_params": params,
+            "enabled_providers": sorted(enabled_set),
+        }
+    )
+
+
+async def apply_config(db: Any) -> AIConfig:
+    """Reload the persisted AI configuration and invalidate registered providers."""
+    global _registered_revision
+    try:
+        config = await build_config_from_db(db)
+    except Exception:
+        logger.exception("Failed to load persisted AI config, falling back to environment defaults")
+        config = _build_env_config()
+    _config_store["config"] = config
+    _config_store["revision"] += 1
+    _registered_revision = -1
+    return config
 
 
 def get_registry() -> AIProviderRegistry:
@@ -55,17 +168,26 @@ def get_registry() -> AIProviderRegistry:
 
 
 def get_ai_config() -> AIConfig:
-    return _get_config()
+    config = _config_store["config"]
+    if config is None:
+        config = _build_env_config()
+        _config_store["config"] = config
+    return config
 
 
 def ensure_providers_registered() -> None:
+    global _registered_revision
     from app.ai.factory import AIProviderFactory
 
     registry = _get_registry()
-    if registry.count() == 0:
-        config = _get_config()
+    config = get_ai_config()
+    revision = _config_store["revision"]
+    if registry.count() == 0 or revision != _registered_revision:
+        if _registered_revision >= 0:
+            registry.clear()
         factory = AIProviderFactory(registry, config)
         factory.register_all()
+        _registered_revision = revision
 
 
 @lru_cache
@@ -148,7 +270,8 @@ Return as JSON:
   "business_impact": string,
   "changes_summary": string[]
 }}""",
-            system_prompt="You are a technical writing expert. Enhance project descriptions while maintaining accuracy.",
+            system_prompt="You are a technical writing expert. "
+            "Enhance project descriptions while maintaining accuracy.",
             description="AI-powered project description enhancement",
         ),
         # ── Experience Enhancement AI Prompt ──
@@ -185,7 +308,8 @@ Return as JSON:
   "skills_demonstrated": string[],
   "changes_summary": string[]
 }}""",
-            system_prompt="You are a resume optimization expert. Enhance experience descriptions while maintaining complete factual accuracy.",
+            system_prompt="You are a resume optimization expert. "
+            "Enhance experience descriptions while maintaining complete factual accuracy.",
             description="AI-powered work experience enhancement",
         ),
         # ── Resume AI Prompts ──
@@ -208,7 +332,7 @@ For each section type requested, generate compelling, professional content that:
 - Uses consistent professional tone throughout
 - Optimizes for ATS parsing with standard section headings
 
-Return a JSON object with section_type as key and {content: string, bullet_points: string[]} as value.""",
+Return a JSON object with section_type as key and {{content: string, bullet_points: string[]}} as value.""",
             system_prompt="You are an expert resume writer specializing in ATS-optimized, achievement-focused resumes.",
             description="AI-powered resume generation from career profile data",
         ),
@@ -235,7 +359,8 @@ Instructions:
 - Keep each bullet concise
 - Focus on achievements and business impact
 
-Return the improved content as a JSON object with {improved_bullets: string[], summary: string, changes_made: string[]}.""",
+Return the improved content as a JSON object with {{improved_bullets: string[],
+summary: string, changes_made: string[]}}.""",
             system_prompt="You are a resume optimization expert. Improve content while maintaining factual accuracy.",
             description="AI-powered resume content improvement",
         ),
@@ -264,7 +389,8 @@ Return as JSON:
   "optimized_content": string,
   "improvement_summary": string[]
 }}""",
-            system_prompt="You are an ATS optimization specialist. Optimize resumes for ATS without sacrificing readability.",
+            system_prompt="You are an ATS optimization specialist. "
+            "Optimize resumes for ATS without sacrificing readability.",
             description="AI-powered ATS optimization for resumes",
         ),
         # ── Profile AI Prompts ──
@@ -294,7 +420,8 @@ Return as JSON:
   "skill_recommendations": {{"current": string[], "to_highlight": string[], "to_add": string[]}},
   "achievement_highlights": string[]
 }}""",
-            system_prompt="You are a professional profile optimization expert. Enhance profiles for recruiter visibility.",
+            system_prompt="You are a professional profile optimization expert. "
+            "Enhance profiles for recruiter visibility.",
             description="AI-powered professional profile summary and headline enhancement",
         ),
         PromptTemplate(
@@ -323,7 +450,8 @@ Return as JSON:
   "role_specific_skills": string[],
   "total_estimated_investment": string
 }}""",
-            system_prompt="You are a career development advisor. Provide actionable, market-aware skill recommendations.",
+            system_prompt="You are a career development advisor. "
+            "Provide actionable, market-aware skill recommendations.",
             description="AI-powered skill recommendations and development planning",
         ),
         # ── Interview & Questions AI Prompts ──
@@ -344,18 +472,24 @@ Generate {count} questions each for:
 3. Company culture and fit questions
 4. Role-specific scenario questions
 
-For each question provide the question, what the interviewer looks for, key points, sample structure, and common mistakes.
+For each question provide the question, what the interviewer looks for, key points,
+sample structure, and common mistakes.
 
 Return as JSON:
 {{
-  "behavioral_questions": [{{"question": string, "looking_for": string, "key_points": string[], "common_mistakes": string[]}}],
-  "technical_questions": [{{"question": string, "looking_for": string, "key_points": string[], "common_mistakes": string[]}}],
-  "culture_questions": [{{"question": string, "looking_for": string, "key_points": string[], "common_mistakes": string[]}}],
-  "scenario_questions": [{{"question": string, "looking_for": string, "key_points": string[], "common_mistakes": string[]}}],
+  "behavioral_questions": [{{"question": string, "looking_for": string,
+    "key_points": string[], "common_mistakes": string[]}}],
+  "technical_questions": [{{"question": string, "looking_for": string,
+    "key_points": string[], "common_mistakes": string[]}}],
+  "culture_questions": [{{"question": string, "looking_for": string,
+    "key_points": string[], "common_mistakes": string[]}}],
+  "scenario_questions": [{{"question": string, "looking_for": string,
+    "key_points": string[], "common_mistakes": string[]}}],
   "preparation_tips": string[],
   "questions_to_ask": string[]
 }}""",
-            system_prompt="You are an expert interview preparation coach. Generate realistic, role-specific interview questions.",
+            system_prompt="You are an expert interview preparation coach. "
+            "Generate realistic, role-specific interview questions.",
             description="AI-powered interview question generation",
         ),
         PromptTemplate(
@@ -378,7 +512,8 @@ Return as JSON:
   "answers": [{{"question": string, "answer": string, "key_points": string[], "estimated_length": string}}],
   "tips": string[]
 }}""",
-            system_prompt="You are an expert at answering job application questions. Provide compelling, tailored responses.",
+            system_prompt="You are an expert at answering job application questions. "
+            "Provide compelling, tailored responses.",
             description="AI-powered job application question answering",
         ),
         # ── Company Research & Job Summary AI Prompts ──
@@ -412,7 +547,8 @@ Return as JSON:
   "talking_points": string[],
   "questions_to_ask": string[]
 }}""",
-            system_prompt="You are a business research analyst. Provide actionable company intelligence for interview preparation.",
+            system_prompt="You are a business research analyst. "
+            "Provide actionable company intelligence for interview preparation.",
             description="AI-powered company research and intelligence",
         ),
         PromptTemplate(
@@ -484,7 +620,8 @@ Return as JSON:
   "tone": string,
   "key_points": string[]
 }}""",
-            system_prompt="You are a professional business communication expert. Generate effective job-related emails.",
+            system_prompt="You are a professional business communication expert. "
+            "Generate effective job-related emails.",
             description="AI-powered email generation for job communications",
         ),
         # ── Cover Letter AI Prompts ──
@@ -507,7 +644,7 @@ The cover letter should:
 - Be between 250-400 words
 - Use {tone} tone throughout
 
-Return as JSON with {content: string, subject: string}.""",
+Return as JSON with {{content: string, subject: string}}.""",
             system_prompt="You are an expert cover letter writer. Write compelling cover letters that get interviews.",
             description="AI-powered cover letter generation",
         ),
@@ -533,7 +670,7 @@ Supported instructions:
 - executive: Focus on leadership and strategy
 - remove_repetition: Remove repetitive phrases
 
-Return only the edited text as a JSON object with {edited_content: string, changes_summary: string}.""",
+Return only the edited text as a JSON object with {{edited_content: string, changes_summary: string}}.""",
             system_prompt="You are a professional editor specializing in cover letter improvement.",
             description="AI-powered cover letter editing assistance",
         ),
@@ -616,8 +753,10 @@ Generate:
 2. {count} technical questions relevant to the role
 3. {count} company-specific questions about {company}
 
-For each question, provide: the question, what the interviewer is looking for, a suggested framework for answering, key points to include.""",
-            system_prompt="You are an interview preparation coach. Generate realistic interview questions and guidance.",
+For each question, provide: the question, what the interviewer is looking for, a suggested
+framework for answering, key points to include.""",
+            system_prompt="You are an interview preparation coach. "
+            "Generate realistic interview questions and guidance.",
             description="Generate interview preparation questions and guidance",
         ),
         PromptTemplate(
@@ -676,7 +815,8 @@ Improve:
 4. Achievement highlights
 
 Make the profile more compelling while keeping all factual information accurate.""",
-            system_prompt="You are a professional profile optimization expert. Enhance profiles for maximum career impact.",
+            system_prompt="You are a professional profile optimization expert. "
+            "Enhance profiles for maximum career impact.",
             description="Enhance a professional profile for better visibility",
         ),
         PromptTemplate(
@@ -707,7 +847,8 @@ Job Description: {job_description}
 Your Profile: {profile_summary}
 Questions: {questions}
 
-For each question, provide a thoughtful, tailored answer that references specific experience, aligns with job requirements, and demonstrates fit.""",
+For each question, provide a thoughtful, tailored answer that references specific experience,
+aligns with job requirements, and demonstrates fit.""",
             system_prompt="You are an expert at answering job application questions.",
             description="Generate answers to job application questions",
         ),
@@ -744,7 +885,7 @@ def get_prompt_registry() -> PromptTemplateRegistry:
 
 def get_ai_service() -> AIService:
     registry = _get_registry()
-    config = _get_config()
+    config = get_ai_config()
     prompt_registry = _get_prompt_registry()
     ensure_providers_registered()
     return AIService(registry=registry, config=config, prompt_registry=prompt_registry)

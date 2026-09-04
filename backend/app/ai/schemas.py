@@ -112,6 +112,8 @@ class HealthCheckResult(BaseModel):
 class AIUpdateConfig(BaseModel):
     default_provider: str | None = None
     default_model: str | None = None
+    fallback_provider: str | None = None
+    fallback_model: str | None = None
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, ge=1)
     timeout_seconds: int | None = Field(default=None, ge=1)
@@ -124,3 +126,16 @@ class AIUpdateConfig(BaseModel):
     anthropic_api_key: str | None = None
     gemini_api_key: str | None = None
     ollama_base_url: str | None = None
+
+
+class AIProviderConfigUpdate(BaseModel):
+    api_key: str | None = None
+    base_url: str | None = None
+    default_model: str | None = None
+    is_enabled: bool | None = None
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(default=None, ge=1)
+    timeout_seconds: int | None = Field(default=None, ge=1)
+    max_retries: int | None = Field(default=None, ge=0)
+    retry_delay_seconds: int | None = Field(default=None, ge=0)
+    streaming_enabled: bool | None = None

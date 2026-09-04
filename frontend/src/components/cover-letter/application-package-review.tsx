@@ -60,7 +60,7 @@ export function ApplicationPackageReview({ jobId, resumeId, coverLetterId, onDow
                 {resume ? (
                   <div>
                     <p className="text-xs font-medium">{resume.title || 'Untitled'}</p>
-                    <p className="text-xs text-muted-foreground">v{resume.version} · {resume.template || 'No template'}</p>
+                    <p className="text-xs text-muted-foreground">v{resume.version}</p>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">No resume selected</p>

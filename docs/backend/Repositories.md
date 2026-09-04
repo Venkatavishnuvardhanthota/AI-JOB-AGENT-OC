@@ -286,31 +286,46 @@ create()
 
 ---
 
-# ResumeRepository
+# ResumeVersionRepository
 
 ## Responsibilities
 
-- Store resume versions
-- Archive resumes
-- Retrieve versions
-- Compare versions
+- Store resumes (resume versions)
+- Archive / restore resumes
+- Track default resume
+- Origin-filtered listing
+- Master and AI-generated resume lookups
 
 ### Public Methods
 
 ```text
 create()
 
-list_versions()
+list_by_user()
 
-get_version()
+list_by_user_with_sections()
+
+list_by_user_and_origin()
+
+list_by_user_and_origins()
+
+list_master_resumes_with_sections()
+
+get_generated_for_job()
+
+get_with_sections()
+
+latest_version()
 
 archive()
 
 restore()
 
-duplicate()
+set_default()
 
-latest_version()
+get_default()
+
+unset_default()
 ```
 
 ---

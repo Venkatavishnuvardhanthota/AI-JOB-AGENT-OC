@@ -9,19 +9,13 @@ import { HealthOverview } from '@/components/ai/HealthOverview'
 import { PromptTemplatesPanel } from '@/components/ai/PromptTemplatesPanel'
 import { ResumeStrategySettings } from '@/components/ai/ResumeStrategySettings'
 import { useAIProviders } from '@/api/hooks'
-import { useToast } from '@/components/ui/toast'
 import type { AIProvider } from '@/types'
 import { RefreshCw, Server, Brain, Activity, FileText, Wand2 } from 'lucide-react'
 
 export function AISettingsPage() {
-  const { addToast } = useToast()
   const { data: providers, isLoading, isError, refetch, isRefetching } = useAIProviders()
   const [configProvider, setConfigProvider] = useState<AIProvider | null>(null)
   const [configOpen, setConfigOpen] = useState(false)
-
-  const handleRefreshModels = (name: string) => {
-    addToast(`Refreshing models for ${name}...`, 'info')
-  }
 
   const handleConfigure = (name: string) => {
     const p = providers?.find(pr => pr.name === name)
@@ -49,7 +43,6 @@ export function AISettingsPage() {
               <ProviderCard
                 key={p.name}
                 provider={p}
-                onRefreshModels={handleRefreshModels}
                 onConfigure={handleConfigure}
               />
             ))}

@@ -129,7 +129,7 @@ class TestAllProviderImplementations:
         assert provider.display_name == "Ollama"
         caps = provider.capabilities
         assert caps.chat is True
-        assert caps.streaming is False
+        assert caps.streaming is True
         assert caps.vision is False
 
     def test_ollama_validate_config(self):

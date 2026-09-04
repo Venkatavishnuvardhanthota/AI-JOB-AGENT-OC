@@ -4,6 +4,8 @@ import type {
   AIHealthResponse,
   AIConfigData,
   AIUpdateConfigData,
+  AIProviderConfigUpdateData,
+  AIProviderConfigData,
   AIModel,
   AIProviderTestResult,
   PromptTemplateInfo,
@@ -46,6 +48,16 @@ export const aiService = {
 
   updateConfig(data: AIUpdateConfigData): Promise<{ updates: string[]; message: string; note: string }> {
     return api.put<APISuccessResponse<{ updates: string[]; message: string; note: string }>>('/ai/config', data).then(unwrap)
+  },
+
+  updateProviderConfig(provider: string, data: AIProviderConfigUpdateData): Promise<{ message: string; saved_config: AIProviderConfigData }> {
+    return api
+      .put<APISuccessResponse<{ message: string; saved_config: AIProviderConfigData }>>(`/ai/providers/${provider}/config`, data)
+      .then(unwrap)
+  },
+
+  deleteProviderConfig(provider: string): Promise<{ message: string; deleted: boolean }> {
+    return api.delete<APISuccessResponse<{ message: string; deleted: boolean }>>(`/ai/providers/${provider}/config`).then(unwrap)
   },
 
   listPrompts(): Promise<PromptTemplateInfo[]> {

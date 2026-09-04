@@ -1,8 +1,8 @@
 from app.core.provider_state import (
     ProviderState,
-    get_job_provider_statuses,
     get_ai_provider_statuses,
     get_all_provider_statuses,
+    get_job_provider_statuses,
 )
 
 
@@ -29,7 +29,7 @@ class TestProviderState:
         statuses = get_ai_provider_statuses(configured=["openai"], registered=[])
         assert len(statuses) == 1
         assert statuses[0].id == "openai"
-        assert statuses[0].state == ProviderState.NOT_IMPLEMENTED
+        assert statuses[0].state == ProviderState.UNAVAILABLE
 
     def test_ai_provider_invalid_name(self):
         statuses = get_ai_provider_statuses(configured=["nonexistent_provider"], registered=[])

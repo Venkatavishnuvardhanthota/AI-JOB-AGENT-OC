@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useResume, useResumeSections, useCreateResumeSection, useUpdateResumeSection, useDeleteResumeSection, useUpdateResume, useReorderSections, useDuplicateResume, useDownloadResume } from '@/api/hooks'
+import { useParams, Link } from 'react-router-dom'
+import { useResume, useResumeSections, useCreateResumeSection, useUpdateResumeSection, useDeleteResumeSection, useUpdateResume, useReorderSections, useDownloadResume } from '@/api/hooks'
 import { ExportPreviewModal } from '@/components/cover-letter/export-preview-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,12 +12,10 @@ import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { AtsScore } from '@/components/resume/ats-score'
 import { ResumeHealth } from '@/components/resume/resume-health'
-import { ResumeCompare } from '@/components/resume/resume-compare'
-import { VersionHistory } from '@/components/resume/version-history'
 import { ResumeOptimize } from '@/components/resume/resume-optimize'
 import {
-  ArrowLeft, Plus, Pencil, Trash2, Save, FileText, Layout,
-  Sparkles, TrendingUp, Heart, History, ArrowLeftRight, Download, Copy, GripVertical, Eye,
+  ArrowLeft, Plus, Pencil, Trash2, Save, FileText,
+  Sparkles, TrendingUp, Heart, Download, Eye, GripVertical,
 } from 'lucide-react'
 
 const SECTION_TYPES = [
@@ -27,15 +25,13 @@ const SECTION_TYPES = [
 
 export function ResumeDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { data: resume, isLoading } = useResume(id!) as any
-  const { data: sections, isLoading: sectionsLoading } = useResumeSections(id!) as any
+  const { data: resume, isLoading } = useResume(id!)
+  const { data: sections, isLoading: sectionsLoading } = useResumeSections(id!)
   const createSection = useCreateResumeSection(id!)
   const updateSection = useUpdateResumeSection(id!)
   const deleteSection = useDeleteResumeSection(id!)
   const updateResume = useUpdateResume()
   const reorderSections = useReorderSections(id!)
-  const duplicateResume = useDuplicateResume()
   const downloadResume = useDownloadResume()
   const { addToast } = useToast()
   const [activeTab, setActiveTab] = useState('editor')
@@ -47,6 +43,7 @@ export function ResumeDetailPage() {
   const [sectionType, setSectionType] = useState('summary')
   const [sectionTitle, setSectionTitle] = useState('')
   const [sectionContent, setSectionContent] = useState('')
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
 
   const handleSaveTitle = useCallback(async () => {
     if (!title.trim()) return
@@ -88,14 +85,6 @@ export function ResumeDetailPage() {
     catch { addToast('Failed to delete section', 'error') }
   }, [deleteSection, addToast])
 
-  const handleDuplicate = useCallback(async () => {
-    try {
-      const result = await duplicateResume.mutateAsync({ id: id!, data: { title: `${resume?.title || 'Resume'} (Copy)` } }) as any
-      addToast('Resume duplicated!', 'success')
-      if (result?.id) navigate(`/resumes/${result.id}`)
-    } catch { addToast('Failed to duplicate', 'error') }
-  }, [id, resume, duplicateResume, navigate, addToast])
-
   const handleDownloadPdf = useCallback(async () => {
     try { await downloadResume.mutateAsync({ id: id!, format: 'pdf' }) }
     catch { addToast('Failed to download', 'error') }
@@ -114,23 +103,7 @@ export function ResumeDetailPage() {
     setSectionContent('')
   }, [])
 
-  if (isLoading) return (
-    <div className="space-y-6 max-w-4xl">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-64 rounded-xl" />
-    </div>
-  )
-
-  if (!resume) return (
-    <div className="text-center py-16 text-muted-foreground">
-      <p className="text-lg mb-2">Resume not found</p>
-      <Button variant="outline" asChild><Link to="/resumes">Back to Resume Library</Link></Button>
-    </div>
-  )
-
   const sortedSections = ((sections as any) || []).slice().sort((a: any, b: any) => a.sort_order - b.sort_order)
-
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
 
   const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
     setDragIdx(idx)
@@ -158,6 +131,20 @@ export function ResumeDetailPage() {
   }, [dragIdx, sortedSections, reorderSections, addToast])
 
   const handleDragEnd = useCallback(() => { setDragIdx(null) }, [])
+
+  if (isLoading) return (
+    <div className="space-y-6 max-w-4xl">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
+  )
+
+  if (!resume) return (
+    <div className="text-center py-16 text-muted-foreground">
+      <p className="text-lg mb-2">Resume not found</p>
+      <Button variant="outline" asChild><Link to="/resumes">Back to Resume Library</Link></Button>
+    </div>
+  )
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -188,18 +175,10 @@ export function ResumeDetailPage() {
           )}
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>v{resume.version}</span>
-            <Badge variant={resume.status === 'complete' ? 'success' : 'warning'} className="text-xs">{resume.status}</Badge>
-            {resume.template && (
-              <Badge variant="secondary" className="text-xs gap-1">
-                <Layout className="h-3 w-3" /> {resume.template}
-              </Badge>
-            )}
+            <Badge variant={resume.status === 'active' || resume.status === 'complete' ? 'success' : 'warning'} className="text-xs">{resume.status}</Badge>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={handleDuplicate} aria-label="Duplicate resume">
-            <Copy className="h-4 w-4 mr-1" /> Duplicate
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowExportPreview(true)} aria-label="Preview and export">
             <Eye className="h-4 w-4 mr-1" /> Preview
           </Button>
@@ -225,12 +204,6 @@ export function ResumeDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="optimize" aria-controls="tab-optimize">
             <Sparkles className="h-4 w-4 mr-1" /> Optimize
-          </TabsTrigger>
-          <TabsTrigger value="versions" aria-controls="tab-versions">
-            <History className="h-4 w-4 mr-1" /> Versions
-          </TabsTrigger>
-          <TabsTrigger value="compare" aria-controls="tab-compare">
-            <ArrowLeftRight className="h-4 w-4 mr-1" /> Compare
           </TabsTrigger>
         </TabsList>
 
@@ -320,20 +293,8 @@ export function ResumeDetailPage() {
           <ResumeOptimize
             resumeId={id!}
             resumeTitle={resume.title || 'Resume'}
-            onOptimized={() => { setActiveTab('versions') }}
+            onOptimized={() => setActiveTab('editor')}
           />
-        </TabsContent>
-
-        <TabsContent value="versions" className="mt-6" id="tab-versions">
-          <VersionHistory
-            resumeId={id!}
-            currentVersion={resume.version}
-            onCompare={() => setActiveTab('compare')}
-          />
-        </TabsContent>
-
-        <TabsContent value="compare" className="mt-6" id="tab-compare">
-          <ResumeCompare resumeId={id!} />
         </TabsContent>
       </Tabs>
 

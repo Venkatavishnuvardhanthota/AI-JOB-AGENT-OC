@@ -1,3 +1,5 @@
+import json
+import logging
 import uuid
 
 from sqlalchemy import select
@@ -14,6 +16,18 @@ from app.schemas.resume import ResumeImportData
 from app.services.audit import AuditService
 from database.models.career_profile import CareerProfile
 
+logger = logging.getLogger(__name__)
+
+# Canonical resume origins. "master" is the legacy default for manually
+# created resumes; the library surfaces the others as origin badges.
+ORIGIN_MASTER = "master"
+ORIGIN_UPLOADED = "uploaded"
+ORIGIN_AI_GENERATED = "ai_generated"
+ORIGIN_AI_TAILORED = "ai_tailored"
+
+ORIGIN_MASTER_RESUMES = (ORIGIN_MASTER, ORIGIN_UPLOADED)
+ORIGIN_AI_RESUMES = (ORIGIN_AI_GENERATED, ORIGIN_AI_TAILORED)
+
 
 class ResumeService:
     def __init__(self, session: AsyncSession):
@@ -25,10 +39,13 @@ class ResumeService:
     # ── Resume CRUD ──
 
     async def list_resumes(
-        self, user_id: uuid.UUID, archived: bool | None = None, origin: str | None = None
+        self, user_id: uuid.UUID, archived: bool | None = None, origin: list[str] | None = None
     ) -> list[ResumeVersion]:
         if origin:
-            return await self.resume_repo.list_by_user_and_origin(user_id, origin)
+            # The library "master" tab shows manual + uploaded resumes.
+            if set(origin) == {ORIGIN_MASTER}:
+                origin = list(ORIGIN_MASTER_RESUMES)
+            return await self.resume_repo.list_by_user_and_origins(user_id, origin)
         return await self.resume_repo.list_by_user(user_id, archived=archived)
 
     async def get_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> ResumeVersion:
@@ -46,6 +63,7 @@ class ResumeService:
         resume_type: str | None = None,
         change_summary: str | None = None,
         sections: list[dict] | None = None,
+        origin: str = ORIGIN_MASTER,
     ) -> ResumeVersion:
         latest_version = await self.resume_repo.latest_version(user_id)
         resume = ResumeVersion(
@@ -57,6 +75,8 @@ class ResumeService:
             resume_type=resume_type,
             change_summary=change_summary,
             is_default=latest_version == 0,
+            origin=origin,
+            status="active" if sections else "draft",
         )
         created = await self.resume_repo.create(resume)
 
@@ -155,50 +175,6 @@ class ResumeService:
         if not resume or resume.user_id != user_id:
             raise NotFoundError("Resume not found.")
         return await self.resume_repo.set_default(resume_id, user_id)
-
-    # ── Versioning ──
-
-    async def create_version(
-        self,
-        resume_id: uuid.UUID,
-        user_id: uuid.UUID,
-        change_summary: str | None = None,
-    ) -> ResumeVersion:
-        resume = await self.resume_repo.get_with_sections(resume_id)
-        if not resume or resume.user_id != user_id:
-            raise NotFoundError("Resume not found.")
-        latest_version = await self.resume_repo.latest_version(user_id)
-        new_resume = ResumeVersion(
-            user_id=user_id,
-            version=latest_version + 1,
-            title=resume.title,
-            description=resume.description,
-            template=resume.template,
-            resume_type=resume.resume_type,
-            source=resume.source,
-            status="draft",
-            change_summary=change_summary,
-            previous_version_id=resume.id,
-        )
-        created = await self.resume_repo.create(new_resume)
-        for section in resume.sections:
-            new_section = ResumeSection(
-                resume_id=created.id,
-                section_type=section.section_type,
-                title=section.title,
-                content=section.content,
-                sort_order=section.sort_order,
-                visible=section.visible,
-            )
-            await self.section_repo.create(new_section)
-        await self.audit_service.log(
-            "VERSION_CREATED",
-            user_id=user_id,
-            entity="resume",
-            entity_id=created.id,
-            outcome="success",
-        )
-        return await self.resume_repo.get_with_sections(created.id)
 
     # ── Sections ──
 
@@ -600,7 +576,38 @@ class ResumeService:
             resume_type="generated",
             change_summary="Generated from career profile" + (" with AI enhancement" if enhance_with_ai else ""),
             sections=sections_data,
+            origin=ORIGIN_AI_GENERATED,
         )
+
+    @staticmethod
+    def _extract_improved_text(result: dict | None, current: str) -> str:
+        """Best-effort parse of the AI improve response into plain text.
+
+        The resume-improvement prompt asks for JSON {improved_bullets,
+        summary, changes_made}. Some providers return clean JSON, others
+        wrap it in prose; fall back to the raw content, then to the
+        original content, so a bad response never corrupts the resume.
+        """
+        if not result:
+            return current
+        raw = str(result.get("improved_content", "") or "").strip()
+        if not raw:
+            return current
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                bullets = parsed.get("improved_bullets") or parsed.get("bullet_points")
+                summary = parsed.get("summary")
+                if isinstance(bullets, list) and len(bullets) > 0:
+                    lines = [str(b) for b in bullets]
+                    if summary:
+                        lines.insert(0, str(summary))
+                    return "\n".join(l for l in lines if l)
+                if summary:
+                    return str(summary)
+        except (json.JSONDecodeError, ValueError):
+            pass
+        return raw
 
     async def _ai_enhance_sections(self, sections_data: list[dict], user_id: uuid.UUID) -> list[dict]:
         from app.ai.features.resume import ai_improve_resume_section
@@ -618,58 +625,13 @@ class ResumeService:
                     current_content=content_text,
                     improvement_areas="grammar, tone, action_verbs, keywords",
                 )
-                improved = result.get("improved_content", "")
-                if improved:
+                improved = self._extract_improved_text(result, content_text)
+                if improved and improved.strip():
                     section["content"]["text"] = improved
             except Exception:
-                pass
+                logger.exception("AI section enhancement failed; keeping original content.")
             enhanced.append(section)
         return enhanced
-
-    # ── Duplicate ──
-
-    async def duplicate_resume(
-        self,
-        resume_id: uuid.UUID,
-        user_id: uuid.UUID,
-        title: str,
-        change_summary: str | None = None,
-    ) -> ResumeVersion:
-        resume = await self.resume_repo.get_with_sections(resume_id)
-        if not resume or resume.user_id != user_id:
-            raise NotFoundError("Resume not found.")
-        latest_version = await self.resume_repo.latest_version(user_id)
-        new_resume = ResumeVersion(
-            user_id=user_id,
-            version=latest_version + 1,
-            title=title,
-            description=resume.description,
-            template=resume.template,
-            resume_type=resume.resume_type,
-            source="duplicate",
-            status="draft",
-            change_summary=change_summary or f"Duplicated from {resume.title}",
-            previous_version_id=resume.id,
-        )
-        created = await self.resume_repo.create(new_resume)
-        for section in (resume.sections or []):
-            new_section = ResumeSection(
-                resume_id=created.id,
-                section_type=section.section_type,
-                title=section.title,
-                content=section.content,
-                sort_order=section.sort_order,
-                visible=section.visible,
-            )
-            await self.section_repo.create(new_section)
-        await self.audit_service.log(
-            "RESUME_DUPLICATED",
-            user_id=user_id,
-            entity="resume",
-            entity_id=created.id,
-            outcome="success",
-        )
-        return await self.resume_repo.get_with_sections(created.id)
 
     # ── Optimize For Job ──
 
@@ -693,20 +655,27 @@ class ResumeService:
             template=resume.template,
             resume_type="optimized",
             source="optimization",
-            status="draft",
+            status="active",
             change_summary=f"Optimized for job {job_id}" + (f" ({target_role})" if target_role else "") + (" with AI enhancement" if enhance_with_ai else ""),
             previous_version_id=resume.id,
             generated_for_job_id=job_id,
+            origin=ORIGIN_AI_TAILORED,
         )
         created = await self.resume_repo.create(new_resume)
         for section in (resume.sections or []):
-            section_content = section.content
-
             if enhance_with_ai:
                 try:
                     from app.ai.features.resume import ai_improve_resume_section
 
-                    content_text = section_content.get("text", "") if isinstance(section_content, dict) else str(section_content) if section_content else ""
+                    original = section.content
+                    content_text = (
+                        original.get("text", "")
+                        if isinstance(original, dict)
+                        else str(original)
+                        if original
+                        else ""
+                    )
+                    result = None
                     if content_text.strip():
                         result = await ai_improve_resume_section(
                             section_type=section.section_type,
@@ -715,14 +684,17 @@ class ResumeService:
                             job_context=f"Optimizing for job {job_id}",
                             improvement_areas="grammar, tone, action_verbs, keywords, ats_optimization",
                         )
-                        improved = result.get("improved_content", "")
-                        if improved:
-                            if isinstance(section_content, dict):
-                                section_content["text"] = improved
-                            else:
-                                section_content = improved
+                    improved_text = self._extract_improved_text(result, content_text)
+                    if isinstance(original, dict):
+                        section_content = dict(original)
+                        section_content["text"] = improved_text
+                    else:
+                        section_content = {"text": improved_text}
                 except Exception:
-                    pass
+                    logger.exception("AI optimization failed for section; copying original content.")
+                    section_content = section.content
+            else:
+                section_content = section.content
 
             new_section = ResumeSection(
                 resume_id=created.id,
@@ -739,38 +711,9 @@ class ResumeService:
             entity="resume",
             entity_id=created.id,
             outcome="success",
+            details={"job_id": str(job_id), "enhanced_with_ai": enhance_with_ai},
         )
         return await self.resume_repo.get_with_sections(created.id)
-
-    # ── Compare Versions ──
-
-    async def compare_versions(
-        self,
-        left_id: uuid.UUID,
-        right_id: uuid.UUID,
-        user_id: uuid.UUID,
-    ) -> dict:
-        left = await self.resume_repo.get_with_sections(left_id)
-        right = await self.resume_repo.get_with_sections(right_id)
-        if not left or left.user_id != user_id:
-            raise NotFoundError("Left resume not found.")
-        if not right or right.user_id != user_id:
-            raise NotFoundError("Right resume not found.")
-        changes = []
-        left_sections = {s.section_type: s for s in (left.sections or [])}
-        right_sections = {s.section_type: s for s in (right.sections or [])}
-        for key in set(list(left_sections.keys()) + list(right_sections.keys())):
-            if key not in right_sections:
-                changes.append({"type": "removed", "section": key})
-            elif key not in left_sections:
-                changes.append({"type": "added", "section": key})
-            elif left_sections[key].content != right_sections[key].content:
-                changes.append({"type": "modified", "section": key})
-        return {
-            "left_version": left.version,
-            "right_version": right.version,
-            "changes": changes,
-        }
 
     # ── ATS Analysis ──
 
@@ -1032,19 +975,6 @@ class ResumeService:
             "improvements": improvements,
             "recommendations": list(dict.fromkeys(recommendations)),
         }
-
-    async def list_versions(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> list:
-        resume = await self.resume_repo.get_by_id(resume_id)
-        if not resume or resume.user_id != user_id:
-            raise NotFoundError("Resume not found.")
-        stmt = (
-            select(ResumeVersion)
-            .where(ResumeVersion.user_id == user_id)
-            .order_by(ResumeVersion.version.desc())
-        )
-        result = await self.session.execute(stmt)
-        versions = result.scalars().all()
-        return versions
 
     async def analyze_resume(self, resume_id: uuid.UUID, user_id: uuid.UUID, job_id: uuid.UUID | None = None) -> dict:
         ats = await self.analyze_ats(resume_id, user_id, job_id)

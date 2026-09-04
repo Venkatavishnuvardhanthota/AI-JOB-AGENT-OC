@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
@@ -7,17 +8,30 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import (
+    AIRequest,
+    AIResponse,
+    CapabilityInfo,
+    GenerationMetadata,
+    ModelInfo,
+    ProviderInfo,
+    UsageMetrics,
+)
 
 logger = structlog.get_logger(__name__)
 
 
 GEMINI_KNOWN_MODELS: list[dict[str, Any]] = [
-    {"id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "tokens": 1048576, "vision": True, "fc": True, "streaming": True},
-    {"id": "gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash Lite", "tokens": 1048576, "vision": True, "fc": True, "streaming": True},
-    {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "tokens": 2097152, "vision": True, "fc": True, "streaming": True},
-    {"id": "gemini-1.5-flash", "name": "Gemini 1.5 Flash", "tokens": 1048576, "vision": True, "fc": True, "streaming": True},
-    {"id": "gemini-1.5-flash-8b", "name": "Gemini 1.5 Flash-8B", "tokens": 1048576, "vision": True, "fc": True, "streaming": True},
+    {"id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "tokens": 1048576,
+     "vision": True, "fc": True, "streaming": True},
+    {"id": "gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash Lite", "tokens": 1048576,
+     "vision": True, "fc": True, "streaming": True},
+    {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "tokens": 2097152,
+     "vision": True, "fc": True, "streaming": True},
+    {"id": "gemini-1.5-flash", "name": "Gemini 1.5 Flash", "tokens": 1048576,
+     "vision": True, "fc": True, "streaming": True},
+    {"id": "gemini-1.5-flash-8b", "name": "Gemini 1.5 Flash-8B", "tokens": 1048576,
+     "vision": True, "fc": True, "streaming": True},
 ]
 
 
@@ -44,39 +58,59 @@ class GeminiProvider(AIProvider):
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
         self._client = AIHTTPClient(
-            base_url=config.gemini_base_url,
-            api_key=config.gemini_api_key,
-            timeout_seconds=config.timeout_seconds,
-            max_retries=config.max_retries,
+            base_url=self.param("base_url", config.gemini_base_url),
+            api_key=self.param("api_key", config.gemini_api_key),
+            timeout_seconds=self.param("timeout_seconds", config.timeout_seconds),
+            max_retries=self.param("max_retries", config.max_retries),
+            retry_delay_seconds=self.param("retry_delay_seconds", config.retry_delay_seconds),
         )
 
     def validate_config(self) -> list[str]:
         errors: list[str] = []
-        if not self.config.gemini_api_key:
+        if not self.param("api_key", self.config.gemini_api_key):
             errors.append("GEMINI_API_KEY is not set")
         return errors
 
+    def _default_model(self) -> str:
+        return self.param("default_model", self.config.gemini_default_model)
+
     def _build_url(self, model: str, action: str = "generateContent") -> str:
-        key = self.config.gemini_api_key or ""
+        key = self.param("api_key", self.config.gemini_api_key) or ""
         return f"/v1beta/models/{model}:{action}?key={key}"
 
-    async def generate(self, request: AIRequest) -> AIResponse:
-        contents: list[dict[str, Any]] = []
-        if request.system_prompt:
-            contents.append({"role": "user", "parts": [{"text": f"[System: {request.system_prompt}]"}]})
-        contents.append({"role": "user", "parts": [{"text": request.prompt}]})
-
+    def _build_body(self, request: AIRequest, *, stream: bool = False) -> dict[str, Any]:
         body: dict[str, Any] = {
-            "contents": contents,
+            "contents": [{"role": "user", "parts": [{"text": request.prompt}]}],
         }
-        if request.temperature is not None:
-            body.setdefault("generationConfig", {})["temperature"] = request.temperature
-        if request.max_tokens is not None:
-            body.setdefault("generationConfig", {})["maxOutputTokens"] = request.max_tokens
+        if request.system_prompt:
+            body["systemInstruction"] = {"parts": [{"text": request.system_prompt}]}
+        generation_config: dict[str, Any] = {}
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
+        if temperature is not None:
+            generation_config["temperature"] = temperature
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", self.config.max_tokens)
+        )
+        if max_tokens is not None:
+            generation_config["maxOutputTokens"] = max_tokens
         if request.stop_sequences:
-            body.setdefault("generationConfig", {})["stopSequences"] = request.stop_sequences
+            generation_config["stopSequences"] = request.stop_sequences
+        if stream:
+            generation_config["responseModalities"] = ["TEXT"]
+        if generation_config:
+            body["generationConfig"] = generation_config
+        return body
 
-        url = self._build_url(request.model or self.config.gemini_default_model)
+    async def generate(self, request: AIRequest) -> AIResponse:
+        body = self._build_body(request)
+        model = request.model or self._default_model()
+        url = self._build_url(model)
         response = await self._client.post(url, json=body)
         data = response.json()
 
@@ -100,22 +134,36 @@ class GeminiProvider(AIProvider):
         )
 
         metadata = GenerationMetadata(
-            model=request.model or self.config.gemini_default_model,
+            model=model,
             provider=self.name,
             finish_reason=finish_reason,
         )
 
         return AIResponse(
             content=content,
-            model=request.model or self.config.gemini_default_model,
+            model=model,
             provider=self.name,
             usage=usage,
             metadata=metadata,
         )
 
+    async def stream(self, request: AIRequest) -> AsyncIterator[str]:
+        body = self._build_body(request, stream=True)
+        model = request.model or self._default_model()
+        url = self._build_url(model, "streamGenerateContent") + "&alt=sse"
+        async for payload in self._client.stream(url, json=body):
+            candidates = payload.get("candidates") or []
+            if not candidates:
+                continue
+            content_parts = candidates[0].get("content", {}).get("parts", [])
+            for part in content_parts:
+                piece = part.get("text")
+                if piece:
+                    yield piece
+
     async def health_check(self) -> bool:
         try:
-            url = self._build_url(self.config.gemini_default_model, "generateContent")
+            url = self._build_url(self._default_model(), "generateContent")
             response = await self._client.post(
                 url,
                 json={"contents": [{"role": "user", "parts": [{"text": "ping"}]}]},
@@ -152,5 +200,5 @@ class GeminiProvider(AIProvider):
             version=self.version,
             supports_streaming=self.supports_streaming,
             capabilities=self.capabilities,
-            configured=bool(self.config.gemini_api_key),
+            configured=bool(self.param("api_key", self.config.gemini_api_key)),
         )

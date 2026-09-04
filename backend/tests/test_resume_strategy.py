@@ -338,7 +338,7 @@ class TestPrepareTailor:
         assert result["generated_resume_id"] is not None
 
         generated = await session.get(ResumeVersion, result["generated_resume_id"])
-        assert generated.origin == "generated"
+        assert generated.origin == "ai_tailored"
         assert generated.parent_resume_id == master.id
         assert generated.generated_for_job_id == job.id
         assert generated.resume_type == "tailored"
@@ -373,7 +373,7 @@ class TestPrepareTailor:
         )
         assert second["reused_generated"] is True
         assert second["generated_resume_id"] == first["generated_resume_id"]
-        resumes = await ResumeVersionRepository(session).list_by_user_and_origin(user.id, "generated")
+        resumes = await ResumeVersionRepository(session).list_by_user_and_origins(user.id, ["ai_tailored", "ai_generated"])
         assert len(resumes) == 1
 
     async def test_tailor_regenerates_when_job_changes(self, session, mock_ai):
@@ -400,7 +400,7 @@ class TestPrepareGenerate:
         assert result["needs_choice"] is False
         assert result["generated_resume_id"] is not None
         generated = await session.get(ResumeVersion, result["generated_resume_id"])
-        assert generated.origin == "generated"
+        assert generated.origin == "ai_generated"
         assert generated.generated_for_job_id == job.id
         assert generated.resume_type == "generated"
 
@@ -576,5 +576,5 @@ class TestListing:
         assert len(masters) == 2
         assert all(r.origin == "master" for r in masters)
         assert len(generated) == 1
-        assert generated[0].origin == "generated"
+        assert generated[0].origin == "ai_generated"
         assert generated[0].generated_for_job_id == job.id

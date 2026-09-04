@@ -83,7 +83,9 @@ class ProfileEnhanceRequest(BaseModel):
     industry: str = Field(default="", max_length=200, description="Industry context")
     improvement_areas: str = Field(default="summary, headline, skills, achievements", max_length=500)
     target_company: str = Field(default="", max_length=200, description="Target company")
-    experience_entries: list[dict] | None = Field(default=None, description="Experience entries for targeted enhancement")
+    experience_entries: list[dict] | None = Field(
+        default=None, description="Experience entries for targeted enhancement"
+    )
     project_entries: list[dict] | None = Field(default=None, description="Project entries for targeted enhancement")
 
 
@@ -141,7 +143,9 @@ class InterviewQuestionsRequest(BaseModel):
     company: str = Field(min_length=1, max_length=200, description="Company name")
     job_description: str = Field(default="", max_length=10000, description="Job description")
     background: str = Field(default="", max_length=5000, description="Candidate background")
-    question_types: str = Field(default="behavioral, technical, culture", max_length=200, description="Types of questions")
+    question_types: str = Field(
+        default="behavioral, technical, culture", max_length=200, description="Types of questions"
+    )
     interview_round: InterviewRoundEnum = Field(default=InterviewRoundEnum.first, description="Interview round")
     count: int = Field(default=3, ge=1, le=20, description="Number of questions per type")
 

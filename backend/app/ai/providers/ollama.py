@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
@@ -7,7 +8,15 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import (
+    AIRequest,
+    AIResponse,
+    CapabilityInfo,
+    GenerationMetadata,
+    ModelInfo,
+    ProviderInfo,
+    UsageMetrics,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -20,13 +29,13 @@ class OllamaProvider(AIProvider):
     display_name = "Ollama"
     description = "Local Ollama server"
     version = "1.0.0"
-    supports_streaming = False
+    supports_streaming = True
 
     @property
     def capabilities(self) -> CapabilityInfo:
         return CapabilityInfo(
             chat=True,
-            streaming=False,
+            streaming=True,
             vision=False,
             json_mode=False,
             function_calling=False,
@@ -38,10 +47,36 @@ class OllamaProvider(AIProvider):
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
         self._client = AIHTTPClient(
-            base_url=config.ollama_base_url,
-            timeout_seconds=config.timeout_seconds,
-            max_retries=config.max_retries,
+            base_url=self.param("base_url", config.ollama_base_url),
+            timeout_seconds=self.param("timeout_seconds", config.timeout_seconds),
+            max_retries=self.param("max_retries", config.max_retries),
+            retry_delay_seconds=self.param("retry_delay_seconds", config.retry_delay_seconds),
         )
+
+    def _build_options(self, request: AIRequest) -> dict[str, Any]:
+        options: dict[str, Any] = {}
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
+        if temperature is not None:
+            options["temperature"] = temperature
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", self.config.max_tokens)
+        )
+        if max_tokens is not None:
+            options["num_predict"] = max_tokens
+        if request.stop_sequences:
+            options["stop"] = request.stop_sequences
+        return options
+
+    @staticmethod
+    def _disable_reasoning_for_qwen3(body: dict[str, Any], model: str) -> None:
+        if model.startswith("qwen3"):
+            body["think"] = False
 
     async def generate(self, request: AIRequest) -> AIResponse:
         messages = []
@@ -54,10 +89,10 @@ class OllamaProvider(AIProvider):
             "messages": messages,
             "stream": False,
         }
-        if request.temperature is not None:
-            body["temperature"] = request.temperature
-        if request.stop_sequences:
-            body["stop"] = request.stop_sequences
+        self._disable_reasoning_for_qwen3(body, request.model)
+        options = self._build_options(request)
+        if options:
+            body["options"] = options
 
         response = await self._client.post(OLLAMA_CHAT_ENDPOINT, json=body)
         data = response.json()
@@ -88,6 +123,29 @@ class OllamaProvider(AIProvider):
             usage=usage,
             metadata=metadata,
         )
+
+    async def stream(self, request: AIRequest) -> AsyncIterator[str]:
+        messages = []
+        if request.system_prompt:
+            messages.append({"role": "system", "content": request.system_prompt})
+        messages.append({"role": "user", "content": request.prompt})
+
+        body: dict[str, Any] = {
+            "model": request.model,
+            "messages": messages,
+            "stream": True,
+        }
+        self._disable_reasoning_for_qwen3(body, request.model)
+        options = self._build_options(request)
+        if options:
+            body["options"] = options
+
+        async for payload in self._client.stream(OLLAMA_CHAT_ENDPOINT, json=body):
+            if payload.get("done"):
+                continue
+            piece = payload.get("message", {}).get("content")
+            if piece:
+                yield piece
 
     async def health_check(self) -> bool:
         try:

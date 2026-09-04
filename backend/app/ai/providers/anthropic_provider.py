@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
@@ -7,7 +8,15 @@ import structlog
 from app.ai.config import AIConfig
 from app.ai.http_client import AIHTTPClient
 from app.ai.interfaces import AIProvider
-from app.ai.schemas import AIRequest, AIResponse, CapabilityInfo, GenerationMetadata, ModelInfo, ProviderInfo, UsageMetrics
+from app.ai.schemas import (
+    AIRequest,
+    AIResponse,
+    CapabilityInfo,
+    GenerationMetadata,
+    ModelInfo,
+    ProviderInfo,
+    UsageMetrics,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -15,7 +24,8 @@ MESSAGES_ENDPOINT = "/v1/messages"
 
 
 ANTHROPIC_KNOWN_MODELS: list[dict[str, Any]] = [
-    {"id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4", "tokens": 200000, "vision": True, "reasoning": True, "fc": True},
+    {"id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4", "tokens": 200000,
+     "vision": True, "reasoning": True, "fc": True},
     {"id": "claude-4-20250514", "name": "Claude 4", "tokens": 200000, "vision": True, "reasoning": True, "fc": True},
     {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "tokens": 200000, "vision": True, "fc": True},
     {"id": "claude-3-5-haiku-20241022", "name": "Claude 3.5 Haiku", "tokens": 200000, "vision": True, "fc": True},
@@ -49,29 +59,40 @@ class AnthropicProvider(AIProvider):
     def __init__(self, config: AIConfig) -> None:
         super().__init__(config)
         self._client = AIHTTPClient(
-            base_url=config.anthropic_base_url,
-            api_key=config.anthropic_api_key,
-            timeout_seconds=config.timeout_seconds,
-            max_retries=config.max_retries,
+            base_url=self.param("base_url", config.anthropic_base_url),
+            api_key=self.param("api_key", config.anthropic_api_key),
+            timeout_seconds=self.param("timeout_seconds", config.timeout_seconds),
+            max_retries=self.param("max_retries", config.max_retries),
+            retry_delay_seconds=self.param("retry_delay_seconds", config.retry_delay_seconds),
             default_headers={"anthropic-version": "2023-06-01"},
         )
 
     def validate_config(self) -> list[str]:
         errors: list[str] = []
-        if not self.config.anthropic_api_key:
+        if not self.param("api_key", self.config.anthropic_api_key):
             errors.append("ANTHROPIC_API_KEY is not set")
         return errors
 
     async def generate(self, request: AIRequest) -> AIResponse:
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", 4096)
+        )
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
         body: dict[str, Any] = {
             "model": request.model,
-            "max_tokens": request.max_tokens or 4096,
+            "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": request.prompt}],
         }
         if request.system_prompt:
             body["system"] = request.system_prompt
-        if request.temperature is not None:
-            body["temperature"] = request.temperature
+        if temperature is not None:
+            body["temperature"] = temperature
         if request.stop_sequences:
             body["stop_sequences"] = request.stop_sequences
 
@@ -110,12 +131,40 @@ class AnthropicProvider(AIProvider):
             metadata=metadata,
         )
 
+    async def stream(self, request: AIRequest) -> AsyncIterator[str]:
+        max_tokens = (
+            request.max_tokens
+            if request.max_tokens is not None
+            else self.param("max_tokens", 4096)
+        )
+        body: dict[str, Any] = {
+            "model": request.model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": request.prompt}],
+            "stream": True,
+        }
+        if request.system_prompt:
+            body["system"] = request.system_prompt
+        temperature = (
+            request.temperature
+            if request.temperature is not None
+            else self.param("temperature", self.config.temperature)
+        )
+        if temperature is not None:
+            body["temperature"] = temperature
+
+        async for payload in self._client.stream(MESSAGES_ENDPOINT, json=body):
+            if payload.get("type") == "content_block_delta":
+                piece = payload.get("delta", {}).get("text")
+                if piece:
+                    yield piece
+
     async def health_check(self) -> bool:
         try:
             response = await self._client.post(
                 MESSAGES_ENDPOINT,
                 json={
-                    "model": self.config.anthropic_default_model,
+                    "model": self.param("default_model", self.config.anthropic_default_model),
                     "max_tokens": 1,
                     "messages": [{"role": "user", "content": "ping"}],
                 },
@@ -153,5 +202,5 @@ class AnthropicProvider(AIProvider):
             version=self.version,
             supports_streaming=self.supports_streaming,
             capabilities=self.capabilities,
-            configured=bool(self.config.anthropic_api_key),
+            configured=bool(self.param("api_key", self.config.anthropic_api_key)),
         )

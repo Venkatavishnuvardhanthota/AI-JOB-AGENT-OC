@@ -331,13 +331,13 @@ class TestHealthChecker:
 
     def test_check_ai_provider_healthy(self, health):
         with patch("app.ai.dependencies.get_ai_service") as mock_svc:
-            mock_svc.return_value.provider_manager.get_available_providers.return_value = ["openai"]
+            mock_svc.return_value.list_providers.return_value = ["openai"]
             result = health.check_ai_provider()
             assert result["status"] == "healthy"
 
     def test_check_ai_provider_degraded(self, health):
         with patch("app.ai.dependencies.get_ai_service") as mock_svc:
-            mock_svc.return_value.provider_manager.get_available_providers.return_value = []
+            mock_svc.return_value.list_providers.return_value = []
             result = health.check_ai_provider()
             assert result["status"] == "degraded"
 
@@ -355,7 +355,7 @@ class TestHealthChecker:
             patch("app.core.config.settings", DATABASE_URL="postgresql://localhost:5432/db"),
             patch("app.ai.dependencies.get_ai_service") as mock_svc,
         ):
-            mock_svc.return_value.provider_manager.get_available_providers.return_value = ["openai"]
+            mock_svc.return_value.list_providers.return_value = ["openai"]
             result = health.check_all()
             assert result["overall"] == "healthy"
 
@@ -364,7 +364,7 @@ class TestHealthChecker:
             patch("app.core.config.settings", DATABASE_URL=""),
             patch("app.ai.dependencies.get_ai_service") as mock_svc,
         ):
-            mock_svc.return_value.provider_manager.get_available_providers.return_value = ["openai"]
+            mock_svc.return_value.list_providers.return_value = ["openai"]
             result = health.check_all()
             assert result["overall"] == "degraded"
 

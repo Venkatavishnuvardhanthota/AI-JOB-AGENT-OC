@@ -5,7 +5,13 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
 import { ProviderCapabilities } from '@/components/ai/ProviderCapabilities'
-import { useTestAIConnection, useAIModels } from '@/api/hooks'
+import {
+  useTestAIConnection,
+  useAIModels,
+  useUpdateProviderConfig,
+  useDeleteProviderConfig,
+  useUpdateAIConfig,
+} from '@/api/hooks'
 import type { AIProvider } from '@/types'
 import {
   X,
@@ -18,6 +24,7 @@ import {
   Eye,
   EyeOff,
   Shield,
+  Trash2,
 } from 'lucide-react'
 
 interface ProviderConfigFormProps {
@@ -29,7 +36,10 @@ interface ProviderConfigFormProps {
 export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFormProps) {
   const { addToast } = useToast()
   const testMutation = useTestAIConnection()
-  const { data: models } = useAIModels(provider?.name)
+  const saveMutation = useUpdateProviderConfig()
+  const deleteMutation = useDeleteProviderConfig()
+  const updateConfigMutation = useUpdateAIConfig()
+  const { data: models, refetch: refetchModels } = useAIModels(provider?.name)
   const [testResult, setTestResult] = useState<{ healthy: boolean; latency_ms?: number; error?: string } | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -38,6 +48,7 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
   const [form, setForm] = useState({
     apiKey: '',
     baseUrl: '',
+    defaultModel: '',
     temperature: 0.7,
     maxTokens: 2048,
     timeout: 60,
@@ -51,7 +62,21 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
 
   useEffect(() => {
     if (provider) {
-      setForm(prev => ({ ...prev, isDefault: provider.is_default, enabled: provider.is_available }))
+      const saved = provider.saved_config
+      setForm({
+        apiKey: '',
+        baseUrl: saved?.base_url || '',
+        defaultModel: saved?.default_model || '',
+        temperature: saved?.temperature ?? 0.7,
+        maxTokens: saved?.max_tokens ?? 2048,
+        timeout: saved?.timeout_seconds ?? 60,
+        retryCount: saved?.max_retries ?? 3,
+        retryDelay: saved?.retry_delay_seconds ?? 1,
+        streamingEnabled: saved?.streaming_enabled ?? true,
+        fallbackEnabled: false,
+        enabled: saved?.is_enabled ?? true,
+        isDefault: provider.is_default,
+      })
       setTestResult(null)
       setSelectedModel('')
     }
@@ -72,15 +97,66 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
     })
   }
 
-  const handleRefreshModels = () => {
+  const handleRefreshModels = async () => {
     setRefreshing(true)
-    addToast('Models refreshed', 'info')
-    setTimeout(() => setRefreshing(false), 1000)
+    try {
+      await refetchModels()
+      addToast('Models refreshed', 'success')
+    } catch {
+      addToast('Failed to refresh models', 'error')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const handleDeleteKey = () => {
+    deleteMutation.mutate(provider.name, {
+      onSuccess: () => {
+        setForm(f => ({ ...f, apiKey: '' }))
+        addToast(`${provider.display_name} saved API key cleared`, 'success')
+      },
+      onError: (err: Error) => {
+        addToast(`Failed to clear API key: ${err.message}`, 'error')
+      },
+    })
   }
 
   const handleSave = () => {
-    addToast(`${provider.display_name} configuration saved`, 'success')
+    saveMutation.mutate(
+      {
+        provider: provider.name,
+        data: {
+          api_key: form.apiKey || undefined,
+          base_url: form.baseUrl || undefined,
+          default_model: selectedModel || form.defaultModel || undefined,
+          is_enabled: form.enabled,
+          temperature: form.temperature,
+          max_tokens: form.maxTokens,
+          timeout_seconds: form.timeout,
+          max_retries: form.retryCount,
+          retry_delay_seconds: form.retryDelay,
+          streaming_enabled: form.streamingEnabled,
+        },
+      },
+      {
+        onSuccess: () => {
+          addToast(`${provider.display_name} configuration saved`, 'success')
+          if (form.isDefault && !provider.is_default) {
+            updateConfigMutation.mutate(
+              { default_provider: provider.name, default_model: selectedModel || form.defaultModel || undefined },
+              { onSuccess: () => addToast(`${provider.display_name} set as default provider`, 'success') },
+            )
+          }
+          onClose()
+        },
+        onError: (err: Error) => {
+          addToast(`Failed to save configuration: ${err.message}`, 'error')
+        },
+      },
+    )
   }
+
+  const selectedModelValue = selectedModel || form.defaultModel || ''
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16" onClick={onClose}>
@@ -102,6 +178,7 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
             {provider.configured && <Badge variant="success">Configured</Badge>}
             {provider.is_default && <Badge variant="default">Default</Badge>}
             {provider.is_available ? <Badge variant="success">Available</Badge> : <Badge variant="warning">Unavailable</Badge>}
+            {provider.saved_config?.api_key_set && <Badge variant="outline">API key saved</Badge>}
           </div>
 
           {provider.capabilities && (
@@ -112,15 +189,15 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
           )}
 
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Available Models ({models?.length || provider.models?.length || 0})</p>
+            <p className="text-xs text-muted-foreground mb-1">Available Models ({models?.length || 0})</p>
             <div className="flex gap-2">
               <Select
-                value={selectedModel}
+                value={selectedModelValue}
                 onChange={e => setSelectedModel(e.target.value)}
                 className="flex-1"
               >
-                <option value="">Select a model...</option>
-                {(models || provider.models || []).map((m: any) => (
+                <option value="">{form.defaultModel || 'Select a model...'}</option>
+                {(models || []).map((m: any) => (
                   <option key={m.id} value={m.id}>{m.name || m.id}</option>
                 ))}
               </Select>
@@ -142,12 +219,17 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
                   type={showApiKey ? 'text' : 'password'}
                   value={form.apiKey}
                   onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
-                  placeholder={provider.configured ? '••••••••••••••••' : 'Enter API key...'}
+                  placeholder={provider.saved_config?.api_key_set ? 'Saved key (enter to replace)' : 'Enter API key...'}
                   className="flex-1"
                 />
                 <Button variant="outline" size="icon" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? 'Hide' : 'Show'}>
                   {showApiKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                 </Button>
+                {provider.saved_config?.api_key_set && (
+                  <Button variant="outline" size="icon" onClick={handleDeleteKey} title="Clear saved API key" disabled={deleteMutation.isPending}>
+                    <Trash2 className="h-3 w-3 text-error" />
+                  </Button>
+                )}
               </div>
             </div>
             <div>
@@ -156,6 +238,14 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
                 value={form.baseUrl}
                 onChange={e => setForm(f => ({ ...f, baseUrl: e.target.value }))}
                 placeholder="https://api.example.com/v1"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Default Model</label>
+              <Input
+                value={form.defaultModel}
+                onChange={e => setForm(f => ({ ...f, defaultModel: e.target.value }))}
+                placeholder="e.g. gpt-4o"
               />
             </div>
           </div>
@@ -225,15 +315,6 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={form.fallbackEnabled}
-                onChange={e => setForm(f => ({ ...f, fallbackEnabled: e.target.checked }))}
-                className="rounded border-glass-border bg-dark-800"
-              />
-              Fallback Enabled
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
                 checked={form.enabled}
                 onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
                 className="rounded border-glass-border bg-dark-800"
@@ -268,8 +349,8 @@ export function ProviderConfigForm({ provider, open, onClose }: ProviderConfigFo
           </Button>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-1" />
+            <Button onClick={handleSave} disabled={saveMutation.isPending || updateConfigMutation.isPending}>
+              {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
               Save Configuration
             </Button>
           </div>

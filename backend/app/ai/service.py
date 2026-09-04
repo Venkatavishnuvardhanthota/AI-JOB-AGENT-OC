@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
 import structlog
@@ -17,7 +18,7 @@ from app.ai.exceptions import (
 from app.ai.prompts.parser import ResponseParser
 from app.ai.prompts.renderer import PromptRenderer
 from app.ai.registry import AIProviderRegistry
-from app.ai.schemas import AIRequest, AIResponse, HealthCheckResult, ProviderInfo
+from app.ai.schemas import AIRequest, AIResponse, HealthCheckResult, ModelInfo, ProviderInfo
 
 if TYPE_CHECKING:
     from app.ai.prompts.registry import PromptTemplateRegistry
@@ -101,7 +102,8 @@ class AIService:
         for i, name in enumerate(providers_to_try):
             try:
                 provider = self._registry.resolve(name)
-                resolved = request.model_copy(update={"provider": name})
+                fallback_model = self._config.fallback_model if i > 0 else request.model
+                resolved = request.model_copy(update={"provider": name, "model": fallback_model})
 
                 logger.info(
                     "Generating AI content",
@@ -148,6 +150,17 @@ class AIService:
         )
         response = await self.generate(request)
         return response.content
+
+    async def generate_stream(
+        self,
+        request: AIRequest,
+    ) -> AsyncIterator[str]:
+        provider_name = request.provider or self._config.default_provider
+        model = request.model or self._config.default_model
+        resolved = request.model_copy(update={"provider": provider_name, "model": model})
+        provider = self._registry.resolve(provider_name)
+        async for chunk in provider.stream(resolved):
+            yield chunk
 
     async def generate_prompted(
         self,
@@ -232,7 +245,6 @@ class AIService:
                 start = time.monotonic()
                 is_healthy = await provider.health_check()
                 latency = (time.monotonic() - start) * 1000
-                await provider.available_models()
                 results.append(HealthCheckResult(
                     provider=name,
                     model=self._config.default_model,
@@ -261,19 +273,18 @@ class AIService:
         errors = provider.validate_config()
         return len(errors) == 0
 
-    async def available_models(self, provider_name: str | None = None) -> dict[str, list]:
+    async def available_models(self, provider_name: str | None = None) -> list[ModelInfo]:
         targets = [provider_name] if provider_name else self._registry.list_providers()
-        results: dict[str, list] = {}
+        results: list[ModelInfo] = []
         for name in targets:
             try:
                 provider = self._registry.resolve(name)
                 models = await provider.available_models()
-                results[name] = [m.model_dump() for m in models]
+                results.extend(models)
             except ProviderNotFoundError:
-                results[name] = []
+                continue
             except Exception:
                 logger.exception("Failed to fetch models for provider", provider=name)
-                results[name] = []
         return results
 
     async def provider_info(self, provider_name: str) -> ProviderInfo:

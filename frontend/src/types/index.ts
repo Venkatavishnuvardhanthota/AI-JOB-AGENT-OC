@@ -596,6 +596,32 @@ export interface AIModel {
   supports_reasoning: boolean
 }
 
+export interface AIProviderConfigData {
+  api_key_set: boolean
+  base_url?: string | null
+  default_model?: string | null
+  is_enabled?: boolean
+  temperature?: number | null
+  max_tokens?: number | null
+  timeout_seconds?: number | null
+  max_retries?: number | null
+  retry_delay_seconds?: number | null
+  streaming_enabled?: boolean | null
+}
+
+export interface AIProviderConfigUpdateData {
+  api_key?: string
+  base_url?: string
+  default_model?: string
+  is_enabled?: boolean
+  temperature?: number
+  max_tokens?: number
+  timeout_seconds?: number
+  max_retries?: number
+  retry_delay_seconds?: number
+  streaming_enabled?: boolean
+}
+
 export interface AIProvider {
   name: string
   display_name: string
@@ -608,6 +634,8 @@ export interface AIProvider {
   capabilities?: CapabilityInfo
   models: AIModel[]
   error?: string
+  implemented?: boolean
+  saved_config?: AIProviderConfigData | null
 }
 
 export interface ProviderStatus {
@@ -660,6 +688,8 @@ export interface AIConfigData {
 export interface AIUpdateConfigData {
   default_provider?: string
   default_model?: string
+  fallback_provider?: string
+  fallback_model?: string
   temperature?: number
   max_tokens?: number
   timeout_seconds?: number

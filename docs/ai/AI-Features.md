@@ -57,12 +57,12 @@ The resume pipeline integrates AI enhancement into the existing `ResumeService`:
 generate_from_profile(enhance_with_ai=True)
   → Build sections from CareerProfile (deterministic)
   → For each section: ai_improve_resume_section() via registry
-  → Create ResumeVersion with enhanced sections
+  → Create resume (origin=ai_generated, status=active)
 
 optimize_for_job(enhance_with_ai=True)
-  → Duplicate existing resume (deterministic)
+  → Copy sections from the selected master resume (deterministic)
   → For each section: ai_improve_resume_section() with job context
-  → Create ResumeVersion with enhanced sections
+  → Create resume (origin=ai_tailored, status=active)
 ```
 
 ### AI Enhancement Scope
