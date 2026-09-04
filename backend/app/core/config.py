@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "AI Job Agent"
-    APP_VERSION: str = "2.0.0"
-    APP_RELEASE_DATE: str = "2026-07-24"
+    APP_VERSION: str = "2.1.0"
+    APP_RELEASE_DATE: str = "2026-07-28"
     APP_DEBUG: bool = True
     APP_SECRET_KEY: str = ""
     APP_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -53,18 +53,33 @@ class Settings(BaseSettings):
     AI_FALLBACK_MODEL: str = "gpt-3.5-turbo"
     AI_FALLBACK_PROVIDER: str = ""
     AI_MAX_RETRIES: int = 3
+    AI_RETRY_DELAY_SECONDS: int = 1
     AI_TIMEOUT_SECONDS: int = 60
     AI_TEMPERATURE: float | None = None
     AI_MAX_TOKENS: int | None = None
+    AI_ENABLED_PROVIDERS: str = "openrouter,ollama,openai,anthropic,gemini"
+    AI_STREAMING_ENABLED: bool = False
 
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai"
     OPENROUTER_DEFAULT_MODEL: str = "gpt-4o"
 
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com"
+    OPENAI_DEFAULT_MODEL: str = "gpt-4o"
+
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
+    ANTHROPIC_DEFAULT_MODEL: str = "claude-sonnet-4-20250514"
+
+    GEMINI_API_KEY: str = ""
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com"
+    GEMINI_DEFAULT_MODEL: str = "gemini-2.0-flash"
+
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_DEFAULT_MODEL: str = "llama3"
 
-    ENABLED_JOB_PROVIDERS_CSV: str = "linkedin,greenhouse,lever,ashby,wellfound,workday"
+    ENABLED_JOB_PROVIDERS_CSV: str = "greenhouse,lever,ashby,wellfound,workday"
 
     JOB_REQUEST_TIMEOUT_SECONDS: int = 30
     JOB_RETRY_COUNT: int = 2
@@ -154,6 +169,10 @@ class Settings(BaseSettings):
     @property
     def ENABLED_JOB_PROVIDERS(self) -> list[str]:  # noqa: N802
         return [x.strip() for x in self.ENABLED_JOB_PROVIDERS_CSV.split(",") if x.strip()]
+
+    @property
+    def AI_ENABLED_PROVIDERS_LIST(self) -> list[str]:  # noqa: N802
+        return [x.strip().lower() for x in self.AI_ENABLED_PROVIDERS.split(",") if x.strip()]
 
     @field_validator("APP_SECRET_KEY")
     @classmethod

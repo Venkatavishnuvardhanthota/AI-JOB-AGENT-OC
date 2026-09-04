@@ -21,6 +21,7 @@ class CareerProfileRepository(BaseRepository):
                 joinedload(CareerProfile.certifications),
                 joinedload(CareerProfile.languages),
                 joinedload(CareerProfile.social_links),
+                joinedload(CareerProfile.achievements),
                 joinedload(CareerProfile.preferences),
             )
         result = await self.session.execute(stmt, execution_options={"populate_existing": True})

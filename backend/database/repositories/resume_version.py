@@ -30,6 +30,54 @@ class ResumeVersionRepository(BaseRepository):
         result = await self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
+    async def list_by_user_and_origin(self, user_id: uuid.UUID, origin: str) -> list[ResumeVersion]:
+        stmt = (
+            select(ResumeVersion)
+            .where(ResumeVersion.user_id == user_id, ResumeVersion.origin == origin)
+            .order_by(ResumeVersion.version.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_by_user_and_origins(self, user_id: uuid.UUID, origins: list[str]) -> list[ResumeVersion]:
+        stmt = (
+            select(ResumeVersion)
+            .where(ResumeVersion.user_id == user_id, ResumeVersion.origin.in_(origins))
+            .order_by(ResumeVersion.version.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_master_resumes_with_sections(self, user_id: uuid.UUID) -> list[ResumeVersion]:
+        from sqlalchemy.orm import joinedload
+
+        stmt = (
+            select(ResumeVersion)
+            .options(joinedload(ResumeVersion.sections))
+            .where(
+                ResumeVersion.user_id == user_id,
+                ResumeVersion.origin.in_(("master", "uploaded")),
+                ResumeVersion.archived.is_(False),
+            )
+            .order_by(ResumeVersion.version.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    async def get_generated_for_job(self, user_id: uuid.UUID, job_id: uuid.UUID) -> ResumeVersion | None:
+        stmt = (
+            select(ResumeVersion)
+            .where(
+                ResumeVersion.user_id == user_id,
+                ResumeVersion.origin.in_(("ai_generated", "ai_tailored", "generated")),
+                ResumeVersion.generated_for_job_id == job_id,
+                ResumeVersion.archived.is_(False),
+            )
+            .order_by(ResumeVersion.version.desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def get_with_sections(self, resume_id: uuid.UUID) -> ResumeVersion | None:
         from sqlalchemy.orm import joinedload
 

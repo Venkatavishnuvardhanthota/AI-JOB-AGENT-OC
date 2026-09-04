@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Index, String
+from sqlalchemy import ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,4 +16,7 @@ class Language(Base):
 
     profile = relationship("CareerProfile", back_populates="languages")
 
-    __table_args__ = (Index("ix_languages_profile_id", "profile_id"),)
+    __table_args__ = (
+        Index("ix_languages_profile_id", "profile_id"),
+        UniqueConstraint("profile_id", "language", name="uq_language_profile_language"),
+    )

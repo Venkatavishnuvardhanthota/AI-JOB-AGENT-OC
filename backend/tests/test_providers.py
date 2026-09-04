@@ -428,8 +428,51 @@ class TestOllamaProvider:
         ollama_provider._client._client = _mock_client(handler)
         await ollama_provider.generate(AIRequest(prompt="Hi", model="llama3", temperature=0.7))
 
-        assert sent_body["temperature"] == 0.7
+        assert sent_body["options"]["temperature"] == 0.7
         assert sent_body["stream"] is False
+
+    async def test_generate_disables_reasoning_for_qwen3(self, ollama_provider: OllamaProvider):
+        sent_body = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal sent_body
+            sent_body = json.loads(request.content)
+            return httpx.Response(
+                200,
+                json={
+                    "model": "qwen3:8b",
+                    "message": {"content": "Result"},
+                    "done": True,
+                },
+            )
+
+        await ollama_provider._client._client.aclose()
+        ollama_provider._client._client = _mock_client(handler)
+        await ollama_provider.generate(AIRequest(prompt="Hi", model="qwen3:8b"))
+
+        assert sent_body["think"] is False
+        assert sent_body["stream"] is False
+
+    async def test_generate_does_not_send_think_for_other_models(self, ollama_provider: OllamaProvider):
+        sent_body = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal sent_body
+            sent_body = json.loads(request.content)
+            return httpx.Response(
+                200,
+                json={
+                    "model": "llama3",
+                    "message": {"content": "Result"},
+                    "done": True,
+                },
+            )
+
+        await ollama_provider._client._client.aclose()
+        ollama_provider._client._client = _mock_client(handler)
+        await ollama_provider.generate(AIRequest(prompt="Hi", model="llama3"))
+
+        assert "think" not in sent_body
 
     async def test_health_check_success(self, ollama_provider: OllamaProvider):
         def handler(request: httpx.Request) -> httpx.Response:
@@ -491,7 +534,7 @@ class TestOllamaProvider:
         assert info.name == "ollama"
         assert info.display_name == "Ollama"
         assert info.is_available is True
-        assert info.supports_streaming is False
+        assert info.supports_streaming is True
 
 
 # ── Fallback Tests ──
@@ -615,3 +658,45 @@ class TestProviderFactory:
         factory.register_all()
         assert registry.is_registered("openrouter")
         assert not registry.is_registered("ollama")
+
+    async def test_factory_warns_for_unknown_providers(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["openrouter", "unknown_provider"],
+            openrouter_api_key="sk-test",
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.is_registered("openrouter")
+        assert registry.count() == 1
+
+    async def test_factory_does_not_register_not_implemented(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["openai", "anthropic", "gemini"],
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.is_registered("openai")
+        assert registry.is_registered("anthropic")
+        assert registry.is_registered("gemini")
+        assert registry.count() == 3
+
+    async def test_factory_normalizes_names(self):
+        from app.ai.factory import AIProviderFactory
+
+        config = AIConfig(
+            enabled_providers=["OpenRouter", "OLLAMA", "  openai  "],
+            openrouter_api_key="sk-test",
+        )
+        registry = AIProviderRegistry()
+        factory = AIProviderFactory(registry, config)
+        factory.register_all()
+        assert registry.is_registered("openrouter")
+        assert registry.is_registered("ollama")
+        assert registry.is_registered("openai")
+        assert registry.count() == 3

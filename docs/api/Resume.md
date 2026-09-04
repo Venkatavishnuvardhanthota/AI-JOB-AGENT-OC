@@ -49,18 +49,47 @@ Authorization: Bearer <access_token>
 
 | Method | Endpoint | Purpose |
 |---------|----------|----------|
-| GET | / | List resumes |
-| POST | /generate | Generate resume |
+| GET | / | List resumes (`?origin=master\|ai_generated\|ai_tailored\|uploaded`, comma-separated) |
+| POST | / | Create a resume (`origin=master`, manual) |
+| POST | /generate | Generate from Career Profile (`origin=ai_generated`) |
+| POST | /upload | Upload PDF/DOCX (`origin=uploaded`) |
+| POST | /import | Import resume JSON |
 | GET | /{resume_id} | Get resume |
 | PATCH | /{resume_id} | Update metadata |
-| DELETE | /{resume_id} | Archive resume |
+| DELETE | /{resume_id} | Delete resume |
+| POST | /{resume_id}/archive | Archive resume |
 | POST | /{resume_id}/restore | Restore archived resume |
-| POST | /{resume_id}/duplicate | Duplicate resume |
-| GET | /{resume_id}/preview | Preview resume |
-| GET | /{resume_id}/download | Download resume |
-| GET | /compare | Compare resume versions |
-| GET | /templates | List templates |
-| POST | /templates/select | Select template |
+| POST | /{resume_id}/optimize | Tailor resume to a job (`origin=ai_tailored`) |
+| GET | /{resume_id}/export | Export resume JSON |
+| GET | /{resume_id}/download/{format} | Download as `json`, `pdf`, or `docx` |
+| GET | /{resume_id}/sections | List sections |
+| POST | /{resume_id}/sections | Add section |
+| PATCH | /{resume_id}/sections/{section_id} | Update section |
+| DELETE | /{resume_id}/sections/{section_id} | Delete section |
+| PUT | /{resume_id}/sections/reorder | Reorder sections |
+| GET | /{resume_id}/ats | ATS analysis |
+| GET | /{resume_id}/health | Resume health score |
+| POST | /{resume_id}/analyze | ATS + health analysis against a job |
+
+Removed in v2.1.1: `POST /{resume_id}/versions`, `GET /{resume_id}/versions`,
+`POST /{resume_id}/duplicate`, `POST /compare`, `GET /templates`.
+
+---
+
+# Resume Origins
+
+Every resume carries an `origin` value surfaced in list responses and used as an
+origin badge in the UI:
+
+| Origin | Meaning |
+|--------|---------|
+| `master` | Manually created |
+| `uploaded` | Created from an uploaded or imported file |
+| `ai_generated` | Generated from the Career Profile |
+| `ai_tailored` | Optimized/tailored for a specific job |
+
+The library "My Resumes" tab queries `origin=master` (the API expands this to
+master + uploaded); the "AI Generated" tab queries `origin=ai_generated,ai_tailored`.
 
 ---
 
@@ -256,19 +285,40 @@ Restore an archived resume.
 
 ---
 
-# POST /{resume_id}/duplicate
+# POST /{resume_id}/optimize
 
 ## Purpose
 
-Create a duplicate of an existing resume.
+Tailor an existing resume to a target job.
 
-### Use Cases
+Creates a new resume with `origin=ai_tailored` and `status=active`; the original
+is left untouched. `enhance_with_ai` (default `true`) rewrites sections via the
+AI provider; AI output is parsed defensively and falls back to original content.
 
-- Creating role-specific variants
-- Testing different templates
-- Manual editing
+### Request
+
+```json
+{
+  "job_id": "uuid",
+  "target_role": "Senior Backend Engineer",
+  "enhance_with_ai": true
+}
+```
 
 ---
+
+# Resume Versioning
+
+Every resume receives:
+
+- Unique ID
+- Version number
+- Creation/update timestamps
+- Origin (see above)
+- Generation metadata (for AI-generated/tailored resumes)
+
+Version snapshotting, comparison, duplication, and template selection were
+removed in v2.1.1; the library exposes one list of resumes with origin badges.
 
 # GET /{resume_id}/preview
 
@@ -297,105 +347,32 @@ Preview rendering is read-only.
 
 Download a generated resume.
 
-### Query Parameters
+### Path Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| format | pdf (default), docx (future) |
+| format | `json`, `pdf`, or `docx` |
 
 Example
 
 ```
-GET /api/v1/resumes/{resume_id}/download?format=pdf
-```
-
----
-
-# GET /compare
-
-## Purpose
-
-Compare two resume versions.
-
-### Example
-
-```
-GET /compare?left=uuid1&right=uuid2
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "left_version": 4,
-    "right_version": 5,
-    "changes": [
-      {
-        "section": "Professional Summary",
-        "change": "Updated wording for Backend Developer role."
-      }
-    ]
-  }
-}
-```
-
----
-
-# GET /templates
-
-## Purpose
-
-List available resume templates.
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "modern",
-      "name": "Modern"
-    },
-    {
-      "id": "professional",
-      "name": "Professional"
-    }
-  ]
-}
-```
-
----
-
-# POST /templates/select
-
-## Purpose
-
-Set the default resume template.
-
-### Request
-
-```json
-{
-  "template": "Modern"
-}
+GET /api/v1/resumes/{resume_id}/download/pdf
 ```
 
 ---
 
 # Resume Versioning
 
-Every generated resume receives:
+Every resume receives:
 
 - Unique ID
 - Version number
-- Creation timestamp
-- Generation metadata
-- Template information
+- Creation/update timestamps
+- Origin (see above)
+- Generation metadata (for AI-generated/tailored resumes)
 
-Versions are immutable.
+Version snapshotting, comparison, duplication, and template selection were
+removed in v2.1.1; the library exposes one list of resumes with origin badges.
 
 ---
 

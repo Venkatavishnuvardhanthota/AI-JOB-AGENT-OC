@@ -15,6 +15,6 @@ class SkillRepository(BaseRepository):
         return list(result.scalars().all())
 
     async def exists(self, profile_id: uuid.UUID, name: str) -> bool:
-        stmt = select(Skill).where(Skill.profile_id == profile_id, Skill.name == name)
+        stmt = select(Skill).where(Skill.profile_id == profile_id, Skill.name.ilike(name))
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none() is not None

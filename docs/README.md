@@ -2,9 +2,9 @@
 
 **Project:** AI Job Agent v2
 
-**Version:** 2.0
+**Version:** 2.1
 
-**Status:** Production Ready — v2.0.0 Released
+**Status:** Production Ready — v2.1.0 Released
 
 ---
 

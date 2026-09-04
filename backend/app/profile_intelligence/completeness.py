@@ -5,15 +5,16 @@ from app.profile_intelligence.schemas import ProfileCompleteness
 
 class ProfileCompletenessScorer:
     CATEGORIES: dict[str, float] = {
-        "career_profile": 0.15,
+        "career_profile": 0.13,
         "education": 0.12,
-        "experience": 0.18,
-        "projects": 0.10,
-        "skills": 0.18,
-        "certifications": 0.08,
+        "experience": 0.17,
+        "projects": 0.09,
+        "skills": 0.17,
+        "certifications": 0.07,
         "languages": 0.05,
         "social_links": 0.05,
         "preferences": 0.09,
+        "achievements": 0.06,
     }
 
     def compute(self, raw: dict) -> ProfileCompleteness:
@@ -29,6 +30,7 @@ class ProfileCompletenessScorer:
         scores["languages"] = self._score_languages(raw)
         scores["social_links"] = self._score_social_links(raw)
         scores["preferences"] = self._score_preferences(raw)
+        scores["achievements"] = self._score_achievements(raw)
 
         for cat, score in scores.items():
             if score < 50:
@@ -59,8 +61,10 @@ class ProfileCompletenessScorer:
             score += 10
         if getattr(profile, "employment_status", None):
             score += 10
-        if getattr(profile, "notice_period", None):
+        if getattr(profile, "salary_preference", None):
             score += 10
+        if getattr(profile, "notice_period", None):
+            score += 5
         if getattr(profile, "portfolio_url", None):
             score += 5
         return min(score, 100)
@@ -108,12 +112,22 @@ class ProfileCompletenessScorer:
         skills = raw.get("skills", [])
         if not skills:
             return 0
-        score = min(len(skills) * 8, 60)
-        has_proficiency = any(getattr(s, "proficiency", None) for s in skills)
+        score = min(len(skills) * 12, 70)
+        has_proficiency = any(getattr(s, "proficiency", None) or getattr(s, "skill_level", None) for s in skills)
         if has_proficiency:
+            score += 30
+        return min(score, 100)
+
+    def _score_achievements(self, raw: dict) -> int:
+        achievements = raw.get("achievements", [])
+        if not achievements:
+            return 0
+        score = min(len(achievements) * 25, 60)
+        has_org = any(getattr(a, "organization", None) for a in achievements)
+        if has_org:
             score += 20
-        has_category = any(getattr(s, "category", None) for s in skills)
-        if has_category:
+        has_date = any(getattr(a, "date", None) for a in achievements)
+        if has_date:
             score += 20
         return min(score, 100)
 

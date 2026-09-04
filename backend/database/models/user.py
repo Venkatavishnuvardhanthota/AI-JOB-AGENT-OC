@@ -28,6 +28,7 @@ class User(Base):
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     cover_letters = relationship("CoverLetter", back_populates="user", cascade="all, delete-orphan")
     preferences = relationship("UserPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    ai_settings = relationship("UserAISettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     job_searches = relationship("JobSearch", back_populates="user", cascade="all, delete-orphan")
     saved_searches = relationship("SavedSearch", back_populates="user", cascade="all, delete-orphan")
     background_jobs = relationship("BackgroundJob", back_populates="user", cascade="all, delete-orphan")

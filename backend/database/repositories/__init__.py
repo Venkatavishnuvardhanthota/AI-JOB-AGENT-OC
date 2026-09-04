@@ -1,5 +1,6 @@
 from database.repositories.ai_request import AIRequestRepository
 from database.repositories.ai_response import AIResponseRepository
+from database.repositories.achievement import AchievementRepository
 from database.repositories.application import ApplicationRepository
 from database.repositories.application_answer import ApplicationAnswerRepository
 from database.repositories.application_event import ApplicationEventRepository
@@ -30,12 +31,15 @@ from database.repositories.scheduler import SchedulerRepository
 from database.repositories.skill import SkillRepository
 from database.repositories.social_link import SocialLinkRepository
 from database.repositories.user import UserRepository
+from database.repositories.user_ai_settings import UserAISettingsRepository
 from database.repositories.user_preference import UserPreferenceRepository
 
 __all__ = [
     "BaseRepository",
     "UserRepository",
+    "UserAISettingsRepository",
     "CareerProfileRepository",
+    "AchievementRepository",
     "EducationRepository",
     "ExperienceRepository",
     "ProjectRepository",

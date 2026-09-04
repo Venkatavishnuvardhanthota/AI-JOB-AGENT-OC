@@ -310,8 +310,8 @@ class TestCheckpointManager:
 
     def test_list_checkpoints(self, checkpoint_manager):
         ctx = OrchestrationContext()
-        ck1 = checkpoint_manager.create_checkpoint(ctx, PipelineStage.APPLICATION_PACKAGE)
-        ck2 = checkpoint_manager.create_checkpoint(ctx, PipelineStage.SUBMISSION)
+        checkpoint_manager.create_checkpoint(ctx, PipelineStage.APPLICATION_PACKAGE)
+        checkpoint_manager.create_checkpoint(ctx, PipelineStage.SUBMISSION)
         checkpoints = checkpoint_manager.list_checkpoints(ctx.orchestration_id)
         assert len(checkpoints) == 2
 
@@ -403,7 +403,6 @@ class TestExecutionDispatcher:
         assert result.state == OrchestratorState.PAUSED
 
     def test_dispatch_unknown_value(self):
-        dispatcher = ExecutionDispatcher()
         valid_modes = [m.value for m in ExecutionMode]
         assert "single" in valid_modes
         assert "batch" in valid_modes
@@ -693,9 +692,9 @@ class TestOrchestratorIntegration:
 
     def test_multiple_checkpoints_same_orchestration(self, checkpoint_manager):
         ctx = OrchestrationContext()
-        ck1 = checkpoint_manager.create_checkpoint(ctx, PipelineStage.JOB_DISCOVERY)
-        ck2 = checkpoint_manager.create_checkpoint(ctx, PipelineStage.JOB_MATCHING)
-        ck3 = checkpoint_manager.create_checkpoint(ctx, PipelineStage.APPLICATION_PACKAGE)
+        checkpoint_manager.create_checkpoint(ctx, PipelineStage.JOB_DISCOVERY)
+        checkpoint_manager.create_checkpoint(ctx, PipelineStage.JOB_MATCHING)
+        checkpoint_manager.create_checkpoint(ctx, PipelineStage.APPLICATION_PACKAGE)
         checkpoints = checkpoint_manager.list_checkpoints(ctx.orchestration_id)
         assert len(checkpoints) == 3
         assert checkpoints[0].stage == PipelineStage.JOB_DISCOVERY

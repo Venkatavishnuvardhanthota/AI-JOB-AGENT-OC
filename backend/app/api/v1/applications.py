@@ -32,14 +32,15 @@ async def prepare_application(
     body: ApplicationPrepareRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = ApplicationService(db)
-    app = await service.prepare(
+    result = await service.prepare(
         user_id=current_user.id,
         job_id=body.job_id,
         resume_id=body.resume_id,
+        resume_strategy_override=body.resume_strategy_override.value if body.resume_strategy_override else None,
         generate_cover_letter=body.generate_cover_letter,
         generate_ai_answers=body.generate_ai_answers,
     )
-    return {"success": True, "data": {"application_id": str(app.id), "status": app.status}}
+    return {"success": True, "data": result}
 
 
 @router.get("/{application_id}")

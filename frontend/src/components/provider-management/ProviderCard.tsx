@@ -12,6 +12,15 @@ const STATUS_COLORS: Record<string, string> = {
   disabled: 'text-muted-foreground bg-dark-800 border-glass-border',
 }
 
+const BACKEND_STATE_COLORS: Record<string, string> = {
+  ready: 'text-success bg-success/10 border-success/20',
+  disabled: 'text-muted-foreground bg-dark-800 border-glass-border',
+  unavailable: 'text-warning bg-warning/10 border-warning/20',
+  not_implemented: 'text-error bg-error/10 border-error/20',
+  initialization_failed: 'text-error bg-error/10 border-error/20',
+  unknown: 'text-muted-foreground bg-dark-800 border-glass-border',
+}
+
 interface ProviderCardProps {
   provider: ManagedProvider
   onToggle: (id: string, enabled: boolean) => void
@@ -48,6 +57,15 @@ export function ProviderCard({ provider, onToggle, onClick }: ProviderCardProps)
             <Activity className="h-2.5 w-2.5 mr-1" />
             {provider.health.status}
           </Badge>
+          {provider.backendState && (
+            <Badge
+              variant="outline"
+              className={cn('text-[10px] px-1.5 py-0 border', BACKEND_STATE_COLORS[provider.backendState] ?? BACKEND_STATE_COLORS.unknown)}
+              title={`Backend: ${provider.backendState}`}
+            >
+              {provider.backendState.replace(/_/g, ' ')}
+            </Badge>
+          )}
           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
             <Shield className="h-2.5 w-2.5 mr-1" />
             P{provider.priority}

@@ -47,7 +47,7 @@ export function OnboardingChecklist() {
   const hasSkills = Array.isArray(skills) && skills.length > 0
   const hasEducation = Array.isArray(education) && education.length > 0
   const hasExperience = Array.isArray(experience) && experience.length > 0
-  const hasProfile = profile?.headline || profile?.bio || profile?.location
+  const hasProfile = profile?.headline || profile?.professional_summary || profile?.current_role
   const appsCount = (appsData as any)?.items?.length || 0
 
   const completedMap: Record<string, boolean> = {

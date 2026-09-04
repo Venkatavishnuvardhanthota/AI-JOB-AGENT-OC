@@ -16,6 +16,7 @@ from app.schemas.resume import (
     ResumeSectionCreate,
 )
 from app.services.resume import ResumeService
+from database.models.job import Job
 from database.models.resume_section import ResumeSection
 from database.models.resume_version import ResumeVersion
 from database.models.user import User
@@ -130,7 +131,7 @@ class TestResumeVersionRepository:
         repo = ResumeVersionRepository(session)
         rv = await repo.create(ResumeVersion(user_id=user.id, version=1))
         section = ResumeSection(resume_id=rv.id, section_type="summary")
-        await repo.session.add(section)
+        repo.session.add(section)
         await repo.session.flush()
         results = await repo.list_by_user_with_sections(user.id)
         assert len(results) == 1
@@ -143,7 +144,7 @@ class TestResumeVersionRepository:
         repo = ResumeVersionRepository(session)
         rv = await repo.create(ResumeVersion(user_id=user.id, version=1))
         section = ResumeSection(resume_id=rv.id, section_type="experience")
-        await repo.session.add(section)
+        repo.session.add(section)
         await repo.session.flush()
         loaded = await repo.get_with_sections(rv.id)
         assert loaded is not None
@@ -164,6 +165,39 @@ class TestResumeVersionRepository:
         await repo.unset_default(user.id)
         default = await repo.get_default(user.id)
         assert default is None
+
+    async def test_get_generated_for_job_returns_latest_of_multiple(self, session):
+        import uuid
+
+        from database.models.job import Job
+
+        user = await UserRepository(session).create(
+            User(email="rvgj@test.com", password_hash="h", first_name="R", last_name="G")
+        )
+        job = Job(provider="manual", title="Engineer", company="Acme", description="desc")
+        session.add(job)
+        await session.flush()
+        repo = ResumeVersionRepository(session)
+        older = await repo.create(
+            ResumeVersion(
+                user_id=user.id,
+                version=1,
+                origin="ai_tailored",
+                generated_for_job_id=job.id,
+            )
+        )
+        newer = await repo.create(
+            ResumeVersion(
+                user_id=user.id,
+                version=2,
+                origin="ai_tailored",
+                generated_for_job_id=job.id,
+            )
+        )
+        latest = await repo.get_generated_for_job(user.id, job.id)
+        assert latest is not None
+        assert latest.id == newer.id
+        assert latest.id != older.id
 
 
 @pytest.mark.usefixtures("session")
@@ -308,16 +342,65 @@ class TestResumeService:
         default = await service.resume_repo.get_default(user.id)
         assert default.id == r2.id
 
-    async def test_create_version(self, db_session):
+    async def test_create_resume_origins(self, db_session):
         user = await _create_user(db_session)
         service = ResumeService(db_session)
-        sections = [{"section_type": "summary", "content": {"text": "Original"}}]
-        created = await service.create_resume(user.id, title="V1", sections=sections)
-        v2 = await service.create_version(created.id, user.id, change_summary="Added experience")
-        assert v2.version == 2
-        assert v2.previous_version_id == created.id
-        assert v2.change_summary == "Added experience"
-        assert len(v2.sections) == 1
+        manual = await service.create_resume(user.id, title="Manual")
+        assert manual.origin == "master"
+        assert manual.status == "draft"
+        uploaded = await service.create_resume(user.id, title="Uploaded", origin="uploaded")
+        assert uploaded.origin == "uploaded"
+        with_sections = await service.create_resume(
+            user.id, title="With Sections", sections=[{"section_type": "summary"}]
+        )
+        assert with_sections.status == "active"
+        assert with_sections.version == 3
+
+    async def test_optimize_for_job(self, db_session):
+        user = await _create_user(db_session)
+        job = Job(
+            provider="test",
+            provider_job_id=str(uuid.uuid4()),
+            title="Engineer",
+            company="Acme",
+            description="Build things",
+            employment_type="full_time",
+        )
+        db_session.add(job)
+        await db_session.flush()
+        service = ResumeService(db_session)
+        resume = await service.create_resume(
+            user.id,
+            title="Base",
+            sections=[{"section_type": "summary", "content": {"text": "Original text"}}],
+        )
+        optimized = await service.optimize_for_job(resume.id, user.id, job.id, target_role="Engineer")
+        assert optimized.version == 2
+        assert optimized.previous_version_id == resume.id
+        assert optimized.generated_for_job_id == job.id
+        assert optimized.origin == "ai_tailored"
+        assert optimized.resume_type == "optimized"
+        assert optimized.status == "active"
+        assert len(optimized.sections) == 1
+
+    async def test_optimize_wrong_user(self, db_session):
+        user1 = await _create_user(db_session, "opt1@test.com")
+        user2 = await _create_user(db_session, "opt2@test.com")
+        service = ResumeService(db_session)
+        resume = await service.create_resume(user1.id, title="Mine")
+        with pytest.raises(NotFoundError):
+            await service.optimize_for_job(resume.id, user2.id, uuid.uuid4())
+
+    async def test_list_by_origins(self, db_session):
+        user = await _create_user(db_session)
+        service = ResumeService(db_session)
+        await service.create_resume(user.id, title="Manual")
+        await service.create_resume(user.id, title="Uploaded", origin="uploaded")
+        await service.create_resume(user.id, title="Generated", origin="ai_generated")
+        masters = await service.list_resumes(user.id, origin=["master"])
+        assert {r.title for r in masters} == {"Manual", "Uploaded"}
+        generated = await service.list_resumes(user.id, origin=["ai_generated", "ai_tailored"])
+        assert {r.title for r in generated} == {"Generated"}
 
     async def test_add_section(self, db_session):
         user = await _create_user(db_session)
@@ -545,7 +628,7 @@ class TestResumeAPI:
         assert resp.status_code == 200
         assert resp.json()["data"]["is_default"] is True
 
-    async def test_create_version(self, api_client, db_session):
+    async def test_create_version_disabled(self, api_client, db_session):
         user = await _create_user(db_session)
         headers = await self._auth_headers(db_session, user.id)
         create_resp = await api_client.post("/resumes/", json={"title": "V1"}, headers=headers)
@@ -555,9 +638,7 @@ class TestResumeAPI:
             json={"change_summary": "New version"},
             headers=headers,
         )
-        assert resp.status_code == 201
-        assert resp.json()["data"]["version"] == 2
-        assert resp.json()["data"]["change_summary"] == "New version"
+        assert resp.status_code == 400
 
     async def test_import_resume(self, api_client, db_session):
         user = await _create_user(db_session)
@@ -651,11 +732,36 @@ class TestResumeAPI:
         assert resp.status_code == 200
         assert len(resp.json()["data"]) == 2
 
-    async def test_templates_endpoint(self, api_client):
-        resp = await api_client.get("/resumes/templates")
+    async def test_versions_and_compare_removed(self, api_client, db_session):
+        user = await _create_user(db_session)
+        headers = await self._auth_headers(db_session, user.id)
+        create_resp = await api_client.post("/resumes/", json={"title": "V1"}, headers=headers)
+        resume_id = create_resp.json()["data"]["id"]
+        versions = await api_client.get(f"/resumes/{resume_id}/versions", headers=headers)
+        assert versions.status_code in (404, 405, 422)
+        dup = await api_client.post(
+            f"/resumes/{resume_id}/duplicate", json={"title": "Copy"}, headers=headers
+        )
+        assert dup.status_code == 404
+        compare = await api_client.post(
+            "/resumes/compare",
+            json={"left_id": resume_id, "right_id": resume_id},
+            headers=headers,
+        )
+        assert compare.status_code in (404, 405, 422)
+        templates = await api_client.get("/resumes/templates", headers=headers)
+        assert templates.status_code in (404, 405, 422)
+
+    async def test_list_origin_filter(self, api_client, db_session):
+        user = await _create_user(db_session)
+        headers = await self._auth_headers(db_session, user.id)
+        await api_client.post("/resumes/", json={"title": "Manual"}, headers=headers)
+        resp = await api_client.get("/resumes/?origin=master", headers=headers)
         assert resp.status_code == 200
-        templates = resp.json()["data"]
-        assert len(templates) > 0
+        assert len(resp.json()["data"]) == 1
+        assert resp.json()["data"][0]["origin"] == "master"
+        empty = await api_client.get("/resumes/?origin=ai_generated", headers=headers)
+        assert empty.json()["data"] == []
 
     async def test_other_user_cannot_modify_resume(self, api_client, db_session):
         user1 = await _create_user(db_session, "owner@test.com")

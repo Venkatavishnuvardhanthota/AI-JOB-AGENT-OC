@@ -39,96 +39,164 @@ export interface RefreshTokenRequest {
   refresh_token: string
 }
 
-export interface UserProfile {
+export type SalaryPreference = 'paid_only' | 'paid_preferred' | 'unpaid_acceptable'
+
+export interface JobPreference {
   id: string
-  user_id: string
-  phone: string | null
-  headline: string | null
-  bio: string | null
-  location: string | null
-  salary_expectation_min: number | null
-  salary_expectation_max: number | null
-  salary_currency: string | null
-  portfolio_url: string | null
-  linkedin_url: string | null
-  github_url: string | null
-  resume_file: string | null
+  preferred_titles: string[]
+  preferred_locations: string[]
+  employment_types: string[]
+  work_modes: string[]
+  minimum_salary: number | null
+  preferred_currency: string | null
   created_at: string
   updated_at: string
 }
 
+export interface UserProfile {
+  id: string
+  headline: string | null
+  professional_summary: string | null
+  total_years_experience: number | null
+  current_role: string | null
+  desired_role: string | null
+  employment_status: string | null
+  current_salary: number | null
+  expected_salary: number | null
+  salary_preference: SalaryPreference | null
+  willing_to_relocate: boolean | null
+  visa_sponsorship_requirement: boolean | null
+  notice_period: string | null
+  portfolio_url: string | null
+  linkedin_url: string | null
+  github_url: string | null
+  website_url: string | null
+  profile_completeness: number | null
+  education: Education[]
+  experience: Experience[]
+  projects: Project[]
+  skills: Skill[]
+  certifications: Certification[]
+  languages: Language[]
+  social_links: SocialLink[]
+  achievements: Achievement[]
+  preferences: JobPreference | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProfileCompleteness {
+  percentage: number
+  breakdown: Record<string, number>
+  missing_sections: string[]
+}
+
 export interface Education {
   id: string
-  user_id: string
+  profile_id: string
   institution: string
   degree: string
   field_of_study: string | null
+  location: string | null
   start_date: string | null
   end_date: string | null
-  gpa: number | null
-  description: string | null
+  currently_studying: boolean | null
+  cgpa: string | null
   created_at: string
   updated_at: string
 }
 
 export interface Experience {
   id: string
-  user_id: string
+  profile_id: string
   company: string
   title: string
   location: string | null
+  employment_type: string | null
   start_date: string | null
   end_date: string | null
-  is_current: boolean
+  currently_working: boolean | null
+  responsibilities: string[] | null
+  achievements: string[] | null
+  technologies_used: string[] | null
   description: string | null
-  company_url: string | null
   created_at: string
   updated_at: string
 }
 
 export interface Project {
   id: string
-  user_id: string
+  profile_id: string
   name: string
   description: string | null
-  url: string | null
+  technologies: string[] | null
   github_url: string | null
+  demo_url: string | null
+  live_url: string | null
   start_date: string | null
   end_date: string | null
-  is_current: boolean
   created_at: string
   updated_at: string
 }
 
 export interface Skill {
   id: string
-  user_id: string
+  profile_id: string
   name: string
   category: string | null
-  proficiency: number | null
+  proficiency: string | null
+  years_experience: number | null
+  skill_level: string | null
+  display_order: number | null
   created_at: string
   updated_at: string
 }
 
 export interface Certification {
   id: string
-  user_id: string
+  profile_id: string
   name: string
   issuer: string | null
-  issue_date: string | null
-  expiry_date: string | null
   credential_id: string | null
+  issue_date: string | null
+  expiration_date: string | null
   credential_url: string | null
-  file_url: string | null
   created_at: string
   updated_at: string
 }
 
 export interface Language {
   id: string
-  user_id: string
-  name: string
-  proficiency: string
+  profile_id: string
+  language: string
+  proficiency: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SocialLinkPlatform = 'linkedin' | 'github' | 'portfolio' | 'website' | 'other'
+
+export interface SocialLink {
+  id: string
+  profile_id: string
+  platform: SocialLinkPlatform
+  url: string
+  display_order: number | null
+  title: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Achievement {
+  id: string
+  profile_id: string
+  title: string
+  organization: string | null
+  achievement_type: string | null
+  date: string | null
+  description: string | null
+  url: string | null
+  display_order: number | null
   created_at: string
   updated_at: string
 }
@@ -361,6 +429,12 @@ export interface Application {
   company_id?: string
   resume_id?: string
   cover_letter_id?: string
+  resume_strategy?: string
+  original_resume_id?: string
+  generated_resume_id?: string
+  generated?: boolean
+  tailored?: boolean
+  generation_timestamp?: string
   status: ApplicationStatus
   priority: ApplicationPriority
   applied_date?: string
@@ -493,4 +567,215 @@ export interface DocumentInfo {
   created_at: string
   updated_at: string
   file_url?: string
+}
+
+// ── AI Types ──
+export interface CapabilityInfo {
+  chat: boolean
+  streaming: boolean
+  vision: boolean
+  json_mode: boolean
+  embeddings: boolean
+  reasoning: boolean
+  function_calling: boolean
+  tool_calling: boolean
+  system_prompt_support: boolean
+  structured_output: boolean
+}
+
+export interface AIModel {
+  id: string
+  name: string
+  provider: string
+  description?: string
+  max_tokens?: number
+  supports_streaming: boolean
+  supports_function_calling: boolean
+  supports_vision: boolean
+  supports_json_mode: boolean
+  supports_reasoning: boolean
+}
+
+export interface AIProviderConfigData {
+  api_key_set: boolean
+  base_url?: string | null
+  default_model?: string | null
+  is_enabled?: boolean
+  temperature?: number | null
+  max_tokens?: number | null
+  timeout_seconds?: number | null
+  max_retries?: number | null
+  retry_delay_seconds?: number | null
+  streaming_enabled?: boolean | null
+}
+
+export interface AIProviderConfigUpdateData {
+  api_key?: string
+  base_url?: string
+  default_model?: string
+  is_enabled?: boolean
+  temperature?: number
+  max_tokens?: number
+  timeout_seconds?: number
+  max_retries?: number
+  retry_delay_seconds?: number
+  streaming_enabled?: boolean
+}
+
+export interface AIProvider {
+  name: string
+  display_name: string
+  description?: string
+  version?: string
+  is_available: boolean
+  supports_streaming: boolean
+  configured: boolean
+  is_default: boolean
+  capabilities?: CapabilityInfo
+  models: AIModel[]
+  error?: string
+  implemented?: boolean
+  saved_config?: AIProviderConfigData | null
+}
+
+export interface ProviderStatus {
+  name: string
+  display_name: string
+  configured: boolean
+  enabled: boolean
+  healthy?: boolean
+  connected?: boolean
+  is_default: boolean
+  available: boolean
+  implementation_status: string
+  capabilities: CapabilityInfo
+  models: AIModel[]
+  error?: string
+}
+
+export interface HealthCheckResult {
+  provider: string
+  model?: string
+  healthy: boolean
+  connected?: boolean
+  latency_ms?: number
+  available: boolean
+  configured: boolean
+  is_default: boolean
+  error?: string
+}
+
+export interface AIHealthResponse {
+  status: 'healthy' | 'degraded'
+  overall_healthy: boolean
+  providers: HealthCheckResult[]
+}
+
+export interface AIConfigData {
+  default_provider: string
+  default_model: string
+  fallback_model?: string
+  fallback_provider?: string
+  max_retries: number
+  retry_delay_seconds: number
+  timeout_seconds: number
+  temperature: number
+  max_tokens: number
+  enabled_providers: string[]
+  streaming_enabled: boolean
+}
+
+export interface AIUpdateConfigData {
+  default_provider?: string
+  default_model?: string
+  fallback_provider?: string
+  fallback_model?: string
+  temperature?: number
+  max_tokens?: number
+  timeout_seconds?: number
+  max_retries?: number
+  retry_delay_seconds?: number
+  streaming_enabled?: boolean
+  enabled_providers?: string[]
+  openrouter_api_key?: string
+  openai_api_key?: string
+  anthropic_api_key?: string
+  gemini_api_key?: string
+  ollama_base_url?: string
+}
+
+export interface AIProviderTestResult {
+  provider: string
+  healthy: boolean
+  connected?: boolean
+  latency_ms?: number
+  model?: string
+  error?: string
+}
+
+export interface PromptTemplateInfo {
+  name: string
+  description?: string
+  version?: string
+  variables: string[]
+  has_system_prompt: boolean
+}
+
+// ── Resume Strategy ──
+
+export type ResumeStrategyOption = 'use_existing' | 'tailor' | 'generate' | 'ask'
+export type SaveGeneratedResumesOption = 'never' | 'submitted_only' | 'every'
+
+export interface ResumeStrategySettingsData {
+  resume_strategy: ResumeStrategyOption
+  save_generated_resumes: SaveGeneratedResumesOption
+}
+
+export interface ResumeStrategySettingsUpdateData {
+  resume_strategy?: ResumeStrategyOption
+  save_generated_resumes?: SaveGeneratedResumesOption
+}
+
+export interface ResumeSelectionScoreData {
+  resume_id: string
+  title: string | null
+  skill_overlap: number
+  keyword_overlap: number
+  role_alignment: number
+  ats_compatibility: number
+  overall: number
+  selected: boolean
+}
+
+export interface ResumeStrategyPreviewData {
+  recommended_strategy: ResumeStrategyOption
+  selected_resume_id: string | null
+  selected_resume_title: string | null
+  scores: ResumeSelectionScoreData[]
+  generated_resume_id: string | null
+  generated_resume_title: string | null
+  reused_generated: boolean
+  rationale: string
+}
+
+export interface ResumeStrategyPrepareData {
+  application_id: string | null
+  status: string | null
+  needs_choice: boolean
+  strategy: ResumeStrategyOption
+  selected_resume_id: string | null
+  selected_resume_title: string | null
+  generated_resume_id: string | null
+  generated_resume_title: string | null
+  cover_letter_id: string | null
+  reused_generated: boolean
+  reason: string | null
+  created_at: string | null
+  job_id?: string | null
+  options?: ResumeStrategyOption[]
+}
+
+export interface APISuccessResponse<T> {
+  success: true
+  data: T
 }

@@ -63,29 +63,41 @@ Authorization: Bearer <access_token>
 | Method | Endpoint | Purpose |
 |----------|----------|----------|
 | GET | / | Get complete profile |
-| PUT | / | Replace profile |
 | PATCH | / | Update profile |
 | GET | /completeness | Calculate profile completeness |
-| POST | /import-resume | Import resume |
-| GET | /export | Export profile |
+| GET | /education | List education |
 | POST | /education | Add education |
 | PATCH | /education/{id} | Update education |
 | DELETE | /education/{id} | Delete education |
+| GET | /experience | List experience |
 | POST | /experience | Add experience |
 | PATCH | /experience/{id} | Update experience |
 | DELETE | /experience/{id} | Delete experience |
+| GET | /projects | List projects |
 | POST | /projects | Add project |
 | PATCH | /projects/{id} | Update project |
 | DELETE | /projects/{id} | Delete project |
+| GET | /skills | List skills (alphabetical, case-insensitive) |
 | POST | /skills | Add skill |
+| PUT | /skills | Replace the full skill list (bulk) |
 | PATCH | /skills/{id} | Update skill |
 | DELETE | /skills/{id} | Delete skill |
+| GET | /certifications | List certifications |
 | POST | /certifications | Add certification |
 | PATCH | /certifications/{id} | Update certification |
 | DELETE | /certifications/{id} | Delete certification |
+| GET | /languages | List languages |
 | POST | /languages | Add language |
 | PATCH | /languages/{id} | Update language |
 | DELETE | /languages/{id} | Delete language |
+| GET | /social-links | List social links |
+| POST | /social-links | Add social link |
+| PATCH | /social-links/{id} | Update social link |
+| DELETE | /social-links/{id} | Delete social link |
+| GET | /achievements | List achievements |
+| POST | /achievements | Add achievement |
+| PATCH | /achievements/{id} | Update achievement |
+| DELETE | /achievements/{id} | Delete achievement |
 | PATCH | /preferences | Update job preferences |
 
 ---
@@ -102,33 +114,38 @@ Retrieve the authenticated user's complete Career Profile.
 {
   "success": true,
   "data": {
-    "personal_information": {},
-    "summary": "",
+    "id": "uuid",
+    "headline": "Senior Software Engineer",
+    "professional_summary": "...",
+    "total_years_experience": 6.0,
+    "current_role": "Software Engineer",
+    "desired_role": "Senior Backend Engineer",
+    "employment_status": "employed",
+    "current_salary": 120000.0,
+    "expected_salary": 150000.0,
+    "salary_preference": "paid_only",
+    "willing_to_relocate": true,
+    "visa_sponsorship_requirement": false,
+    "notice_period": "30 days",
+    "portfolio_url": null,
+    "linkedin_url": "https://linkedin.com/in/...",
+    "github_url": null,
+    "website_url": null,
+    "profile_completeness": 72,
     "education": [],
     "experience": [],
     "projects": [],
     "skills": [],
     "certifications": [],
     "languages": [],
+    "social_links": [],
+    "achievements": [],
     "preferences": {},
-    "portfolio_links": {}
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   }
 }
 ```
-
----
-
-# PUT /
-
-## Purpose
-
-Replace the complete Career Profile.
-
-### Notes
-
-Use only when replacing the full profile.
-
-For normal edits, PATCH is preferred.
 
 ---
 
@@ -142,11 +159,23 @@ Update selected profile fields.
 
 ```json
 {
-  "summary": "Backend Developer with experience building AI-powered applications."
+  "headline": "Senior Software Engineer",
+  "expected_salary": 150000,
+  "salary_preference": "paid_only"
 }
 ```
 
-Only supplied fields are modified.
+Only supplied fields are modified. Invalid URLs return `422`.
+
+### Salary Preference
+
+`salary_preference` accepts one of:
+
+- `paid_only`
+- `paid_preferred`
+- `unpaid_acceptable`
+
+Setting `paid_only` requires `expected_salary` to be present.
 
 ---
 
@@ -163,13 +192,24 @@ Calculate Career Profile completeness.
   "success": true,
   "data": {
     "percentage": 87,
+    "breakdown": {
+      "headline": 5,
+      "professional_summary": 8,
+      "education": 8,
+      "experience": 8,
+      "skills": 8,
+      "achievements": 5,
+      "social_links": 5
+    },
     "missing_sections": [
-      "Languages",
-      "Certifications"
+      "languages",
+      "certifications"
     ]
   }
 }
 ```
+
+The `breakdown` contains per-field scores in points; the weights total 100, so `percentage` is the sum of earned points.
 
 ---
 
@@ -249,9 +289,11 @@ Supported formats
   "institution": "ABC University",
   "degree": "Bachelor of Technology",
   "field_of_study": "Computer Science",
+  "location": "Boston, USA",
+  "cgpa": "8.6",
   "start_date": "2023-08-01",
   "end_date": "2027-05-30",
-  "grade": "8.6 CGPA"
+  "currently_studying": false
 }
 ```
 
@@ -264,8 +306,9 @@ Required
 
 Optional
 
-- Grade
-- Description
+- Location
+- CGPA
+- Dates (`end_date` must be on or after `start_date`)
 
 ---
 
@@ -291,10 +334,19 @@ Example
 {
   "company": "OpenAI",
   "title": "Software Engineer",
+  "location": "San Francisco",
+  "employment_type": "full_time",
   "start_date": "2025-01-01",
   "currently_working": true,
-  "description": [
+  "responsibilities": [
     "Built scalable backend services."
+  ],
+  "achievements": [
+    "Reduced p95 latency by 40%."
+  ],
+  "technologies_used": [
+    "Python",
+    "FastAPI"
   ]
 }
 ```
@@ -303,6 +355,8 @@ Validation
 
 - Company required
 - Title required
+- `end_date` must be empty when `currently_working` is true
+- `end_date` must be on or after `start_date` otherwise
 
 ---
 
@@ -361,16 +415,35 @@ Delete project.
 
 ```json
 {
-  "name": "Python",
-  "category": "Programming Language",
-  "level": "Advanced"
+  "name": "Python"
 }
 ```
 
 Validation
 
-- Name required
-- Duplicate skills should be prevented.
+- Name required (trimmed)
+- Duplicate skills are prevented (case-insensitive, returns `409 CONFLICT`)
+
+---
+
+## PUT /skills
+
+Replaces the entire skill list atomically (deletes existing skills, inserts the given names).
+
+```json
+{
+  "skills": ["Python", "SQL", "Docker"]
+}
+```
+
+Validation
+
+- `skills` must be a non-empty list (at least 1 item; `422` if empty)
+- Names are trimmed; blank/whitespace-only entries are dropped
+- Duplicates are removed case-insensitively
+- If no valid names remain, `422` with `At least one skill name is required.`
+
+Response — the full new skill list, sorted alphabetically (case-insensitive).
 
 ---
 
@@ -394,9 +467,17 @@ Delete skill.
 {
   "name": "AWS Certified Cloud Practitioner",
   "issuer": "Amazon Web Services",
-  "issue_date": "2026-01-10"
+  "credential_id": "ABC123",
+  "credential_url": "https://aws.com/cert/ABC123",
+  "issue_date": "2026-01-10",
+  "expiration_date": "2029-01-10"
 }
 ```
+
+Validation
+
+- `expiration_date` must be on or after `issue_date`
+- `credential_url` must be a valid URL
 
 ---
 
@@ -425,6 +506,11 @@ Example
 }
 ```
 
+Validation
+
+- Language names are title-cased and trimmed
+- Duplicate languages are prevented per profile (case-insensitive, returns `409 CONFLICT`)
+
 ---
 
 ## PATCH /languages/{id}
@@ -436,6 +522,80 @@ Update language.
 ## DELETE /languages/{id}
 
 Delete language.
+
+---
+
+# Social Links
+
+## POST /social-links
+
+Example
+
+```json
+{
+  "platform": "linkedin",
+  "url": "https://linkedin.com/in/...",
+  "display_order": 1
+}
+```
+
+Validation
+
+- Platform must be one of `linkedin` / `github` / `portfolio` / `website` / `other` (normalized case-insensitively; unknown values are rejected with `422`)
+- URL must be valid
+- One link per platform per profile (`409 CONFLICT` on duplicates)
+
+Response includes a computed `title` (e.g. `LinkedIn`, `GitHub`, `Portfolio`, `Personal Website`).
+
+Reads are defensive: legacy rows with non-normalized `platform` values (e.g. `sq`) are coerced to `other` in responses and never crash serialization; a DB check constraint (`ck_social_link_platform`) prevents new invalid values.
+
+---
+
+## PATCH /social-links/{id}
+
+Update social link.
+
+---
+
+## DELETE /social-links/{id}
+
+Delete social link.
+
+---
+
+# Achievements
+
+## POST /achievements
+
+Example
+
+```json
+{
+  "title": "Regional Hackathon Winner",
+  "organization": "Hack Corp",
+  "achievement_type": "Hackathon Winner",
+  "date": "2026-03-15",
+  "description": "Led a team of 4 to first place.",
+  "url": "https://example.com/win"
+}
+```
+
+Validation
+
+- Title required (max 255 characters)
+- URL must be valid
+
+---
+
+## PATCH /achievements/{id}
+
+Update achievement.
+
+---
+
+## DELETE /achievements/{id}
+
+Delete achievement.
 
 ---
 
@@ -503,6 +663,8 @@ The API validates:
 | PROFILE_VALIDATION_ERROR | Validation failed |
 | DUPLICATE_SKILL | Skill already exists |
 | DUPLICATE_PROJECT | Project already exists |
+| DUPLICATE_LANGUAGE | Language already exists |
+| DUPLICATE_SOCIAL_LINK | Social link platform already exists |
 | INVALID_FILE | Unsupported file type |
 | FILE_TOO_LARGE | Uploaded file exceeds limit |
 | IMPORT_FAILED | Resume extraction failed |

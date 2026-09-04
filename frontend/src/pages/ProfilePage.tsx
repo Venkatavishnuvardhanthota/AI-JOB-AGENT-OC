@@ -38,12 +38,12 @@ interface ModalState {
 }
 
 const defaultForms: Record<SectionKey, Record<string, any>> = {
-  education: { institution: '', degree: '', field_of_study: '', start_date: '', end_date: '', gpa: '', description: '' },
-  experience: { company: '', title: '', location: '', start_date: '', end_date: '', is_current: false, description: '', company_url: '' },
-  projects: { name: '', description: '', url: '', github_url: '', start_date: '', end_date: '', is_current: false },
-  skills: { name: '', category: '', proficiency: '' },
-  certifications: { name: '', issuer: '', issue_date: '', expiry_date: '', credential_id: '', credential_url: '' },
-  languages: { name: '', proficiency: 'Beginner' },
+  education: { institution: '', degree: '', field_of_study: '', location: '', cgpa: '', start_date: '', end_date: '', currently_studying: false },
+  experience: { company: '', title: '', location: '', employment_type: '', start_date: '', end_date: '', currently_working: false, responsibilities: '', achievements: '', technologies_used: '', description: '' },
+  projects: { name: '', description: '', technologies: '', github_url: '', demo_url: '', live_url: '', start_date: '', end_date: '' },
+  skills: { name: '', category: '', proficiency: '', years_experience: '', skill_level: '' },
+  certifications: { name: '', issuer: '', credential_id: '', credential_url: '', issue_date: '', expiration_date: '' },
+  languages: { language: '', proficiency: 'Beginner' },
   blacklist: { company_name: '', reason: '' },
 }
 
@@ -69,12 +69,14 @@ function EntityModal({ section, item, onClose, onSaved }: {
     try {
       const payload: Record<string, any> = {}
       for (const [key, value] of Object.entries(form)) {
-        if (value !== '' && value !== null) {
-          payload[key] = key === 'gpa' || key === 'proficiency' ? Number(value) : value
+        if (Array.isArray(value)) {
+          if (value.length > 0) payload[key] = value
+        } else if (typeof value === 'boolean' || (value !== '' && value !== null)) {
+          payload[key] = key === 'years_experience' ? Number(value) : value
         }
       }
       if (item?.id) {
-        await api.put(`/profile/${section}/${item.id}`, payload)
+        await api.patch(`/profile/${section}/${item.id}`, payload)
       } else {
         await api.post(`/profile/${section}`, payload)
       }
@@ -129,14 +131,13 @@ function EntityModal({ section, item, onClose, onSaved }: {
             {renderField('institution', 'Institution')}
             {renderField('degree', 'Degree')}
             {renderField('field_of_study', 'Field of Study')}
+            {renderField('location', 'Location')}
+            {renderField('cgpa', 'CGPA')}
             <div className="form-row">
               {renderField('start_date', 'Start Date', 'date')}
               {renderField('end_date', 'End Date', 'date')}
             </div>
-            <div className="form-row">
-              {renderField('gpa', 'GPA', 'number')}
-            </div>
-            {renderField('description', 'Description', 'textarea')}
+            {renderField('currently_studying', 'I currently study here', 'checkbox')}
           </>
         )
       case 'experience':
@@ -145,13 +146,15 @@ function EntityModal({ section, item, onClose, onSaved }: {
             {renderField('company', 'Company')}
             {renderField('title', 'Title')}
             {renderField('location', 'Location')}
+            {renderField('employment_type', 'Employment Type', 'select', ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'])}
             <div className="form-row">
               {renderField('start_date', 'Start Date', 'date')}
               {renderField('end_date', 'End Date', 'date')}
             </div>
-            {renderField('is_current', 'I currently work here', 'checkbox')}
-            {renderField('description', 'Description', 'textarea')}
-            {renderField('company_url', 'Company URL')}
+            {renderField('currently_working', 'I currently work here', 'checkbox')}
+            {renderField('responsibilities', 'Responsibilities (one per line)', 'textarea')}
+            {renderField('achievements', 'Key Achievements (one per line)', 'textarea')}
+            {renderField('technologies_used', 'Technologies (one per line)', 'textarea')}
           </>
         )
       case 'projects':
@@ -159,13 +162,14 @@ function EntityModal({ section, item, onClose, onSaved }: {
           <>
             {renderField('name', 'Project Name')}
             {renderField('description', 'Description', 'textarea')}
-            {renderField('url', 'URL')}
+            {renderField('technologies', 'Technologies (one per line)', 'textarea')}
             {renderField('github_url', 'GitHub URL')}
+            {renderField('demo_url', 'Demo URL')}
+            {renderField('live_url', 'Live URL')}
             <div className="form-row">
               {renderField('start_date', 'Start Date', 'date')}
               {renderField('end_date', 'End Date', 'date')}
             </div>
-            {renderField('is_current', 'Ongoing', 'checkbox')}
           </>
         )
       case 'skills':
@@ -173,7 +177,9 @@ function EntityModal({ section, item, onClose, onSaved }: {
           <>
             {renderField('name', 'Skill Name')}
             {renderField('category', 'Category')}
-            {renderField('proficiency', 'Proficiency (1-100)', 'number')}
+            {renderField('proficiency', 'Proficiency', 'select', ['Beginner', 'Intermediate', 'Advanced', 'Expert'])}
+            {renderField('years_experience', 'Years of Experience', 'number')}
+            {renderField('skill_level', 'Skill Level', 'select', ['Learning', 'Comfortable', 'Proficient', 'Expert'])}
           </>
         )
       case 'certifications':
@@ -183,7 +189,7 @@ function EntityModal({ section, item, onClose, onSaved }: {
             {renderField('issuer', 'Issuer')}
             <div className="form-row">
               {renderField('issue_date', 'Issue Date', 'date')}
-              {renderField('expiry_date', 'Expiry Date', 'date')}
+              {renderField('expiration_date', 'Expiration Date', 'date')}
             </div>
             {renderField('credential_id', 'Credential ID')}
             {renderField('credential_url', 'Credential URL')}
@@ -192,7 +198,7 @@ function EntityModal({ section, item, onClose, onSaved }: {
       case 'languages':
         return (
           <>
-            {renderField('name', 'Language')}
+            {renderField('language', 'Language')}
             {renderField('proficiency', 'Proficiency', 'select', ['Beginner', 'Intermediate', 'Advanced', 'Fluent', 'Native'])}
           </>
         )
@@ -245,34 +251,52 @@ function ProfileForm({ profile, onUpdate, onToast }: {
   onToast: (msg: string, type: 'success' | 'error') => void
 }) {
   const [form, setForm] = useState({
-    phone: profile?.phone || '',
     headline: profile?.headline || '',
-    bio: profile?.bio || '',
-    location: profile?.location || '',
-    salary_expectation_min: profile?.salary_expectation_min ?? '',
+    current_role: profile?.current_role || '',
+    desired_role: profile?.desired_role || '',
+    employment_status: profile?.employment_status || '',
+    total_years_experience: profile?.total_years_experience ?? '',
+    notice_period: profile?.notice_period || '',
+    current_salary: profile?.current_salary ?? '',
+    expected_salary: profile?.expected_salary ?? '',
+    salary_preference: profile?.salary_preference || '',
+    willing_to_relocate: !!profile?.willing_to_relocate,
+    visa_sponsorship_requirement: !!profile?.visa_sponsorship_requirement,
     linkedin_url: profile?.linkedin_url || '',
     github_url: profile?.github_url || '',
     portfolio_url: profile?.portfolio_url || '',
+    website_url: profile?.website_url || '',
+    professional_summary: profile?.professional_summary || '',
   })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (profile) {
       setForm({
-        phone: profile.phone || '',
         headline: profile.headline || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        salary_expectation_min: profile.salary_expectation_min ?? '',
+        current_role: profile.current_role || '',
+        desired_role: profile.desired_role || '',
+        employment_status: profile.employment_status || '',
+        total_years_experience: profile.total_years_experience ?? '',
+        notice_period: profile.notice_period || '',
+        current_salary: profile.current_salary ?? '',
+        expected_salary: profile.expected_salary ?? '',
+        salary_preference: profile.salary_preference || '',
+        willing_to_relocate: !!profile.willing_to_relocate,
+        visa_sponsorship_requirement: !!profile.visa_sponsorship_requirement,
         linkedin_url: profile.linkedin_url || '',
         github_url: profile.github_url || '',
         portfolio_url: profile.portfolio_url || '',
+        website_url: profile.website_url || '',
+        professional_summary: profile.professional_summary || '',
       })
     }
   }, [profile])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target
+    const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
+    setForm(prev => ({ ...prev, [target.name]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -280,29 +304,14 @@ function ProfileForm({ profile, onUpdate, onToast }: {
     setSaving(true)
     const payload: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(form)) {
-      if (value !== '') payload[key] = value
+      if (typeof value === 'boolean' || value !== '') payload[key] = value
     }
     try {
-      await api.put('/profile', payload)
+      await api.patch('/profile', payload)
       onToast('Profile saved successfully!', 'success')
       onUpdate()
     } catch (err: any) {
       onToast(err.message || 'Failed to save profile', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setSaving(true)
-    try {
-      await api.uploadFile('/profile/resume', file)
-      onToast('Resume uploaded!', 'success')
-      onUpdate()
-    } catch (err: any) {
-      onToast(err.message || 'Failed to upload resume', 'error')
     } finally {
       setSaving(false)
     }
@@ -316,21 +325,60 @@ function ProfileForm({ profile, onUpdate, onToast }: {
           <input name="headline" value={form.headline} onChange={handleChange} placeholder="e.g. Senior Software Engineer" />
         </div>
         <div className="form-group">
-          <label>Phone</label>
-          <input name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (555) 123-4567" />
+          <label>Current Role</label>
+          <input name="current_role" value={form.current_role} onChange={handleChange} placeholder="e.g. Software Engineer" />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Desired Role</label>
+          <input name="desired_role" value={form.desired_role} onChange={handleChange} placeholder="e.g. Senior Backend Engineer" />
+        </div>
+        <div className="form-group">
+          <label>Employment Status</label>
+          <select name="employment_status" value={form.employment_status} onChange={handleChange}>
+            <option value="">Select...</option>
+            <option value="employed">Employed</option>
+            <option value="self_employed">Self-employed</option>
+            <option value="freelancer">Freelancer</option>
+            <option value="student">Student</option>
+            <option value="unemployed">Unemployed</option>
+            <option value="retired">Retired</option>
+          </select>
         </div>
       </div>
       <div className="form-group">
-        <label>Location</label>
-        <input name="location" value={form.location} onChange={handleChange} placeholder="e.g. San Francisco, CA" />
+        <label>Professional Summary</label>
+        <textarea name="professional_summary" value={form.professional_summary} onChange={handleChange} placeholder="Tell us about yourself..." />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Total Years of Experience</label>
+          <input name="total_years_experience" type="number" step="0.5" value={form.total_years_experience} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+          <label>Notice Period</label>
+          <input name="notice_period" value={form.notice_period} onChange={handleChange} placeholder="e.g. 30 days" />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Current Salary</label>
+          <input name="current_salary" type="number" value={form.current_salary} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+          <label>Expected Salary</label>
+          <input name="expected_salary" type="number" value={form.expected_salary} onChange={handleChange} placeholder="e.g. 90000" />
+        </div>
       </div>
       <div className="form-group">
-        <label>Bio</label>
-        <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Tell us about yourself..." />
-      </div>
-      <div className="form-group">
-        <label>Salary Expectation (Min)</label>
-        <input name="salary_expectation_min" type="number" value={form.salary_expectation_min} onChange={handleChange} placeholder="e.g. 80000" />
+        <label>Salary Preference</label>
+        <select name="salary_preference" value={form.salary_preference} onChange={handleChange}>
+          <option value="">Select...</option>
+          <option value="paid_only">Paid only</option>
+          <option value="paid_preferred">Paid preferred, unpaid considered</option>
+          <option value="unpaid_acceptable">Open to unpaid</option>
+        </select>
       </div>
       <div className="form-row">
         <div className="form-group">
@@ -342,14 +390,27 @@ function ProfileForm({ profile, onUpdate, onToast }: {
           <input name="github_url" value={form.github_url} onChange={handleChange} placeholder="https://github.com/..." />
         </div>
       </div>
-      <div className="form-group">
-        <label>Portfolio URL</label>
-        <input name="portfolio_url" value={form.portfolio_url} onChange={handleChange} placeholder="https://..." />
+      <div className="form-row">
+        <div className="form-group">
+          <label>Portfolio URL</label>
+          <input name="portfolio_url" value={form.portfolio_url} onChange={handleChange} placeholder="https://..." />
+        </div>
+        <div className="form-group">
+          <label>Website URL</label>
+          <input name="website_url" value={form.website_url} onChange={handleChange} placeholder="https://..." />
+        </div>
       </div>
       <div className="form-group">
-        <label>Resume</label>
-        <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} />
-        {profile?.resume_file && <p style={{ color: 'var(--success)', fontSize: '0.85rem', marginTop: '0.3rem' }}>✓ Resume uploaded</p>}
+        <label className="checkbox-label">
+          <input type="checkbox" name="willing_to_relocate" checked={form.willing_to_relocate} onChange={handleChange} />
+          Willing to relocate
+        </label>
+      </div>
+      <div className="form-group">
+        <label className="checkbox-label">
+          <input type="checkbox" name="visa_sponsorship_requirement" checked={form.visa_sponsorship_requirement} onChange={handleChange} />
+          Requires visa sponsorship
+        </label>
       </div>
       <button type="submit" className="add-btn" disabled={saving} style={{ marginTop: '0.5rem' }}>
         {saving ? 'Saving...' : 'Save Profile'}
@@ -436,15 +497,15 @@ export function ProfilePage() {
       case 'education':
         return { title: `${item.degree} at ${item.institution}`, subtitle: item.field_of_study ? item.field_of_study : '' }
       case 'experience':
-        return { title: `${item.title} at ${item.company}`, subtitle: item.is_current ? 'Current' : '' }
+        return { title: `${item.title} at ${item.company}`, subtitle: item.currently_working ? 'Current' : '' }
       case 'projects':
-        return { title: item.name, subtitle: '' }
+        return { title: item.name, subtitle: item.description ? item.description : '' }
       case 'skills':
         return { title: item.name, subtitle: item.proficiency ? `Proficiency: ${item.proficiency}` : '' }
       case 'certifications':
         return { title: item.name, subtitle: item.issuer || '' }
       case 'languages':
-        return { title: `${item.name} - ${item.proficiency}`, subtitle: '' }
+        return { title: `${item.language} - ${item.proficiency}`, subtitle: '' }
       case 'blacklist':
         return { title: item.company_name, subtitle: item.reason || '' }
     }

@@ -15,6 +15,7 @@ class AIProviderRegistry:
     def __init__(self) -> None:
         self._providers: dict[str, AIProvider] = {}
         self._lock = threading.Lock()
+        self._default_provider: str | None = None
 
     def register(self, provider: AIProvider) -> None:
         with self._lock:
@@ -30,6 +31,8 @@ class AIProviderRegistry:
             if name not in self._providers:
                 raise ProviderNotFoundError(f"Provider '{name}' is not registered.")
             del self._providers[name]
+            if self._default_provider == name:
+                self._default_provider = None
             logger.info("Unregistered AI provider", name=name)
 
     def resolve(self, name: str) -> AIProvider:
@@ -50,6 +53,23 @@ class AIProviderRegistry:
         provider = self.resolve(name)
         return await provider.provider_info()
 
+    async def get_all_provider_infos(self, default_provider: str | None = None) -> dict[str, ProviderInfo]:
+        results: dict[str, ProviderInfo] = {}
+        for name in self.list_providers():
+            try:
+                info = await self.get_provider_info(name)
+                info.enabled = True
+                info.is_default = name == (default_provider or self._default_provider)
+                results[name] = info
+            except Exception as exc:
+                results[name] = ProviderInfo(
+                    name=name,
+                    display_name=name,
+                    is_available=False,
+                    error=str(exc),
+                )
+        return results
+
     def is_registered(self, name: str) -> bool:
         with self._lock:
             return name in self._providers
@@ -61,3 +81,4 @@ class AIProviderRegistry:
     def clear(self) -> None:
         with self._lock:
             self._providers.clear()
+            self._default_provider = None

@@ -26,7 +26,9 @@ export function ResumeOptimize({ resumeId, resumeTitle, onOptimized }: ResumeOpt
   const [analyzing, setAnalyzing] = useState(false)
   const [optimizing, setOptimizing] = useState(false)
 
-  const jobList = (jobs as any) || []
+  const jobList = Array.isArray(jobs)
+    ? jobs
+    : (((jobs as any)?.items ?? (jobs as any)?.data?.items) || [])
 
   const handleAnalyze = async () => {
     if (!selectedJobId) return
@@ -50,7 +52,7 @@ export function ResumeOptimize({ resumeId, resumeTitle, onOptimized }: ResumeOpt
     try {
       await optimizeResume.mutateAsync({
         id: resumeId,
-        data: { job_id: selectedJobId, target_role: targetRole || undefined },
+        data: { job_id: selectedJobId, target_role: targetRole || undefined, enhance_with_ai: true },
       })
       addToast('Resume optimized! New version created.', 'success')
       setStep('done')

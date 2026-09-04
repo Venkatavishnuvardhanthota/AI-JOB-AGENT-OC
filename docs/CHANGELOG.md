@@ -9,6 +9,121 @@ This project follows the principles of **Keep a Changelog** and **Semantic Versi
 
 ---
 
+# [2.1.1] - 2026-08-01
+
+## Added
+
+### Resume Library Manual QA (v2.1.1 sprint)
+- **Origin badges** on resume cards: `Uploaded` / `AI Generated` / `AI Tailored` / `Manual`, driven by the `origin` column (migration `9a8b7c6d5e4f` backfills existing rows by `resume_type`/`source`)
+- **Origin-filtered library tabs**: "My Resumes" (manual + uploaded) and "AI Generated" (`ai_generated,ai_tailored`, comma-separated query param)
+- `enhance_with_ai` on generate and optimize requests (optimize defaults to AI enhancement)
+- New regression tests: origin/status on create+optimize, master/AI listing filters, removed-endpoint 404/405/422 assertions, strategy origin updates
+
+### Career Profile QA Improvements (v2.1.1 sprint)
+- **Achievements**: new model, repository, migration (`7a8b9c0d1e2f`), schemas, and `/profile/achievements` CRUD endpoints (GET/POST/PATCH/DELETE)
+- **Salary preference**: `salary_preference` column (`paid_only` / `paid_preferred` / `unpaid_acceptable`) on career profiles with `paid_only` requiring an expected salary
+- **Education**: `location` and `cgpa` fields (removed `description` / `grade`)
+- **Profile completeness API**: backend-computed `{ percentage, breakdown, missing_sections }` replacing client-side heuristics
+- **Skills**: string `proficiency` / `skill_level` values plus `years_experience` and `display_order`
+- **Bulk skills replace**: `PUT /profile/skills` replaces the whole skill list atomically (trims names, dedupes case-insensitively, `422` when empty) with deterministic alphabetical ordering (case-insensitive) on both PUT and GET responses
+- **Achievement types**: 15 preset types (Award, Certificate, Badge, Certification, Competition, Hackathon, Scholarship, Publication, Patent, Research, Open Source, Employee Recognition, Leadership, Volunteer, Other) with a custom label input when "Other" is selected
+- **Frontend Career Profile page**: typed forms matching the backend contract, achievements section, salary preference control, tag-style skill entries, empty states, saving feedback, ARIA-compliant dialogs, responsive layout
+- **Social links UX**: section refreshes immediately after add/edit/delete, stale "no links" empty state removed on load errors (retry button), duplicate platform errors show the friendly backend message instead of raw `HTTP 409`
+- **Dashboard completion card**: renders backend-computed percentage/breakdown only (fixes NaN completion display)
+- **Regression tests**: new frontend suite (`CareerProfilePage.test.tsx`, 13 tests) covering social-link refresh/friendly-409, achievement type dropdown + custom labels, and tag-based skill entry (multi-add, comma entry, dedupe, save refresh, remove-then-save); backend suite updated to 132 passing tests
+
+## Changed
+
+### Resume Library Manual QA (v2.1.1 sprint)
+
+- Optimize now creates an `active` resume with `origin=ai_tailored` (was draft + null origin); AI output parsed defensively so bad provider responses never corrupt resume content
+- Generate sets `origin=ai_generated`; section building covers profile sub-resources (summary/experience/education/skills/projects/certifications/languages/achievements)
+- Strategy service uses canonical origins and includes uploaded resumes in master-resume selection
+- `useUpdateResume` invalidates both the library list and the detail query (immediate refresh)
+- `DropdownMenuItem` now has explicit `text-foreground` (dark-mode readability)
+
+### Career Profile QA Improvements (v2.1.1 sprint)
+- Education/Experience/Certification schemas now validate date ranges (`422` on invalid ranges)
+- Experience requires `end_date` to be empty when `currently_working` is set
+- Skill/language/project/certification duplicate checks are case-insensitive (returns `409 CONFLICT`)
+- Language names are title-cased and trimmed; empty values rejected
+- Social links normalize platform to `linkedin` / `github` / `portfolio` / `website` / `other` and expose a computed `title`
+- URL fields validated and normalized across profile sections (invalid URLs return `422`)
+- Career profile duplication constraints: one language per profile, one social link per platform
+- Resume generation now emits certifications, languages, and achievements sections
+- Fixed `profile.bio` reference bug in `ResumeService.generate_from_profile` (uses `professional_summary`)
+- Fixed resume strategy "ask" flow: explicit `ask` override returns a needs-choice response instead of crashing; re-preparing a job with unchanged inputs returns the reused generated resume without a duplicate application error
+
+## Removed
+
+- Versions: `POST /resumes/{id}/versions` (now 400 "disabled") and `GET /resumes/{id}/versions`, `ResumeVersionCreate` schema, `create_version`/`list_versions` service methods
+- Duplicate: `POST /resumes/{id}/duplicate`, `ResumeDuplicateRequest`, `duplicate_resume` service method, Duplicate button/menu item
+- Compare: `POST /resumes/compare`, `ResumeCompareRequest/Response`, `compare_versions` service method
+- Templates: `GET /resumes/templates`, `TemplateSelector`, `useResumeTemplates`, `template` param on generate
+- Frontend components `VersionHistory`, `ResumeCompare`, "Create Blank"/"Duplicate Existing" modal steps
+
+## Fixed
+
+- **Resume Details crash**: `useState` after early returns (Rules of Hooks violation) hoisted above not-found/loading branches
+- **Optimize producing empty results**: status/origin/parsing fixes above
+- **Generate from Career Profile**: works end to end with a populated profile (4-5 sections verified live)
+- **Card metadata**: correct origin badges and `active` status rendering
+- **Strategy integration**: reuse lookup and origin filters updated to canonical values
+- Pre-existing test failures: `await repo.session.add(...)` (await on non-awaitable) in two repository tests
+
+### Career Profile QA Improvements (v2.1.1 sprint)
+- Profile completeness scorer no longer requires proficiency on skills (tag-based model)
+- NaN profile completion on the dashboard
+- Broken `/profile/social-links` GET route declaration
+- Skills returned in non-deterministic heap order from `profile.skills` — relationship now orders case-insensitively by name
+- Stale "No social links added yet." / "No skills added yet." empty states when the query failed (sections now show a retry state)
+- `test_profile_intelligence`, `test_career_profile` suites updated and passing (132 tests); stale questionnaire salary assertion fixed (`1,20` → `120,000`)
+- **BUG-011 (Personal Details save → "An unexpected error occurred.")** and **BUG-012 (Social Links → "Couldn't load social links.")**: both were caused by legacy `social_links` rows with non-normalized `platform` values (e.g. `sq`) crashing strict response serialization, which 500'd every profile route and hid the real error behind a generic message. Fixed by:
+  - `SocialLinkResponse` decoupled from `SocialLinkBase` — reads are now defensive (unknown platforms coerced to `other`, cased values normalized, no read-time validation crash)
+  - New `ck_social_link_platform` check constraint on `social_links` (migration `8c9d0e1f2a3b`) plus sanitization of existing rows: trim/lowercase/collapse spaces, coerce unknown values to `other`, dedupe per profile
+  - `PydanticValidationError` exception handler in `main.py` — response serialization failures now surface the real error in logs and the 500 envelope instead of failing silently
+   - Regression tests: legacy rows no longer crash profile routes, invalid platform rejected at the model level, response coercion/normalization unit tests
+
+## AI Integration
+
+### Fixed
+- Removed duplicate nested backend/tests suite
+- Fixed provider contract regression tests
+- Fixed provider registration expectations
+- Fixed provider_state expectations
+- Fixed Ollama configuration contract
+- Added ai_settings migration (created_at/deleted_at)
+- Fixed production startup database error
+
+### Added
+- Live provider verification
+- Provider switching verification
+- Real Ollama generation verification
+- AI request persistence verification
+- AI feature execution verification
+
+### Changed
+- Increased default timeout from 60s to 240s for local LLMs
+- Frontend rebuilt and redeployed
+
+### Verified
+- All provider endpoints
+- Configuration CRUD
+- Model discovery
+- Provider switching
+- AIService execution path
+- Prompt registry
+- Local Ollama generation
+- Fallback routing
+- ai_requests persistence
+
+### Testing
+- 3370 passing
+- 0 failures
+- AI integration regression clean
+
+---
+
 # [2.1.0] - 2026-07-28
 
 ## Added

@@ -26,7 +26,7 @@ import { getReminderBadges } from '@/hooks/useReminderBadges'
 import { getApplicationAge } from '@/hooks/useApplicationAge'
 import {
   ArrowLeft, Building2, Briefcase,
-  Globe, Trash2, AlertCircle, Clock,
+  Globe, Trash2, AlertCircle, Clock, Wand2, Recycle, Sparkles,
 } from 'lucide-react'
 import type { ApplicationStatus, ApplicationPriority } from '@/types'
 
@@ -110,6 +110,14 @@ export function ApplicationDetailPage() {
     } : null,
   }
 
+  const strategyLabels: Record<string, string> = {
+    use_existing: 'Use Best Resume',
+    tailor: 'Tailored Best Resume',
+    generate: 'Generated New Resume',
+    ask: 'Asked at apply time',
+  }
+  const hasStrategyInfo = !!(application.resume_strategy || application.generated || application.tailored)
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -148,6 +156,54 @@ export function ApplicationDetailPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
+          {hasStrategyInfo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wand2 className="h-5 w-5 text-primary" />
+                  AI Resume Strategy
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {application.resume_strategy && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{strategyLabels[application.resume_strategy] || application.resume_strategy}</Badge>
+                    {application.tailored && <Badge variant="outline">Tailored</Badge>}
+                    {application.generated && (
+                      <Badge variant="outline" className="text-primary">
+                        <Sparkles className="h-3 w-3 mr-1" /> AI Generated
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                {application.original_resume_id && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Source resume</p>
+                    <p className="text-xs font-mono text-muted-foreground">{application.original_resume_id}</p>
+                  </div>
+                )}
+                {application.generated_resume_id && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Generated resume</p>
+                    <p className="text-xs font-mono text-muted-foreground">{application.generated_resume_id}</p>
+                  </div>
+                )}
+                {application.generation_timestamp && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Generated</p>
+                    <p className="text-sm">{new Date(application.generation_timestamp).toLocaleString()}</p>
+                  </div>
+                )}
+                {application.generated && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Recycle className="h-3.5 w-3.5" />
+                    Generated resumes are kept only per your AI settings (saved when submitted by default).
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
               <CardHeader>

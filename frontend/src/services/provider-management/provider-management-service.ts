@@ -24,8 +24,42 @@ function setConfig(config: DiscoveryConfiguration): void {
 }
 
 const jobsTodayCache = new Map<ProviderId, number>()
+let _backendStates: Record<string, string> = {}
+let _backendStatesFetched = false
+
+async function fetchBackendStates(): Promise<Record<string, string>> {
+  try {
+    const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL ?? ''
+    const res = await fetch(`${baseUrl}/api/v1/health/self-test`)
+    if (!res.ok) return {}
+    const data = await res.json()
+    const states: Record<string, string> = {}
+    if (data.providers) {
+      for (const p of data.providers) {
+        states[p.id] = p.state
+      }
+    } else if (data.checks) {
+      for (const [key, check] of Object.entries(data.checks) as [string, any][]) {
+        if (key.endsWith('_providers') && check.detail) {
+          states[key] = check.passed ? 'ready' : 'unavailable'
+        }
+      }
+    }
+    return states
+  } catch {
+    return {}
+  }
+}
 
 export const providerManagementService = {
+  async getProvidersAsync(): Promise<ManagedProvider[]> {
+    if (!_backendStatesFetched) {
+      _backendStates = await fetchBackendStates()
+      _backendStatesFetched = true
+    }
+    return this.getProviders()
+  },
+
   getProviders(): ManagedProvider[] {
     const providers = providerRegistry.getAll()
     const allHealth = providerHealthService.getAll()
@@ -51,8 +85,14 @@ export const providerManagementService = {
         config,
         lastSearchTime: health.lastSuccess,
         jobsFoundToday: jobsTodayCache.get(p.id) ?? 0,
+        backendState: _backendStates[p.id] ?? null,
       }
     })
+  },
+
+  resetBackendStates(): void {
+    _backendStatesFetched = false
+    _backendStates = {}
   },
 
   getCategories(providers?: ManagedProvider[]) {

@@ -1,15 +1,15 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.core.exceptions import ValidationError as AppValidationError
 from app.models import User
 from app.schemas.cover_letter import (
     ApplicationPackageRequest,
-    ApplicationPackageResponse,
     CoverLetterAIAssistRequest,
     CoverLetterCreate,
     CoverLetterGenerateRequest,
@@ -147,7 +147,7 @@ async def export_cover_letter(
         cl = await service.get(cid, current_user.id)
         return Response(content=cl.content or "", media_type="text/plain",
                         headers={"Content-Disposition": f'attachment; filename="cover-letter.txt"'})
-    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'pdf', 'docx', or 'txt'.")
+    raise AppValidationError(f"Unsupported format: {format}. Use 'pdf', 'docx', or 'txt'.")
 
 
 @router.post("/application-package")

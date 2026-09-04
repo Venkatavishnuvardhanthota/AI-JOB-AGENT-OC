@@ -39,6 +39,7 @@ const OrchestrationPage = lazy(() => import('./pages/OrchestrationPage').then(m 
 const CareerProfilePage = lazy(() => import('./pages/CareerProfilePage').then(m => ({ default: m.CareerProfilePage })))
 const SettingsAccountPage = lazy(() => import('./pages/SettingsAccountPage').then(m => ({ default: m.SettingsAccountPage })))
 const SettingsPreferencesPage = lazy(() => import('./pages/SettingsPreferencesPage').then(m => ({ default: m.SettingsPreferencesPage })))
+const AISettingsPage = lazy(() => import('./pages/AISettingsPage').then(m => ({ default: m.AISettingsPage })))
 const ProviderManagementPage = lazy(() => import('./pages/ProviderManagementPage').then(m => ({ default: m.ProviderManagementPage })))
 
 const queryClient = new QueryClient({
@@ -100,6 +101,7 @@ function App() {
                   <Route path="/profile" element={<CareerProfilePage />} />
                   <Route path="/settings/account" element={<SettingsAccountPage />} />
                   <Route path="/settings/preferences" element={<SettingsPreferencesPage />} />
+                  <Route path="/settings/ai" element={<AISettingsPage />} />
                   <Route path="/providers" element={<ProviderManagementPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Route>

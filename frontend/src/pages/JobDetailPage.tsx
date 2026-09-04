@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useJob, useJobMatch, useJobCompany } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
@@ -5,7 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Building, MapPin, DollarSign, Clock, ExternalLink, Briefcase, Star } from 'lucide-react'
+import { ApplyJobDialog } from '@/components/jobs/ApplyJobDialog'
+import { ArrowLeft, Building, MapPin, DollarSign, Clock, ExternalLink, Briefcase, Star, Wand2 } from 'lucide-react'
 import { formatSalary, timeAgo } from '@/lib/utils'
 
 export function JobDetailPage() {
@@ -13,6 +15,7 @@ export function JobDetailPage() {
   const { data: job, isLoading: jobLoading } = useJob(id!) as any
   const { data: match } = useJobMatch(id!) as any
   const { data: company } = useJobCompany(id!) as any
+  const [applyOpen, setApplyOpen] = useState(false)
 
   if (jobLoading) return <div className="space-y-4">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
 
@@ -61,17 +64,28 @@ export function JobDetailPage() {
             {job.description || 'No description available.'}
           </div>
 
-          {job.apply_url && (
-            <div className="mt-6">
-              <Button asChild>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button onClick={() => setApplyOpen(true)}>
+              <Wand2 className="h-4 w-4 mr-2" /> Apply with AI
+            </Button>
+            {job.apply_url && (
+              <Button asChild variant="outline">
                 <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-2" /> Apply on {job.source}
                 </a>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <ApplyJobDialog
+        jobId={id!}
+        jobTitle={job.title}
+        companyName={job.company_name}
+        open={applyOpen}
+        onClose={() => setApplyOpen(false)}
+      />
 
       {match && (
         <Card>

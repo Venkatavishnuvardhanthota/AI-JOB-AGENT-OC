@@ -165,38 +165,62 @@ export_profile()
 
 ## Responsibilities
 
-- Generate resumes
-- Resume versioning
-- Resume templates
-- Resume preview
-- Resume comparison
+- Generate resumes from career profiles
+- Optimize resumes for job postings
+- Resume preview and export
+- Origin tracking (master / uploaded / AI generated / AI tailored)
 - Archive resumes
 
 ## Dependencies
 
-- ResumeRepository
+- ResumeVersionRepository
 - CareerProfileService
 - AIOrchestratorService
-- TemplateEngine
 
 ## Public Methods
 
 ```
-generate_resume()
+list_resumes()
 
-preview_resume()
+get_resume()
 
-download_resume()
+create_resume()
+
+update_resume()
+
+delete_resume()
 
 archive_resume()
 
 restore_resume()
 
-duplicate_resume()
+set_default_resume()
 
-compare_versions()
+add_section()
 
-list_versions()
+update_section()
+
+delete_section()
+
+import_resume()
+
+export_resume()
+
+reorder_sections()
+
+generate_from_profile()
+
+optimize_for_job()
+
+analyze_ats()
+
+analyze_health()
+
+analyze_resume()
+
+export_resume_pdf()
+
+export_resume_docx()
 ```
 
 ---

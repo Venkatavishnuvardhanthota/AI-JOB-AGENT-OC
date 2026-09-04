@@ -1,5 +1,7 @@
+from database.models.achievement import Achievement
 from database.models.ai_request import AIRequest
 from database.models.ai_response import AIResponse
+from database.models.ai_settings import AISettings
 from database.models.application import Application
 from database.models.application_answer import ApplicationAnswer
 from database.models.application_event import ApplicationEvent
@@ -29,11 +31,14 @@ from database.models.scheduler_job import SchedulerJob
 from database.models.skill import Skill
 from database.models.social_link import SocialLink
 from database.models.user import User
+from database.models.user_ai_settings import UserAISettings
 from database.models.user_preference import UserPreference
 
 __all__ = [
     "User",
+    "UserAISettings",
     "CareerProfile",
+    "Achievement",
     "Education",
     "Experience",
     "Project",

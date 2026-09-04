@@ -129,7 +129,7 @@ export function CoverLetterWizard({ onComplete }: { onComplete: () => void }) {
                 )}
               >
                 <p className="text-sm font-medium">{r.title || 'Untitled Resume'}</p>
-                <p className="text-xs text-muted-foreground">v{r.version} · {r.section_count} sections{r.template && ` · ${r.template}`}</p>
+                <p className="text-xs text-muted-foreground">v{r.version} · {r.section_count} sections</p>
               </button>
             ))}
           </div>

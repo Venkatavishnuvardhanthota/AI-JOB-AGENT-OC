@@ -137,11 +137,23 @@ Stores verified professional information.
 |---------|------|-------------|
 | id | UUID | PK |
 | user_id | UUID | FK users(id), UNIQUE |
+| headline | VARCHAR(255) | NULL |
 | professional_summary | TEXT | NULL |
+| total_years_experience | NUMERIC(4,1) | NULL |
+| current_role | VARCHAR(255) | NULL |
+| desired_role | VARCHAR(255) | NULL |
+| employment_status | VARCHAR(50) | NULL |
+| current_salary | NUMERIC(12,2) | NULL |
+| expected_salary | NUMERIC(12,2) | NULL |
+| salary_preference | VARCHAR(50) | NULL (`paid_only` / `paid_preferred` / `unpaid_acceptable`) |
+| willing_to_relocate | BOOLEAN | NULL |
+| visa_sponsorship_requirement | BOOLEAN | NULL |
+| notice_period | VARCHAR(100) | NULL |
 | portfolio_url | TEXT | NULL |
 | linkedin_url | TEXT | NULL |
 | github_url | TEXT | NULL |
 | website_url | TEXT | NULL |
+| profile_completeness | INTEGER | DEFAULT 0 |
 | created_at | TIMESTAMPTZ | NOT NULL |
 | updated_at | TIMESTAMPTZ | NOT NULL |
 
@@ -165,10 +177,11 @@ One Career Profile
 | institution | VARCHAR(255) |
 | degree | VARCHAR(255) |
 | field_of_study | VARCHAR(255) |
+| location | VARCHAR(255) |
 | start_date | DATE |
 | end_date | DATE |
-| grade | VARCHAR(50) |
-| description | TEXT |
+| currently_studying | BOOLEAN |
+| cgpa | VARCHAR(20) |
 | created_at | TIMESTAMPTZ |
 | updated_at | TIMESTAMPTZ |
 
@@ -187,6 +200,9 @@ One Career Profile
 | start_date | DATE |
 | end_date | DATE |
 | currently_working | BOOLEAN |
+| responsibilities | JSONB |
+| achievements | JSONB |
+| technologies_used | JSONB |
 | description | TEXT |
 | created_at | TIMESTAMPTZ |
 | updated_at | TIMESTAMPTZ |
@@ -204,6 +220,9 @@ One Career Profile
 | technologies | JSONB |
 | github_url | TEXT |
 | demo_url | TEXT |
+| live_url | TEXT |
+| start_date | DATE |
+| end_date | DATE |
 | created_at | TIMESTAMPTZ |
 | updated_at | TIMESTAMPTZ |
 
@@ -219,6 +238,8 @@ One Career Profile
 | category | VARCHAR(100) |
 | proficiency | VARCHAR(50) |
 | years_experience | NUMERIC(4,1) |
+| skill_level | VARCHAR(50) |
+| display_order | INTEGER |
 | created_at | TIMESTAMPTZ |
 | updated_at | TIMESTAMPTZ |
 
@@ -255,6 +276,58 @@ Unique Constraint
 | profile_id | UUID FK |
 | language | VARCHAR(100) |
 | proficiency | VARCHAR(100) |
+| created_at | TIMESTAMPTZ |
+| updated_at | TIMESTAMPTZ |
+
+Unique Constraint
+
+```
+(profile_id, language)
+```
+
+---
+
+# social_links
+
+| Column | Type |
+|---------|------|
+| id | UUID |
+| profile_id | UUID FK |
+| platform | VARCHAR(50) |
+| url | TEXT |
+| display_order | INTEGER |
+| created_at | TIMESTAMPTZ |
+| updated_at | TIMESTAMPTZ |
+
+Unique Constraint
+
+```
+(profile_id, platform)
+```
+
+Check Constraint
+
+```
+ck_social_link_platform: platform IN ('linkedin', 'github', 'portfolio', 'website', 'other')
+```
+
+Migration `8c9d0e1f2a3b` sanitized legacy rows (trim/lowercase/collapse spaces, unknown values coerced to `other`, dedupe per profile) and added the check constraint.
+
+---
+
+# achievements
+
+| Column | Type |
+|---------|------|
+| id | UUID |
+| profile_id | UUID FK |
+| title | VARCHAR(255) |
+| organization | VARCHAR(255) |
+| achievement_type | VARCHAR(100) |
+| date | DATE |
+| description | TEXT |
+| url | TEXT |
+| display_order | INTEGER |
 | created_at | TIMESTAMPTZ |
 | updated_at | TIMESTAMPTZ |
 

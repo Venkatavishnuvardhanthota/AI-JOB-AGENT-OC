@@ -29,15 +29,54 @@ class ResumeVersion(Base):
     generated_for_job_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    origin: Mapped[str] = mapped_column(String(20), default="master", nullable=False)
+    parent_resume_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resume_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    generation_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user = relationship("User", back_populates="resumes")
-    applications = relationship("Application", back_populates="resume")
+    applications = relationship(
+        "Application", back_populates="resume", foreign_keys="Application.resume_id"
+    )
+    generated_for_applications = relationship(
+        "Application",
+        back_populates="generated_resume",
+        foreign_keys="Application.generated_resume_id",
+    )
+    original_for_applications = relationship(
+        "Application",
+        back_populates="original_resume",
+        foreign_keys="Application.original_resume_id",
+    )
     sections = relationship(
         "ResumeSection", back_populates="resume", cascade="all, delete-orphan", order_by="ResumeSection.sort_order"
     )
-    previous_version = relationship("ResumeVersion", remote_side="ResumeVersion.id", back_populates="next_versions")
-    next_versions = relationship("ResumeVersion", remote_side="ResumeVersion.previous_version_id", back_populates="previous_version")
+    previous_version = relationship(
+        "ResumeVersion",
+        remote_side="ResumeVersion.id",
+        foreign_keys=[previous_version_id],
+        back_populates="next_versions",
+    )
+    next_versions = relationship(
+        "ResumeVersion",
+        remote_side="ResumeVersion.previous_version_id",
+        foreign_keys=[previous_version_id],
+        back_populates="previous_version",
+    )
+    parent_resume = relationship(
+        "ResumeVersion",
+        remote_side="ResumeVersion.id",
+        foreign_keys=[parent_resume_id],
+        back_populates="generated_resumes",
+    )
+    generated_resumes = relationship(
+        "ResumeVersion",
+        remote_side="ResumeVersion.parent_resume_id",
+        foreign_keys=[parent_resume_id],
+        back_populates="parent_resume",
+    )
 
     __table_args__ = (
         UniqueConstraint("user_id", "version", name="uq_resume_user_version"),
@@ -45,5 +84,7 @@ class ResumeVersion(Base):
         Index("ix_resume_versions_user_id_created_at", "user_id", "created_at"),
         Index("ix_resume_versions_user_id_archived", "user_id", "archived"),
         Index("ix_resume_versions_user_id_default", "user_id", "is_default"),
+        Index("ix_resume_versions_user_id_origin", "user_id", "origin"),
+        Index("ix_resume_versions_user_id_job_origin", "user_id", "generated_for_job_id", "origin"),
         Index("ix_resume_versions_status", "status"),
     )

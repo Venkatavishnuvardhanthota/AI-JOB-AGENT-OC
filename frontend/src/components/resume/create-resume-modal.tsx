@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useCreateResume } from '@/api/hooks'
+import { useCreateResume, useUpdateResume } from '@/api/hooks'
 import { useToast } from '@/components/ui/toast'
-import { Upload, Sparkles, FileText, Copy, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Upload, Sparkles, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { ResumeUpload } from './resume-upload'
 import { ResumeWizard } from './resume-wizard'
 import { ResumePreview } from './resume-preview'
@@ -11,10 +11,9 @@ interface CreateResumeModalProps {
   open: boolean
   onClose: () => void
   onCreated: () => void
-  resumes?: any[]
 }
 
-type Step = 'choose' | 'upload' | 'upload-preview' | 'generate' | 'blank' | 'duplicate'
+type Step = 'choose' | 'upload' | 'upload-preview' | 'generate'
 
 interface ParsedResult {
   title: string
@@ -23,17 +22,20 @@ interface ParsedResult {
   needs_review: string[]
 }
 
-export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: CreateResumeModalProps) {
+export function CreateResumeModal({ open, onClose, onCreated }: CreateResumeModalProps) {
   const [step, setStep] = useState<Step>('choose')
   const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null)
+  const [uploadedResumeId, setUploadedResumeId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const createResume = useCreateResume()
+  const updateResume = useUpdateResume()
   const { addToast } = useToast()
 
   if (!open) return null
 
   const handleUploadComplete = (result: any) => {
     if (result?.resume) {
+      setUploadedResumeId(result.resume.id || null)
       setParsedResult({
         title: result.resume.title || 'Uploaded Resume',
         sections: (result.resume.sections || []).map((s: any) => ({
@@ -55,15 +57,22 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
   const handleSavePreview = async (title: string, sections: any[]) => {
     setSaving(true)
     try {
-      await createResume.mutateAsync({
-        title,
-        sections: sections.map((s, i) => ({
-          section_type: s.section_type,
-          title: s.title,
-          content: s.content,
-          sort_order: i,
-        })),
-      })
+      if (uploadedResumeId) {
+        await updateResume.mutateAsync({
+          id: uploadedResumeId,
+          data: { title, change_summary: 'Uploaded from file' },
+        })
+      } else {
+        await createResume.mutateAsync({
+          title,
+          sections: sections.map((s, i) => ({
+            section_type: s.section_type,
+            title: s.title,
+            content: s.content,
+            sort_order: i,
+          })),
+        })
+      }
       addToast('Resume saved!', 'success')
       onCreated()
     } catch {
@@ -129,38 +138,6 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
                   <p className="text-xs text-muted-foreground mt-1">Use your saved profile to generate a professional resume.</p>
                 </div>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setStep('blank')}
-                className="flex flex-col items-start gap-3 rounded-xl border border-glass-border p-5 text-left transition-all hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                aria-label="Create blank resume"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-dark-600 text-foreground">
-                  <FileText className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="font-semibold">Create Blank Resume</p>
-                  <p className="text-xs text-muted-foreground mt-1">Build a resume manually from scratch.</p>
-                </div>
-              </button>
-
-              {resumes.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setStep('duplicate')}
-                  className="flex flex-col items-start gap-3 rounded-xl border border-glass-border p-5 text-left transition-all hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  aria-label="Duplicate existing resume"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/20 text-warning">
-                    <Copy className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Duplicate Existing Resume</p>
-                    <p className="text-xs text-muted-foreground mt-1">Create another version from an existing resume.</p>
-                  </div>
-                </button>
-              )}
             </div>
 
             <div className="flex justify-end mt-6">
@@ -219,35 +196,7 @@ export function CreateResumeModal({ open, onClose, onCreated, resumes = [] }: Cr
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
             <h2 className="text-xl font-semibold mb-4">Generate From Career Profile</h2>
-            <ResumeWizard mode="generate" onComplete={() => { onCreated(); onClose() }} />
-          </div>
-        )}
-
-        {step === 'blank' && (
-          <div className="p-6">
-            <button
-              type="button"
-              onClick={() => setStep('choose')}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back
-            </button>
-            <h2 className="text-xl font-semibold mb-4">Create Blank Resume</h2>
-            <ResumeWizard mode="blank" onComplete={() => { onCreated(); onClose() }} />
-          </div>
-        )}
-
-        {step === 'duplicate' && (
-          <div className="p-6">
-            <button
-              type="button"
-              onClick={() => setStep('choose')}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back
-            </button>
-            <h2 className="text-xl font-semibold mb-4">Duplicate Resume</h2>
-            <ResumeWizard mode="duplicate" resumes={resumes} onComplete={() => { onCreated(); onClose() }} />
+            <ResumeWizard onComplete={() => { onCreated(); onClose() }} />
           </div>
         )}
       </div>

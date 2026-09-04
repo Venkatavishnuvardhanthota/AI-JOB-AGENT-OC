@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -10,6 +11,30 @@ from app.repositories import JobRepository
 from app.services.match_engine import MatchEngineService
 
 router = APIRouter()
+
+
+class ScoringWeights(BaseModel):
+    skill: float = 30
+    keyword: float = 20
+    experience: float = 25
+    education: float = 15
+    company: float = 10
+
+
+class ScoringConfigUpdate(BaseModel):
+    weights: ScoringWeights | None = None
+    skill_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    keyword_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    experience_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    education_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    overall_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    boost_exact_title_match: bool | None = None
+    boost_current_company: bool | None = None
+    penalty_blacklisted: bool | None = None
+
+
+class BatchScoreRequest(BaseModel):
+    job_ids: list[str] = Field(min_length=1, max_length=100)
 
 
 DEFAULT_SCORING_CONFIG = {
@@ -41,23 +66,23 @@ async def get_config(current_user: User = Depends(get_current_user)):
 
 @router.put("/config")
 async def update_config(
-    body: dict,
+    body: ScoringConfigUpdate,
     current_user: User = Depends(get_current_user),
 ):
     global _scoring_config, _config_updated_at
     from datetime import datetime, timezone
 
-    weights = body.get("weights")
-    if weights:
-        _scoring_config["weights"] = weights
-    threshold_keys = (
-        "skill_threshold", "keyword_threshold", "experience_threshold",
-        "education_threshold", "overall_threshold",
-        "boost_exact_title_match", "boost_current_company", "penalty_blacklisted",
-    )
-    for key in threshold_keys:
-        if key in body:
-            _scoring_config[key] = body[key]
+    if body.weights is not None:
+        _scoring_config["weights"] = body.weights.model_dump()
+    for key in ("skill_threshold", "keyword_threshold", "experience_threshold",
+                 "education_threshold", "overall_threshold"):
+        val = getattr(body, key, None)
+        if val is not None:
+            _scoring_config[key] = val
+    for key in ("boost_exact_title_match", "boost_current_company", "penalty_blacklisted"):
+        val = getattr(body, key, None)
+        if val is not None:
+            _scoring_config[key] = val
     _config_updated_at = datetime.now(timezone.utc).isoformat()
     return {
         "success": True,
@@ -99,11 +124,11 @@ async def score_job(
 
 @router.post("/jobs/batch-score")
 async def batch_score_jobs(
-    body: dict,
+    body: BatchScoreRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    job_ids = body.get("job_ids", [])
+    job_ids = body.job_ids
     service = MatchEngineService(db)
     scores = []
     for jid in job_ids:

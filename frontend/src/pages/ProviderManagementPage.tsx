@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Settings } from 'lucide-react'
 import { ProviderCard } from '@/components/provider-management/ProviderCard'
@@ -23,18 +23,26 @@ const DEFAULT_FILTERS: ProviderFilterOptions = {
 }
 
 export function ProviderManagementPage() {
-  const [providers, setProviders] = useState<ManagedProvider[]>(() => providerManagementService.getProviders())
-  const [categories] = useState<ProviderCategory[]>(() => providerManagementService.getCategories())
+  const [providers, setProviders] = useState<ManagedProvider[]>([])
+  const [categories, setCategories] = useState<ProviderCategory[]>([])
   const [filters, setFilters] = useState<ProviderFilterOptions>(DEFAULT_FILTERS)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [drawerProvider, setDrawerProvider] = useState<ManagedProvider | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
   const [healthRunning, setHealthRunning] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(() => {
-    setProviders(providerManagementService.getProviders())
+    setLoading(true)
+    providerManagementService.getProvidersAsync().then(p => {
+      setProviders(p)
+      setCategories(providerManagementService.getCategories(p))
+      setLoading(false)
+    })
   }, [])
+
+  useEffect(() => { refresh() }, [refresh])
 
   const filteredProviders = useMemo(() => {
     return providerManagementService.getFilteredProviders(filters)
@@ -109,18 +117,24 @@ export function ProviderManagementPage() {
             onBulkAction={handleBulkAction}
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredProviders.map(provider => (
-              <ProviderCard
-                key={provider.id}
-                provider={provider}
-                onToggle={handleToggle}
-                onClick={handleCardClick}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-muted-foreground">Loading providers...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredProviders.map(provider => (
+                <ProviderCard
+                  key={provider.id}
+                  provider={provider}
+                  onToggle={handleToggle}
+                  onClick={handleCardClick}
+                />
+              ))}
+            </div>
+          )}
 
-          {filteredProviders.length === 0 && (
+          {!loading && filteredProviders.length === 0 && (
             <div className="text-center py-12">
               <p className="text-sm text-muted-foreground">No providers found</p>
             </div>
